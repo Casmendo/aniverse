@@ -185,8 +185,8 @@ input[type=range]::-moz-range-thumb{
   animation: floatNav 5s ease-in-out infinite;
 }
 @keyframes floatNav{
-  0%,100%{ transform:translateX(-50%) translateY(0); }
-  50%     { transform:translateX(-50%) translateY(-4px); }
+  0%,100%{ transform:translateY(0); }
+  50%     { transform:translateY(-4px); }
 }
 
 /* ── Card hover ── */

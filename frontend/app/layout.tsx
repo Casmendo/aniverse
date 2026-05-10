@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className={`transition-opacity duration-500 ${booting ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <Navbar />
             <Sidebar />
-            <main className="relative z-10 pt-[64px] pb-28 min-h-screen">
+            <main className="relative z-10 pt-[64px] pb-24 min-h-screen max-w-full overflow-x-hidden">
               {children}
             </main>
             <BottomNav />
