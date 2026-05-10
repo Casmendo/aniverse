@@ -46,7 +46,7 @@ export default function APKPage() {
         transition={{ duration:4, ease:'easeInOut', repeat:Infinity }}
         className="w-28 h-28 rounded-[28px] bg-s1 border border-[var(--border)] flex items-center justify-center mb-8 relative"
         style={{boxShadow:'var(--shadow-lg)'}}>
-        <svg viewBox="0 0 34 38" fill="none" className="w-14 h-16">
+        <svg viewBox="0 0 34 38" fill="none" className="w-24 h-24 scale-150">
           <defs>
             <linearGradient id="apkG" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#CCD0CF"/>

@@ -43,7 +43,8 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 CORS(app,
      origins=[FRONTEND_URL,'http://localhost:3000','http://127.0.0.1:3000',
-              'http://localhost:3001','http://127.0.0.1:3001'],
+              'http://localhost:3001','http://127.0.0.1:3001',
+              'http://localhost', 'capacitor://localhost'],
      supports_credentials=True,
      allow_headers=['Content-Type','Authorization'],
      methods=['GET','POST','DELETE','OPTIONS'])
