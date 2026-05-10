@@ -34,17 +34,21 @@ jobs:
         run: |
           cd frontend
           npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://ani-verse-mauve.vercel.app # Build with production URL
 
       - name: Capacitor Sync
         run: |
           cd frontend
+          # Ensure out directory exists even if build failed partly
+          mkdir -p out
           npx cap sync android
 
       - name: Build with Gradle
         run: |
           cd frontend/android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
