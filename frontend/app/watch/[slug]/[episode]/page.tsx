@@ -1,0 +1,454 @@
+'use client';
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronLeft, Download, SkipForward, List, X, Loader2, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import VideoPlayer from '@/components/VideoPlayer';
+import { animeAPI, downloadAPI } from '@/lib/api';
+import { extractAnimeData, extractEpisode } from '@/lib/utils';
+import { useToast } from '@/components/Toast';
+import { useAuthStore } from '@/store/authStore';
+import { useDownloadStore } from '@/store/downloadStore';
+import { useWatchlistStore } from '@/store/watchlistStore';
+
+export default function WatchPage({ params, searchParams }: { params: { slug: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
+  const { slug, episode } = params;
+  const initialTitle = searchParams.title || '';
+  const initialEpNum = searchParams.ep ? Number(searchParams.ep) : 0;
+  const router = useRouter();
+  const toast = useToast();
+  const { user } = useAuthStore();
+  const { add: addDownload } = useDownloadStore();
+  const { trackEpisode } = useWatchlistStore();
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+  const [anime, setAnime] = useState<ReturnType<typeof extractAnimeData> | null>(
+    initialTitle ? { slug, title: initialTitle, cover: '', banner: '', description: '', genres: [], score: 0, episodes: 0, status: '', year: '', type: '' } as any : null
+  );
+  const [episodes, setEpisodes] = useState<ReturnType<typeof extractEpisode>[]>([]);
+  const [currentEp, setCurrentEp] = useState<ReturnType<typeof extractEpisode> | null>(
+    initialEpNum ? { id: episode, num: initialEpNum, title: `Episode ${initialEpNum}`, thumbnail: '' } : null
+  );
+  const [streamUrl, setStreamUrl] = useState('');
+  const [loadStream, setLoadStream] = useState(true);
+  const [streamErr, setStreamErr] = useState('');
+  const [showEpList, setShowEpList] = useState(false);
+  const [qualityOptions, setQualityOptions] = useState<string[]>(['best', '1080p', '720p', '480p']);
+  const [audioOptions, setAudioOptions] = useState<string[]>(['jpn', 'eng']);
+  const [selectedQuality, setSelectedQuality] = useState('best');
+  const [selectedAudio, setSelectedAudio] = useState('jpn');
+
+  useEffect(() => {
+    animeAPI.getDetail(slug).then(({ data }) => {
+      const raw = data.data || data.anime || data;
+      if (raw) {
+        const anime = extractAnimeData(raw);
+        // Ensure title is not a UUID
+        if (initialTitle && (!anime.title || anime.title === 'Unknown Anime' || anime.title === slug || /^[a-f0-9\-]{20,}$/.test(anime.title))) {
+          anime.title = initialTitle;
+        } else if (!anime.title || /^[a-f0-9\-]{20,}$/.test(anime.title)) {
+          anime.title = String(raw.name || raw.anime_name || raw.anime_title || slug);
+        }
+        setAnime(anime);
+      }
+    }).catch(async () => {
+      try {
+        const { data } = await animeAPI.getEpisodes(slug, initialTitle || '');
+        const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+        const first = Array.isArray(raw) ? raw[0] : null;
+        if (first) {
+          const info = extractAnimeData(first as Record<string, unknown>);
+          // Extract proper anime name from episode data
+          let animeName = String(raw.anime_name || (first as any).anime_name || (first as any).anime_title || (first as any).name || slug);
+          if (initialTitle) {
+            animeName = initialTitle;
+          } else if (!animeName || /^[a-f0-9\-]{20,}$/.test(animeName)) {
+            animeName = slug;
+          }
+          info.title = animeName;
+          info.slug = slug;
+          setAnime(info);
+        }
+      } catch {
+        // Fallback: set anime with slug as title
+        setAnime(extractAnimeData({ slug, title: slug }));
+      }
+    });
+  }, [slug]);
+
+  useEffect(() => {
+    animeAPI.getEpisodes(slug, initialTitle || anime?.title || '').then(({ data }) => {
+      const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+      const eps = raw.map((ep: Record<string, unknown>, i: number) => extractEpisode(ep, i));
+      setEpisodes(eps);
+      // First try to find by ID (session hash), then by episode number
+      let found = eps.find((e: ReturnType<typeof extractEpisode>) => e.id === episode);
+      if (!found) {
+        // If episode param is a number, try to match by episode number
+        const epNum = Number(episode);
+        if (!isNaN(epNum)) {
+          found = eps.find((e: ReturnType<typeof extractEpisode>) => e.num === epNum);
+        }
+      }
+      if (!found) found = eps[0];
+      if (found) {
+        setCurrentEp(found);
+        // Update URL to use the session ID instead of episode number for consistency
+        if (found.id !== episode) {
+          window.history.replaceState({}, '', `/watch/${slug}/${found.id}?title=${encodeURIComponent(anime?.title || initialTitle)}&ep=${found.num}`);
+        }
+      }
+    }).catch(() => { });
+  }, [slug, episode, anime?.title, initialTitle]);
+
+  const fetchStream = useCallback(async (ep: ReturnType<typeof extractEpisode>) => {
+    setLoadStream(true); setStreamErr(''); setStreamUrl('');
+    try {
+      const q = selectedQuality.replace('p', '');
+      const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
+      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || '';
+      // Relative URLs from the remote API → make absolute
+      if (url && url.startsWith('/')) url = `https://apis.ayohost.site${url}`;
+      if (!url) throw new Error('No stream URL returned');
+      setStreamUrl(url);
+    } catch (e: any) {
+      setStreamErr(e.message || 'Stream unavailable');
+    } finally { setLoadStream(false); }
+  }, [slug, selectedQuality, selectedAudio]);
+
+  useEffect(() => {
+    if (currentEp) fetchStream(currentEp);
+  }, [currentEp, fetchStream]);
+
+  useEffect(() => {
+    if (!currentEp) return;
+    animeAPI.getStreamQualities(currentEp.id, slug)
+      .then(({ data }) => {
+        const qualities = Array.isArray(data.qualities) ? data.qualities : Array.isArray(data) ? data : [];
+        const audios = Array.isArray(data.audios) ? data.audios : ['jpn', 'eng'];
+        if (qualities.length) setQualityOptions([...new Set(qualities.map(String))]);
+        if (audios.length) setAudioOptions([...new Set(audios.map(String))]);
+      })
+      .catch(() => {
+        setQualityOptions(['best', '1080p', '720p', '480p']);
+        setAudioOptions(['jpn', 'eng']);
+      });
+  }, [currentEp, slug]);
+
+  // Track episode in watchlist store
+  useEffect(() => {
+    if (anime && currentEp) {
+      trackEpisode(slug, anime.title, anime.cover, currentEp.id, currentEp.num, currentEp.title, 0);
+      document.title = `EP ${currentEp.num} — ${anime.title} — AniVerse`;
+    }
+  }, [currentEp, anime]);
+
+  const switchEp = (ep: ReturnType<typeof extractEpisode>) => {
+    setCurrentEp(ep);
+    window.history.replaceState({}, '', `/watch/${slug}/${ep.id}?title=${encodeURIComponent(anime?.title || initialTitle)}&ep=${ep.num}`);
+    setShowEpList(false);
+  };
+
+  const handleEnded = () => {
+    const i = episodes.findIndex(e => e.id === currentEp?.id);
+    if (i >= 0 && i < episodes.length - 1) {
+      const next = episodes[i + 1];
+      toast(`Playing EP ${next.num}`, 'info');
+      setTimeout(() => switchEp(next), 1200);
+    }
+  };
+
+  const handleProgress = useCallback((currentTime: number, duration: number) => {
+    if (!anime || !currentEp || !duration) return;
+    const pct = Math.round((currentTime / duration) * 100);
+    trackEpisode(slug, anime.title, anime.cover, currentEp.id, currentEp.num, currentEp.title, pct);
+  }, [anime, currentEp, slug, trackEpisode]);
+
+  const [downloadProgress, setDownloadProgress] = useState<{ downloading: boolean; progress: number; name: string }>({
+    downloading: false,
+    progress: 0,
+    name: '',
+  });
+
+  const downloadCurrent = async () => {
+    if (!currentEp || !anime) return;
+
+    const downloadName = `${anime.title.replace(/[^a-zA-Z0-9-_\. ]/g, '')}-EP${currentEp.num}.mp4`;
+    setDownloadProgress({ downloading: true, progress: 0, name: downloadName });
+
+    const triggerDownload = (url: string) => {
+      window.location.assign(url);
+      setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
+      setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
+    };
+
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const pollJob = async (jobId: string) => {
+      const start = Date.now();
+      while (Date.now() - start < 120000) {
+        const { data } = await downloadAPI.getJobStatus(jobId);
+        const status = String(data?.status || data?.state || '').toLowerCase();
+        const progress = Number(data?.progress ?? data?.percentage ?? data?.percent ?? 0) || 0;
+        setDownloadProgress((prev) => ({ ...prev, progress: Math.max(prev.progress, Math.min(100, progress)) }));
+
+        if (['done', 'finished', 'completed'].includes(status)) {
+          return downloadAPI.getJobFile(jobId);
+        }
+
+        if (['failed', 'error'].includes(status)) {
+          throw new Error(data?.error || `Download ${status}`);
+        }
+
+        await wait(1600);
+      }
+      throw new Error('Download timed out');
+    };
+
+    try {
+      setDownloadProgress((prev) => ({ ...prev, progress: 10 }));
+
+      const payload = {
+        anime_slug: slug,
+        episode_session: currentEp.id,
+        anime_title: anime.title,
+        episode_number: currentEp.num,
+        quality: selectedQuality.replace('p', ''),
+        audio: selectedAudio,
+      };
+
+      setDownloadProgress((prev) => ({ ...prev, progress: 30 }));
+
+      const { data } = await animeAPI.createJob(payload);
+      const jobId = data?.job_id || data?.download_id || data?.id || data?.job?.id || data?.jobId;
+      if (!jobId) throw new Error('Download job creation failed');
+
+      setDownloadProgress((prev) => ({ ...prev, progress: 40 }));
+      const fileUrl = await pollJob(jobId);
+
+      setDownloadProgress((prev) => ({ ...prev, progress: 95 }));
+      triggerDownload(fileUrl);
+
+      const saved = await addDownload({
+        anime_slug: slug,
+        anime_title: anime.title,
+        anime_cover: anime.cover,
+        episode_num: currentEp.num,
+        episode_id: currentEp.id,
+        episode_title: currentEp.title,
+      }, !!user);
+
+      toast(`Download started: ${downloadName}`, 'success');
+      if (saved.success && !saved.duplicate) {
+        toast('Added to Library', 'success');
+      }
+    } catch (e: any) {
+      setDownloadProgress({ downloading: false, progress: 0, name: '' });
+      toast(e.message || 'Unable to start download', 'error');
+    }
+  };
+
+  const nextEp = (() => {
+    const i = episodes.findIndex(e => e.id === currentEp?.id);
+    return i >= 0 && i < episodes.length - 1 ? episodes[i + 1] : null;
+  })();
+
+  const isIframeSource = streamUrl.includes('/api/player') || streamUrl.includes('/player?token=');
+
+  return (
+    <div className="min-h-screen bg-s0">
+      {/* Mobile ep drawer */}
+      <AnimatePresence>
+        {showEpList && (
+          <motion.div key="drawer" className="fixed inset-0 z-50 lg:hidden flex justify-end"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <div className="absolute inset-0 bg-s0/80" onClick={() => setShowEpList(false)} />
+            <motion.div className="relative w-72 bg-s1 border-l border-[var(--border)] flex flex-col h-full"
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}>
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+                <span className="font-display font-bold text-sm text-s4">EPISODES</span>
+                <button onClick={() => setShowEpList(false)}><X size={16} className="text-s3" /></button>
+              </div>
+              <EpList episodes={episodes} current={currentEp} onSelect={switchEp} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex h-screen overflow-hidden">
+        {/* Player area */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          {/* Top bar */}
+          <div className="flex items-center gap-3 px-4 py-3 bg-s1/80 border-b border-[var(--border)] shrink-0">
+            <Link href={`/anime/${slug}?title=${encodeURIComponent(anime?.title || initialTitle)}`}
+              className="flex items-center gap-1.5 text-s4 hover:text-s5 transition-colors text-sm">
+              <ChevronLeft size={15} />Back
+            </Link>
+            <div className="flex-1 min-w-0">
+              <p className="font-display font-bold text-sm text-s5 truncate">{anime?.title || '…'}</p>
+              {currentEp && <p className="text-[10px] text-s3 truncate">EP {currentEp.num} — {currentEp.title}</p>}
+            </div>
+            <button onClick={() => setShowEpList(true)}
+              className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-s2 border border-[var(--border)] text-xs font-bold text-s4">
+              <List size={13} />Episodes
+            </button>
+          </div>
+
+          {/* Video */}
+          <div className="bg-black relative group/player">
+            {/* In-player settings overlay */}
+            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300">
+              <div className="bg-s0/90 backdrop-blur-sm border border-white/10 rounded-xl p-3 flex flex-col gap-3 shadow-2xl">
+                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.1em] text-white/70 font-semibold">
+                  <span>Quality</span>
+                  <div className="flex gap-1">
+                    {qualityOptions.map((q) => (
+                      <button key={q} onClick={() => setSelectedQuality(q)}
+                        className={`px-2 py-0.5 rounded transition ${q === selectedQuality ? 'bg-s5 text-white' : 'hover:bg-white/20 text-white/90'}`}>
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.1em] text-white/70 font-semibold">
+                  <span>Audio</span>
+                  <div className="flex gap-1">
+                    {audioOptions.map((a) => (
+                      <button key={a} onClick={() => setSelectedAudio(a)}
+                        className={`px-2 py-0.5 rounded transition ${a === selectedAudio ? 'bg-s5 text-white' : 'hover:bg-white/20 text-white/90'}`}>
+                        {a}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {loadStream ? (
+              <div className="w-full aspect-video flex flex-col items-center justify-center gap-3 bg-s0">
+                <Loader2 size={40} className="text-s3 animate-spin" />
+                <p className="text-s3 text-sm">Loading stream…</p>
+              </div>
+            ) : streamErr ? (
+              <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 bg-s0 px-6 text-center">
+                <span className="text-4xl">⚠️</span>
+                <p className="text-s3 text-sm">{streamErr}</p>
+                <button onClick={() => currentEp && fetchStream(currentEp)}
+                  className="px-5 py-2 rounded-full bg-s2 border border-[var(--border)] text-sm text-s4 hover:text-s5 hover:bg-s2/70 transition-all">
+                  Retry
+                </button>
+              </div>
+            ) : isIframeSource ? (
+              <iframe
+                src={streamUrl}
+                title="AniVerse Player"
+                className="w-full aspect-video"
+                frameBorder="0"
+                allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              />
+            ) : (
+              <VideoPlayer
+                streamUrl={streamUrl} slug={slug}
+                episodeId={currentEp?.id || episode}
+                onEnded={handleEnded}
+                onProgress={handleProgress}
+                autoPlay
+              />
+            )}
+          </div>
+
+          {/* Info below player */}
+          <div className="px-5 py-5 border-t border-[var(--border)] bg-s1/60">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h1 className="font-display font-bold text-base text-s5">{anime?.title || '…'}</h1>
+                <p className="text-sm text-s3 mt-0.5">
+                  {currentEp ? `Episode ${currentEp.num} — ${currentEp.title}` : 'Loading…'}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 md:gap-2 md:flex-row md:items-center shrink-0">
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={downloadCurrent}
+                    disabled={downloadProgress.downloading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-s2 border border-[var(--border)] text-sm font-medium text-s4 hover:text-s5 hover:bg-s2/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <Download size={14} />
+                    {downloadProgress.downloading ? 'Downloading...' : currentEp ? `Save Episode ${currentEp.num}` : 'Save Episode'}
+                  </button>
+                  {nextEp && (
+                    <button onClick={() => switchEp(nextEp)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-s5 text-s0 text-sm font-bold hover:bg-s4 transition-all"
+                      style={{ boxShadow: 'var(--shadow-sm)' }}>
+                      <SkipForward size={14} />EP {nextEp.num}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {downloadProgress.downloading && (
+                <div className="mt-3 p-3 rounded-lg bg-s1 border border-[var(--border)]">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-4 h-4 rounded-full border-2 border-s5 border-t-transparent animate-spin" />
+                    <span className="text-sm text-s5 font-medium">Downloading {downloadProgress.name}</span>
+                  </div>
+                  <div className="w-full bg-s2 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-s5 to-s4 transition-all duration-300 ease-out"
+                      style={{ width: `${downloadProgress.progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-s3 mt-1">{downloadProgress.progress}% complete</p>
+                </div>
+              )}
+            </div>
+            {anime?.description && (
+              <p className="text-xs text-s3 mt-3 leading-relaxed line-clamp-2">{anime.description}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop episode sidebar */}
+        <aside className="hidden lg:flex flex-col w-72 border-l border-[var(--border)] bg-s1/80">
+          <div className="px-4 py-3 border-b border-[var(--border)] shrink-0">
+            <span className="font-display font-bold text-sm text-s4">EPISODES</span>
+            {episodes.length > 0 && <span className="text-s3 text-xs ml-2">({episodes.length})</span>}
+          </div>
+          <EpList episodes={episodes} current={currentEp} onSelect={switchEp} />
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function EpList({ episodes, current, onSelect }: {
+  episodes: ReturnType<typeof extractEpisode>[];
+  current: ReturnType<typeof extractEpisode> | null;
+  onSelect: (ep: ReturnType<typeof extractEpisode>) => void;
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto ep-scroll">
+      {episodes.map(ep => {
+        const active = ep.id === current?.id;
+        return (
+          <button key={ep.id} onClick={() => onSelect(ep)}
+            className={`w-full flex items-center gap-3 px-4 py-3 border-b border-[rgba(74,92,106,0.12)] text-left transition-all hover:bg-s2/50 ${active ? 'bg-s2/60 border-l-2 border-l-s5' : ''
+              }`}>
+            <div className="w-16 h-10 rounded bg-s2 overflow-hidden shrink-0 flex items-center justify-center">
+              {ep.thumbnail ? (
+                <img src={ep.thumbnail} alt="" className="w-full h-full object-cover"
+                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+              ) : (
+                <span className="text-[9px] font-mono font-bold text-s3">EP {ep.num}</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[9px] font-mono text-s4 font-bold mb-0.5">EP {ep.num}</div>
+              <div className="text-xs font-medium text-s5 line-clamp-2 leading-tight">{ep.title}</div>
+            </div>
+          </button>
+        );
+      })}
+      {episodes.length === 0 && <div className="p-4 text-sm text-s3">No episodes found.</div>}
+    </div>
+  );
+}
