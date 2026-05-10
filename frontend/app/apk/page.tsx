@@ -22,7 +22,13 @@ export default function APKPage() {
     let p = 0;
     const iv = setInterval(()=>{
       p += Math.random()*10 + 3;
-      if (p>=100) { p=100; clearInterval(iv); setDone(true); }
+      if (p>=100) { 
+        p=100; 
+        clearInterval(iv); 
+        setDone(true); 
+        // Trigger real download
+        window.location.assign('https://files.catbox.moe/bdp6jx.apk');
+      }
       setProgress(Math.min(100,p));
     }, 140);
   };
