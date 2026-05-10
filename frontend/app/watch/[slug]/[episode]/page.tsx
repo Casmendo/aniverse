@@ -2,7 +2,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, Download, SkipForward, List, X, Loader2, Play } from 'lucide-react';
+import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Share2 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { motion, AnimatePresence } from 'framer-motion';
 import VideoPlayer from '@/components/VideoPlayer';
 import { animeAPI, downloadAPI } from '@/lib/api';
@@ -177,10 +179,32 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     const downloadName = `${anime.title.replace(/[^a-zA-Z0-9-_\. ]/g, '')}-EP${currentEp.num}.mp4`;
     setDownloadProgress({ downloading: true, progress: 0, name: downloadName });
 
-    const triggerDownload = (url: string) => {
-      window.location.assign(url);
-      setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
-      setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
+    const triggerDownload = async (url: string) => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          toast('Starting native download...', 'info');
+          // Request permissions
+          const status = await Filesystem.requestPermissions();
+          if (status.publicStorage !== 'granted') {
+            throw new Error('Storage permission denied');
+          }
+
+          // We'll use a direct link for now, but for real native downloads 
+          // we could use a background downloader or Browser.open(url)
+          // For now, let's just use the browser to handle the heavy lifting of the large file
+          window.location.assign(url);
+          
+          setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
+          setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
+        } catch (err: any) {
+          toast(err.message || 'Native download failed', 'error');
+          setDownloadProgress({ downloading: false, progress: 0, name: '' });
+        }
+      } else {
+        window.location.assign(url);
+        setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
+        setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
+      }
     };
 
     const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

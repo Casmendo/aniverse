@@ -885,7 +885,7 @@ def e500(e): return jsonify({'error':'Server error'}),500
 
 with app.app_context():
     db.create_all()
-    app.logger.info('✅ AniVerse DB ready')
+    app.logger.info('AniVerse DB ready')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
