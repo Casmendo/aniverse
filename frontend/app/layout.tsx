@@ -1,6 +1,7 @@
 'use client';
 import './globals.css';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar    from '@/components/Navbar';
 import Sidebar   from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
@@ -8,10 +9,27 @@ import { ToastProvider } from '@/components/Toast';
 import LoadingScreen from '@/components/LoadingScreen';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [booting, setBooting] = useState(true);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    
+    // Handle Android Back Button
+    (async () => {
+      if (typeof window !== 'undefined') {
+        const { App } = await import('@capacitor/app');
+        App.addListener('backButton', ({ canGoBack }) => {
+          if (canGoBack) {
+            window.history.back();
+          } else {
+            App.exitApp();
+          }
+        });
+      }
+    })();
+  }, []);
 
   const handleLoadDone = () => {
     setBooting(false);
@@ -50,6 +68,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Sidebar />
             <main className="relative z-10 pt-[64px] pb-24 min-h-screen max-w-full overflow-x-hidden">
               {children}
+              
+              <footer className="py-10 px-6 border-t border-[var(--border)] mt-10">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2 text-s3 font-mono text-[10px] tracking-widest uppercase">
+                    Build with <span className="text-s4">❤</span> by Leo
+                  </div>
+                  <p className="text-[9px] text-s2 font-mono uppercase tracking-[.3em]">Enter the Multiverse</p>
+                </div>
+              </footer>
             </main>
             <BottomNav />
           </div>

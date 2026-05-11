@@ -12,7 +12,7 @@ const NAV = [
 
 export default function BottomNav() {
   const path = usePathname();
-  if (path.startsWith('/watch')) return null;
+  if (path.startsWith('/watch/')) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-s0/95 backdrop-blur-xl border-t border-[var(--border)] pt-2 pb-[calc(8px+env(safe-area-inset-bottom))] px-4 flex items-center justify-around">

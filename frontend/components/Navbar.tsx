@@ -47,9 +47,20 @@ export default function Navbar() {
         </button>
 
         {/* Logo — centered */}
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center select-none group">
-          <img src="/logo_new.png" alt="AniVerse" className="h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-105" />
-          <span className="font-display font-black text-xl tracking-tight text-s5 ml-1">
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 select-none group">
+          <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
+            <defs>
+              <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#CCD0CF"/>
+                <stop offset="60%" stopColor="#9BA8AB"/>
+                <stop offset="100%" stopColor="#4A5C6A"/>
+              </linearGradient>
+            </defs>
+            <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#navLg)"/>
+            <path d="M17 10L22 26H12Z" fill="#06141B"/>
+            <circle cx="17" cy="2" r="2" fill="#CCD0CF"/>
+          </svg>
+          <span className="font-display font-black text-xl tracking-tight text-s5">
             niVerse
           </span>
         </Link>
