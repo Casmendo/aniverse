@@ -44,20 +44,9 @@ export default function APKPage() {
       <motion.div
         animate={{ y:[0,-10,0] }}
         transition={{ duration:4, ease:'easeInOut', repeat:Infinity }}
-        className="w-28 h-28 rounded-[28px] bg-s1 border border-[var(--border)] flex items-center justify-center mb-8 relative"
+        className="w-28 h-28 rounded-[28px] overflow-hidden bg-s1 border border-[var(--border)] flex items-center justify-center mb-8 relative"
         style={{boxShadow:'var(--shadow-lg)'}}>
-        <svg viewBox="0 0 34 38" fill="none" className="w-24 h-24 scale-150">
-          <defs>
-            <linearGradient id="apkG" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#CCD0CF"/>
-              <stop offset="60%" stopColor="#9BA8AB"/>
-              <stop offset="100%" stopColor="#4A5C6A"/>
-            </linearGradient>
-          </defs>
-          <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#apkG)"/>
-          <path d="M17 10L22 26H12Z" fill="#06141B"/>
-          <circle cx="17" cy="2" r="2.5" fill="#CCD0CF"/>
-        </svg>
+        <img src="/logo_new.png" alt="AniVerse" className="w-full h-full object-cover" />
         {/* Notification dot */}
         <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-s5 border-2 border-s1" />
       </motion.div>

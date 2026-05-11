@@ -32,7 +32,7 @@ export default function HomePage() {
   const [loadingG,   setLoadingG]   = useState(false);
 
   useEffect(() => {
-    const hardcodedAiring = ['dr stone', 're zero', 'classroom of the elite', 'wistoria season 2', 'witch hat atelier'];
+    const hardcodedAiring = ['witch hat atelier', 'dr stone', 're zero', 'classroom of the elite', 'wistoria season 2'];
     Promise.all(hardcodedAiring.map(q => animeAPI.search(q).then(r => {
       const arr = Array.isArray(r.data) ? r.data : r.data.results || r.data.data || r.data.anime || [];
       return arr.length > 0 ? arr[0] : null;
