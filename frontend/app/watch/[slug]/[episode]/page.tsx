@@ -46,10 +46,11 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       const raw = data.data || data.anime || data;
       if (raw) {
         const anime = extractAnimeData(raw);
-        // Ensure title is not a UUID
-        if (initialTitle && (!anime.title || anime.title === 'Unknown Anime' || anime.title === slug || /^[a-f0-9\-]{20,}$/.test(anime.title))) {
+        // Ensure title is not a hash
+        const isHash = (s: string) => /^[a-f0-9\-]{20,}$/i.test(s);
+        if (initialTitle && (!anime.title || anime.title === 'Unknown Anime' || anime.title === slug || isHash(anime.title))) {
           anime.title = initialTitle;
-        } else if (!anime.title || /^[a-f0-9\-]{20,}$/.test(anime.title)) {
+        } else if (!anime.title || isHash(anime.title)) {
           anime.title = String(raw.name || raw.anime_name || raw.anime_title || slug);
         }
         setAnime(anime);

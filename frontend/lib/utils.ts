@@ -36,13 +36,17 @@ export function extractAnimeData(raw: Record<string, unknown>) {
   // Extract title - try multiple fields in order of preference
   let title = String(raw.name || raw.title || raw.anime_title || raw.anime_name || '').trim();
   
-  // If title is empty or looks like UUID, try other fields
-  if (!title || /^[a-f0-9\-]+$/.test(title)) {
-    title = String(raw.anime_title || raw.anime_name || raw.title || raw.name || 'Unknown Anime').trim();
+  // If title is empty or looks like a hash/UUID (lots of hex characters), try to find a better one
+  const isHash = (s: string) => /^[a-f0-9\-]{20,}$/i.test(s);
+
+  if (!title || isHash(title)) {
+    const fallback = String(raw.anime_name || raw.anime_title || raw.title || raw.name || '').trim();
+    if (fallback && !isHash(fallback)) title = fallback;
+    else if (raw.slug && !isHash(String(raw.slug))) title = String(raw.slug);
   }
   
   // Final fallback
-  if (!title || title === 'Unknown Anime') {
+  if (!title || title === 'Unknown Anime' || isHash(title)) {
     title = 'Unknown Anime';
   }
   
