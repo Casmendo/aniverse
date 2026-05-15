@@ -110,13 +110,18 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     try {
       const q = selectedQuality.replace('p', '');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || '';
-      // Relative URLs from the remote API → make absolute
-      if (url && url.startsWith('/')) url = `https://apis.ayohost.site${url}`;
-      if (!url) throw new Error('No stream URL returned');
+      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || data.data?.stream_url || '';
+      
+      // If we got a direct video ID or path, try to construct a full URL
+      if (url && !url.startsWith('http')) {
+        url = url.startsWith('/') ? `https://apis.ayohost.site${url}` : `https://apis.ayohost.site/api/stream/${url}`;
+      }
+
+      if (!url) throw new Error('Video source not found on server');
       setStreamUrl(url);
     } catch (e: any) {
-      setStreamErr(e.message || 'Stream unavailable');
+      console.error('Stream Fetch Error:', e);
+      setStreamErr(e.message || 'Video source unavailable — check your backend');
     } finally { setLoadStream(false); }
   }, [slug, selectedQuality, selectedAudio]);
 
