@@ -112,12 +112,22 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
       let url: string = data.stream_url || data.url || data.hls || data.link || data.source || data.data?.stream_url || '';
       
-      // If we got a direct video ID or path, try to construct a full URL
+      // If we got a player/iframe link, we need to handle it or extract the token
+      if (url && (url.includes('/player') || url.includes('/embed'))) {
+        // Try to extract token if present
+        const tokenMatch = url.match(/[?&]token=([^&]+)/);
+        if (tokenMatch) {
+          const decoded = decodeURIComponent(tokenMatch[1]);
+          if (decoded.startsWith('http')) url = decoded;
+        }
+      }
+
+      // Ensure full URL
       if (url && !url.startsWith('http')) {
         url = url.startsWith('/') ? `https://apis.ayohost.site${url}` : `https://apis.ayohost.site/api/stream/${url}`;
       }
 
-      if (!url) throw new Error('Video source not found on server');
+      if (!url) throw new Error('Video source not found — server is likely down');
       setStreamUrl(url);
     } catch (e: any) {
       console.error('Stream Fetch Error:', e);
