@@ -48,21 +48,21 @@ REMOTE.interceptors.response.use(
   }
 );
 
-// ── Anime endpoints (direct to remote API) ─────────────────────────────────
+// ── Anime endpoints (routed through our BACKEND proxy for better name/slug handling) ───
 export const animeAPI = {
-  getAiring:    (page = 1) => REMOTE.get('/api/airing', { params: { page } }),
-  search:       (q: string) => REMOTE.get('/api/search', { params: { q } }),
-  getDetail:    (slug: string) => REMOTE.get(`/api/anime/${slug}/info`),
-  getEpisodes:  (slug: string, animeName?: string) => REMOTE.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
+  getAiring:    (page = 1) => BACKEND.get('/api/airing', { params: { page } }),
+  search:       (q: string) => BACKEND.get('/api/search', { params: { q } }),
+  getDetail:    (slug: string) => BACKEND.get(`/api/anime/${slug}`),
+  getEpisodes:  (slug: string, animeName?: string) => BACKEND.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
   getStream:    (episodeSession: string, animeSlug: string, quality = 'best', audio = 'jpn') =>
-    REMOTE.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
+    BACKEND.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
   getStreamQualities: (episodeSession: string, animeSlug: string) =>
-    REMOTE.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
-  createJob:    (payload: Record<string, unknown>) => REMOTE.post('/api/download', payload),
-  getTrending:  () => REMOTE.get('/api/top-anime'),
-  getRecommended: () => REMOTE.get('/api/latest-release'),
-  getGenres:    () => REMOTE.get('/api/genres'),
-  getGenre:     (genre: string, page = 1) => REMOTE.get('/api/genre', { params: { genre, page } }),
+    BACKEND.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
+  createJob:    (payload: Record<string, unknown>) => BACKEND.post('/api/download', payload),
+  getTrending:  () => BACKEND.get('/api/trending'),
+  getRecommended: () => BACKEND.get('/api/recommended'),
+  getGenres:    () => BACKEND.get('/api/genres'),
+  getGenre:     (genre: string, page = 1) => BACKEND.get(`/api/genre/${genre}`, { params: { page } }),
 };
 
 // ── Auth endpoints (backend for local authentication) ────────────────────────
