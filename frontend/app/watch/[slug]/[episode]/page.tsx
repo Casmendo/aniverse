@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Share2 } from 'lucide-react';
+import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, List, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { motion, AnimatePresence } from 'framer-motion';
