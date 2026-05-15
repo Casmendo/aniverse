@@ -2,8 +2,10 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
 // ── Backend client (for auth/comments/watchlist) ────────────────────────────
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const BACKEND = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  baseURL: typeof window !== 'undefined' ? `/api/proxy?url=${encodeURIComponent(API_URL)}` : API_URL,
   withCredentials: true,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
