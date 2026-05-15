@@ -18,7 +18,7 @@ jobs:
           java-version: '17'
           distribution: 'zulu'
         env:
-          NEXT_PUBLIC_API_URL: http://51.107.1.142:25573
+          NEXT_PUBLIC_API_URL: http://18.209.171.47:5000
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
