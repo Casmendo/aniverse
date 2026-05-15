@@ -31,7 +31,7 @@ BACKEND.interceptors.response.use(
 // ── Remote API client (direct to apis.ayohost.site) ────────────────────────
 const REMOTE = axios.create({
   baseURL: 'https://apis.ayohost.site',
-  timeout: 30000,
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 
