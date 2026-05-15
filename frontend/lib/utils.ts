@@ -18,33 +18,36 @@ export function formatTime(secs: number): string {
 export function extractAnimeData(raw: Record<string, unknown>) {
   if (!raw) {
     return {
-      slug: '',
-      title: 'Unknown Anime',
-      cover: '',
-      banner: '',
-      description: '',
-      score: 0,
-      status: '',
-      type: '',
-      year: '',
-      episodes: 0,
-      genres: [],
-      in_watchlist: false,
+      slug: '', title: 'Unknown Anime', cover: '', banner: '',
+      description: '', score: 0, status: '', type: '',
+      year: '', episodes: 0, genres: [], in_watchlist: false,
     };
   }
-  
+
+  // Helper to detect hashes/session IDs/UUIDs
+  const isHash = (s: string) => {
+    if (!s) return true;
+    if (s.includes(' ') || s.length < 15) return false;
+    return /^[a-f0-9\-]{20,}$/i.test(s) || /^[a-f0-9]{32,}$/i.test(s);
+  };
+
   // Extract title - try multiple fields in order of preference
   let title = String(raw.name || raw.title || raw.anime_title || raw.anime_name || '').trim();
   
-  // If title is empty or looks like a hash/UUID (lots of hex characters), try to find a better one
-  const isHash = (s: string) => /^[a-f0-9\-]{20,}$/i.test(s);
+  // If the extracted title is a hash, clear it and try alternatives
+  if (isHash(title)) title = '';
 
-  if (!title || isHash(title)) {
-    const fallback = String(raw.anime_name || raw.anime_title || raw.title || raw.name || '').trim();
-    if (fallback && !isHash(fallback)) title = fallback;
-    else if (raw.slug && !isHash(String(raw.slug))) title = String(raw.slug);
+  if (!title) {
+    const fields = [raw.anime_name, raw.anime_title, raw.title, raw.name, raw.slug];
+    for (const f of fields) {
+      const val = String(f || '').trim();
+      if (val && !isHash(val)) {
+        title = val;
+        break;
+      }
+    }
   }
-  
+
   // Final fallback
   if (!title || title === 'Unknown Anime' || isHash(title)) {
     title = 'Unknown Anime';
