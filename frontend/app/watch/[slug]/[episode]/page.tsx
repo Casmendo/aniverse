@@ -110,11 +110,12 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     try {
       const q = selectedQuality.replace('p', '');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || data.data?.stream_url || '';
+      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || data.data?.stream_url || data.data?.url || '';
       
-      // If we got a player/iframe link, we need to handle it or extract the token
-      if (url && (url.includes('/player') || url.includes('/embed'))) {
-        // Try to extract token if present
+      if (!url && data.direct_url) url = data.direct_url;
+
+      // Handle iframe/token extraction
+      if (url && (url.includes('/player') || url.includes('/embed') || url.includes('token='))) {
         const tokenMatch = url.match(/[?&]token=([^&]+)/);
         if (tokenMatch) {
           const decoded = decodeURIComponent(tokenMatch[1]);
@@ -122,16 +123,16 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
         }
       }
 
-      // Ensure full URL
+      // Ensure full URL if relative
       if (url && !url.startsWith('http')) {
         url = url.startsWith('/') ? `https://apis.ayohost.site${url}` : `https://apis.ayohost.site/api/stream/${url}`;
       }
 
-      if (!url) throw new Error('Video source not found — server is likely down');
+      if (!url) throw new Error('Video server returned no link — try another episode');
       setStreamUrl(url);
     } catch (e: any) {
       console.error('Stream Fetch Error:', e);
-      setStreamErr(e.message || 'Video source unavailable — check your backend');
+      setStreamErr(e.message || 'Video source unavailable — check your backend connection');
     } finally { setLoadStream(false); }
   }, [slug, selectedQuality, selectedAudio]);
 
