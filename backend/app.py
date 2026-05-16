@@ -38,7 +38,7 @@ app.config.update(
     MAIL_DEFAULT_SENDER            = os.environ.get('MAIL_USERNAME', 'noreply@aniverse.com')
 )
 
-API_BASE     = os.environ.get('API_BASE', 'https://apis.ayohost.site')
+API_BASE     = os.environ.get('API_BASE', 'https://animapi.ayohost.site')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 CORS(app,

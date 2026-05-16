@@ -15,6 +15,20 @@ export function formatTime(secs: number): string {
     : `${m}:${String(s).padStart(2, '0')}`;
 }
 
+/** Detect session IDs, UUIDs, and hex hashes — these are NEVER valid titles */
+function isSessionOrHash(s: string): boolean {
+  if (!s) return true;
+  // Titles with spaces are almost certainly real titles
+  if (s.includes(' ') && s.length > 3) return false;
+  // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(s)) return true;
+  // Long hex hashes (20+ hex chars, possibly with dashes)
+  if (/^[a-f0-9\-]{20,}$/i.test(s) && !s.includes(' ')) return true;
+  // Pure hex string 32+ chars
+  if (/^[a-f0-9]{32,}$/i.test(s)) return true;
+  return false;
+}
+
 export function extractAnimeData(raw: Record<string, unknown>) {
   if (!raw) {
     return {
@@ -24,37 +38,34 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     };
   }
 
-  // Helper to detect hashes/session IDs/UUIDs
-  const isHash = (s: string) => {
-    if (!s) return true;
-    if (s.includes(' ') || s.length < 15) return false;
-    return /^[a-f0-9\-]{20,}$/i.test(s) || /^[a-f0-9]{32,}$/i.test(s);
-  };
+  // Title priority: anime_title > name > title > anime_name
+  // anime_title is the field the API uses for human-readable names
+  const candidates = [
+    raw.anime_title,
+    raw.name,
+    raw.title,
+    raw.anime_name,
+  ];
 
-  // Extract title - try multiple fields in order of preference
-  let title = String(raw.name || raw.title || raw.anime_title || raw.anime_name || '').trim();
-  
-  // If the extracted title is a hash, clear it and try alternatives
-  if (isHash(title)) title = '';
-
-  if (!title) {
-    const fields = [raw.anime_name, raw.anime_title, raw.title, raw.name, raw.slug];
-    for (const f of fields) {
-      const val = String(f || '').trim();
-      if (val && !isHash(val)) {
-        title = val;
-        break;
-      }
+  let title = '';
+  for (const c of candidates) {
+    const val = String(c || '').trim();
+    if (val && !isSessionOrHash(val)) {
+      title = val;
+      break;
     }
   }
 
   // Final fallback
-  if (!title || title === 'Unknown Anime' || isHash(title)) {
+  if (!title) {
     title = 'Unknown Anime';
   }
-  
+
+  // Slug priority: anime_session > session > slug > id
+  const slug = String(raw.anime_session || raw.session || raw.slug || raw.anime_id || raw.id || '');
+
   return {
-    slug:        String(raw.slug || raw.anime_session || raw.session || raw.anime_id || raw.id || ''),
+    slug,
     title,
     cover:       String(raw.cover || raw.image || raw.poster || raw.thumbnail || raw.snapshot || ''),
     banner:      String(raw.banner || raw.cover || raw.image || raw.snapshot || ''),
@@ -73,12 +84,12 @@ export function extractAnimeData(raw: Record<string, unknown>) {
 export function extractEpisode(raw: Record<string, unknown>, index: number) {
   const num = Number(raw.episode || raw.number || raw.ep_number || index + 1);
   let title = String(raw.title || raw.name || `Episode ${num}`);
-  
-  // If title is just a number or empty, use default
-  if (!title || /^\d+$/.test(title.trim())) {
+
+  // If title is just a number, empty, or a session hash, use default
+  if (!title || /^\d+$/.test(title.trim()) || isSessionOrHash(title)) {
     title = `Episode ${num}`;
   }
-  
+
   return {
     id:        String(raw.session || raw.episode_session || raw.id || raw.slug || num),
     num,

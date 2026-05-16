@@ -1,11 +1,29 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-// ── Backend client (for auth/comments/watchlist) ────────────────────────────
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// ── Anime API client (direct to animapi.ayohost.site — works WITHOUT backend) ──
+const ANIMAPI = axios.create({
+  baseURL: 'https://animapi.ayohost.site',
+  timeout: 120000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+ANIMAPI.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    const msg =
+      err?.response?.data?.error ||
+      err?.message ||
+      'Something went wrong';
+    return Promise.reject(new Error(msg));
+  }
+);
+
+// ── Backend client (for auth/comments/watchlist — needs Pterodactyl backend) ──
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 const BACKEND = axios.create({
-  baseURL: typeof window !== 'undefined' ? `/api/proxy?url=${encodeURIComponent(API_URL)}` : API_URL,
+  baseURL: BACKEND_URL,
   withCredentials: true,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
@@ -30,42 +48,24 @@ BACKEND.interceptors.response.use(
   }
 );
 
-// ── Remote API client (direct to apis.ayohost.site) ────────────────────────
-const REMOTE = axios.create({
-  baseURL: 'https://apis.ayohost.site',
-  timeout: 60000,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-REMOTE.interceptors.response.use(
-  (r) => r,
-  (err) => {
-    const msg =
-      err?.response?.data?.error ||
-      err?.message ||
-      'Something went wrong';
-    return Promise.reject(new Error(msg));
-  }
-);
-
-// ── Anime endpoints (routed through our BACKEND proxy for better name/slug handling) ───
+// ── Anime endpoints (direct to animapi — no backend needed) ────────────────
 export const animeAPI = {
-  getAiring:    (page = 1) => BACKEND.get('/api/airing', { params: { page } }),
-  search:       (q: string) => BACKEND.get('/api/search', { params: { q } }),
-  getDetail:    (slug: string) => BACKEND.get(`/api/anime/${slug}`),
-  getEpisodes:  (slug: string, animeName?: string) => BACKEND.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
+  getAiring:    (page = 1) => ANIMAPI.get('/api/airing', { params: { page } }),
+  search:       (q: string) => ANIMAPI.get('/api/search', { params: { q } }),
+  getDetail:    (slug: string) => ANIMAPI.get(`/api/anime/${slug}/info`),
+  getEpisodes:  (slug: string, animeName?: string) =>
+    ANIMAPI.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
   getStream:    (episodeSession: string, animeSlug: string, quality = 'best', audio = 'jpn') =>
-    BACKEND.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
+    ANIMAPI.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
   getStreamQualities: (episodeSession: string, animeSlug: string) =>
-    BACKEND.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
-  createJob:    (payload: Record<string, unknown>) => BACKEND.post('/api/download', payload),
-  getTrending:  () => BACKEND.get('/api/trending'),
-  getRecommended: () => BACKEND.get('/api/recommended'),
-  getGenres:    () => BACKEND.get('/api/genres'),
-  getGenre:     (genre: string, page = 1) => BACKEND.get(`/api/genre/${genre}`, { params: { page } }),
+    ANIMAPI.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
+  getTrending:  () => ANIMAPI.get('/api/top-anime'),
+  getRecommended: () => ANIMAPI.get('/api/latest-release'),
+  getGenres:    () => ANIMAPI.get('/api/genres'),
+  getGenre:     (genre: string, page = 1) => ANIMAPI.get('/api/genre', { params: { genre, page } }),
 };
 
-// ── Auth endpoints (backend for local authentication) ────────────────────────
+// ── Auth endpoints (backend — needs Pterodactyl) ────────────────────────────
 export const authAPI = {
   signup:         (data: { username:string; email:string; password:string }) =>
     BACKEND.post('/api/auth/signup', data),
@@ -81,31 +81,33 @@ export const authAPI = {
     BACKEND.post('/api/auth/change-password', { old_password, new_password }),
 };
 
-// ── Comments ───────────────────────────────────────────────────────────────
+// ── Comments (backend) ─────────────────────────────────────────────────────
 export const commentAPI = {
   get:    (slug: string, page = 1) => BACKEND.get(`/api/comments/${slug}`, { params: { page } }),
   post:   (slug: string, text: string) => BACKEND.post(`/api/comments/${slug}`, { text }),
   delete: (id: number)               => BACKEND.delete(`/api/comments/delete/${id}`),
 };
 
-// ── Downloads ──────────────────────────────────────────────────────────────
+// ── Downloads (animapi for jobs, backend for library) ───────────────────────
 export const downloadAPI = {
+  // Library management (backend)
   getAll:        ()  => BACKEND.get('/api/downloads'),
   add:           (data: Record<string,unknown>) => BACKEND.post('/api/downloads', data),
   remove:        (id: number)    => BACKEND.delete(`/api/downloads/${id}`),
   removeAnime:   (slug: string)  => BACKEND.delete(`/api/downloads/anime/${slug}`),
-  createJob:     (data: Record<string,unknown>) => REMOTE.post('/api/download', data),
-  getJobStatus:  (id: string) => REMOTE.get(`/api/download/${id}/status`),
-  getJobFile:    (id: string) => `https://apis.ayohost.site/api/download/${id}/file`,
+  // Download jobs (animapi — direct, no backend needed)
+  createJob:     (data: Record<string,unknown>) => ANIMAPI.post('/api/download', data),
+  getJobStatus:  (id: string) => ANIMAPI.get(`/api/download/${id}/status`),
+  getJobFile:    (id: string) => `https://animapi.ayohost.site/api/download/${id}/file`,
 };
 
-// ── Watchlist ──────────────────────────────────────────────────────────────
+// ── Watchlist (backend) ────────────────────────────────────────────────────
 export const watchlistAPI = {
   getAll: ()  => BACKEND.get('/api/watchlist'),
   toggle: (data: Record<string,unknown>) => BACKEND.post('/api/watchlist', data),
 };
 
-// ── History ────────────────────────────────────────────────────────────────
+// ── History (backend) ──────────────────────────────────────────────────────
 export const historyAPI = {
   getAll: () => BACKEND.get('/api/history'),
   update: (data: Record<string,unknown>) => BACKEND.post('/api/history', data),

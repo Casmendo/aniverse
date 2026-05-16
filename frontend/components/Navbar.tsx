@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Search, Download } from 'lucide-react';
 import { useSidebarStore } from '@/store/sidebarStore';
 import SearchPage from './SearchPage';
@@ -46,20 +47,16 @@ export default function Navbar() {
           <span className="block w-5 h-px bg-s5 rounded-full" />
         </button>
 
-        {/* Logo — centered */}
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 select-none group">
-          <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
-            <defs>
-              <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#CCD0CF"/>
-                <stop offset="60%" stopColor="#9BA8AB"/>
-                <stop offset="100%" stopColor="#4A5C6A"/>
-              </linearGradient>
-            </defs>
-            <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#navLg)"/>
-            <path d="M17 10L22 26H12Z" fill="#06141B"/>
-            <circle cx="17" cy="2" r="2" fill="#CCD0CF"/>
-          </svg>
+        {/* Logo — centered, using the APK logo */}
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 select-none group">
+          <Image
+            src="/logo_new.png"
+            alt="AniVerse"
+            width={36}
+            height={36}
+            className="rounded-lg transition-transform duration-300 group-hover:scale-110"
+            priority
+          />
           <span className="font-display font-black text-xl tracking-tight text-s5">
             niVerse
           </span>

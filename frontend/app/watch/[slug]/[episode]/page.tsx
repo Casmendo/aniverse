@@ -14,6 +14,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useDownloadStore } from '@/store/downloadStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 
+const ANIMAPI_BASE = 'https://animapi.ayohost.site';
+
 export default function WatchPage({ params, searchParams }: { params: { slug: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
   const { slug, episode } = params;
   const initialTitle = searchParams.title || '';
@@ -23,7 +25,6 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const { user } = useAuthStore();
   const { add: addDownload } = useDownloadStore();
   const { trackEpisode } = useWatchlistStore();
-  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   const [anime, setAnime] = useState<ReturnType<typeof extractAnimeData> | null>(
     initialTitle ? { slug, title: initialTitle, cover: '', banner: '', description: '', genres: [], score: 0, episodes: 0, status: '', year: '', type: '' } as any : null
@@ -41,54 +42,35 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [selectedQuality, setSelectedQuality] = useState('best');
   const [selectedAudio, setSelectedAudio] = useState('jpn');
 
+  // Fetch anime details
   useEffect(() => {
     animeAPI.getDetail(slug).then(({ data }) => {
       const raw = data.data || data.anime || data;
       if (raw) {
-        const anime = extractAnimeData(raw);
-        // Ensure title is not a hash
-        const isHash = (s: string) => /^[a-f0-9\-]{20,}$/i.test(s);
-        if (initialTitle && (!anime.title || anime.title === 'Unknown Anime' || anime.title === slug || isHash(anime.title))) {
-          anime.title = initialTitle;
-        } else if (!anime.title || isHash(anime.title)) {
-          anime.title = String(raw.name || raw.anime_name || raw.anime_title || slug);
+        const info = extractAnimeData(raw);
+        // Always prefer the URL title param (it's the human-readable name)
+        if (initialTitle && info.title === 'Unknown Anime') {
+          info.title = initialTitle;
         }
-        setAnime(anime);
+        setAnime(info);
       }
-    }).catch(async () => {
-      try {
-        const { data } = await animeAPI.getEpisodes(slug, initialTitle || '');
-        const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
-        const first = Array.isArray(raw) ? raw[0] : null;
-        if (first) {
-          const info = extractAnimeData(first as Record<string, unknown>);
-          // Extract proper anime name from episode data
-          let animeName = String(raw.anime_name || (first as any).anime_name || (first as any).anime_title || (first as any).name || slug);
-          if (initialTitle) {
-            animeName = initialTitle;
-          } else if (!animeName || /^[a-f0-9\-]{20,}$/.test(animeName)) {
-            animeName = slug;
-          }
-          info.title = animeName;
-          info.slug = slug;
-          setAnime(info);
-        }
-      } catch {
-        // Fallback: set anime with slug as title
-        setAnime(extractAnimeData({ slug, title: slug }));
+    }).catch(() => {
+      // Fallback: use the title from URL params
+      if (initialTitle) {
+        setAnime({ slug, title: initialTitle, cover: '', banner: '', description: '', genres: [], score: 0, episodes: 0, status: '', year: '', type: '', in_watchlist: false });
       }
     });
-  }, [slug]);
+  }, [slug, initialTitle]);
 
+  // Fetch episodes
   useEffect(() => {
     animeAPI.getEpisodes(slug, initialTitle || anime?.title || '').then(({ data }) => {
       const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
       const eps = raw.map((ep: Record<string, unknown>, i: number) => extractEpisode(ep, i));
       setEpisodes(eps);
-      // First try to find by ID (session hash), then by episode number
+      // Find the current episode by session ID or episode number
       let found = eps.find((e: ReturnType<typeof extractEpisode>) => e.id === episode);
       if (!found) {
-        // If episode param is a number, try to match by episode number
         const epNum = Number(episode);
         if (!isNaN(epNum)) {
           found = eps.find((e: ReturnType<typeof extractEpisode>) => e.num === epNum);
@@ -97,7 +79,6 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       if (!found) found = eps[0];
       if (found) {
         setCurrentEp(found);
-        // Update URL to use the session ID instead of episode number for consistency
         if (found.id !== episode) {
           window.history.replaceState({}, '', `/watch/${slug}/${found.id}?title=${encodeURIComponent(anime?.title || initialTitle)}&ep=${found.num}`);
         }
@@ -105,34 +86,26 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     }).catch(() => { });
   }, [slug, episode, anime?.title, initialTitle]);
 
+  // ── STREAMING: Use your friend's iframe player logic ──────────────────────
   const fetchStream = useCallback(async (ep: ReturnType<typeof extractEpisode>) => {
     setLoadStream(true); setStreamErr(''); setStreamUrl('');
     try {
       const q = selectedQuality.replace('p', '');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || data.data?.stream_url || data.data?.url || '';
-      
-      if (!url && data.direct_url) url = data.direct_url;
+      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || '';
 
-      // Handle iframe/token extraction
-      if (url && (url.includes('/player') || url.includes('/embed') || url.includes('token='))) {
-        const tokenMatch = url.match(/[?&]token=([^&]+)/);
-        if (tokenMatch) {
-          const decoded = decodeURIComponent(tokenMatch[1]);
-          if (decoded.startsWith('http')) url = decoded;
-        }
+      if (!url) throw new Error('Video server returned no stream link — try another episode');
+
+      // The API returns relative paths like "/api/player?token=...&_=xxxx"
+      // Prepend the base URL to make it a full iframe-embeddable URL
+      if (url.startsWith('/')) {
+        url = `${ANIMAPI_BASE}${url}`;
       }
 
-      // Ensure full URL if relative
-      if (url && !url.startsWith('http')) {
-        url = url.startsWith('/') ? `https://apis.ayohost.site${url}` : `https://apis.ayohost.site/api/stream/${url}`;
-      }
-
-      if (!url) throw new Error('Video server returned no link — try another episode');
       setStreamUrl(url);
     } catch (e: any) {
       console.error('Stream Fetch Error:', e);
-      setStreamErr(e.message || 'Video source unavailable — check your backend connection');
+      setStreamErr(e.message || 'Video source unavailable');
     } finally { setLoadStream(false); }
   }, [slug, selectedQuality, selectedAudio]);
 
@@ -140,17 +113,22 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     if (currentEp) fetchStream(currentEp);
   }, [currentEp, fetchStream]);
 
+  // Fetch available qualities
   useEffect(() => {
     if (!currentEp) return;
     animeAPI.getStreamQualities(currentEp.id, slug)
       .then(({ data }) => {
-        const qualities = Array.isArray(data.qualities) ? data.qualities : Array.isArray(data) ? data : [];
-        const audios = Array.isArray(data.audios) ? data.audios : ['jpn', 'eng'];
-        if (qualities.length) setQualityOptions([...new Set(qualities.map(String))]);
-        if (audios.length) setAudioOptions([...new Set(audios.map(String))]);
+        // API returns: { streams: [{quality: "1080", audio: "jpn"}, ...] }
+        const streams = data.streams || data.qualities || [];
+        if (Array.isArray(streams) && streams.length > 0) {
+          const quals = [...new Set(streams.map((s: any) => String(s.quality || s)))];
+          const auds = [...new Set(streams.map((s: any) => String(s.audio || 'jpn')))];
+          if (quals.length) setQualityOptions(quals);
+          if (auds.length) setAudioOptions(auds);
+        }
       })
       .catch(() => {
-        setQualityOptions(['best', '1080p', '720p', '480p']);
+        setQualityOptions(['best', '1080', '720', '480']);
         setAudioOptions(['jpn', 'eng']);
       });
   }, [currentEp, slug]);
@@ -200,17 +178,11 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       if (Capacitor.isNativePlatform()) {
         try {
           toast('Starting native download...', 'info');
-          // Request permissions
           const status = await Filesystem.requestPermissions();
           if (status.publicStorage !== 'granted') {
             throw new Error('Storage permission denied');
           }
-
-          // We'll use a direct link for now, but for real native downloads 
-          // we could use a background downloader or Browser.open(url)
-          // For now, let's just use the browser to handle the heavy lifting of the large file
           window.location.assign(url);
-          
           setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
           setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
         } catch (err: any) {
@@ -242,7 +214,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
           throw new Error(data?.error || `Download ${status}`);
         }
 
-        await wait(1600);
+        await wait(2000); // Poll every 2 seconds per friend's spec
       }
       throw new Error('Download timed out');
     };
@@ -261,7 +233,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
 
       setDownloadProgress((prev) => ({ ...prev, progress: 30 }));
 
-      const { data } = await animeAPI.createJob(payload);
+      const { data } = await downloadAPI.createJob(payload);
       const jobId = data?.job_id || data?.download_id || data?.id || data?.job?.id || data?.jobId;
       if (!jobId) throw new Error('Download job creation failed');
 
@@ -295,7 +267,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     return i >= 0 && i < episodes.length - 1 ? episodes[i + 1] : null;
   })();
 
-  const isIframeSource = streamUrl.includes('/api/player') || streamUrl.includes('/player?token=');
+  // Determine if the stream URL is an iframe player URL
+  const isIframeSource = streamUrl.includes('/api/player') || streamUrl.includes('/player?token=') || streamUrl.includes('/embed');
 
   return (
     <div className="min-h-screen bg-s0">
@@ -387,6 +360,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 title="AniVerse Player"
                 className="w-full aspect-video"
                 frameBorder="0"
+                allowFullScreen
                 allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               />
             ) : (

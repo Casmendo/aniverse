@@ -25,3 +25,12 @@ env/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Secrets — never commit these
+*.pem
+*.tar.gz
+*.key
+
+# IDE
+.vscode/
+.idea/
