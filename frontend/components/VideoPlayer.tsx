@@ -106,7 +106,10 @@ export default function VideoPlayer({
       hls.on(Hls.Events.BUFFER_APPENDING,()=>setBuffering(false));
       hls.on(Hls.Events.ERROR, (_:any, data:any) => {
         if (data.fatal) {
-          if (data.type===Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+          if (data.type===Hls.ErrorTypes.NETWORK_ERROR) {
+            console.error('HLS Network Error:', data);
+            setError('Network Error: Stream failed to load (likely CORS/403). Check console.');
+          }
           else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
           else setError('Playback failed — try another episode');
         }
