@@ -47,16 +47,20 @@ export default function Navbar() {
           <span className="block w-5 h-px bg-s5 rounded-full" />
         </button>
 
-        {/* Logo — centered, using the APK logo */}
-        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 select-none group">
-          <Image
-            src="/logo_new.png"
-            alt="AniVerse"
-            width={36}
-            height={36}
-            className="rounded-lg transition-transform duration-300 group-hover:scale-110"
-            priority
-          />
+        {/* Logo — SVG A-style */}
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 select-none group">
+          <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
+            <defs>
+              <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#CCD0CF"/>
+                <stop offset="60%" stopColor="#9BA8AB"/>
+                <stop offset="100%" stopColor="#4A5C6A"/>
+              </linearGradient>
+            </defs>
+            <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#navLg)"/>
+            <path d="M17 10L22 26H12Z" fill="#06141B"/>
+            <circle cx="17" cy="2" r="2" fill="#CCD0CF"/>
+          </svg>
           <span className="font-display font-black text-xl tracking-tight text-s5">
             niVerse
           </span>
@@ -70,9 +74,16 @@ export default function Navbar() {
             <Search size={19} />
           </button>
           <Link href="/apk"
-            className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-s1 transition-all text-s4 hover:text-s5"
+            className="relative flex items-center justify-center w-10 h-10 rounded-xl group overflow-hidden"
             aria-label="Download app">
-            <Download size={18} />
+            {/* Animated gradient border */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-s5 via-s3 to-s4 rounded-xl animate-spin-slow" style={{ padding: '2px' }}>
+              <div className="w-full h-full bg-s0 rounded-[10px] group-hover:bg-s1 transition-colors flex items-center justify-center">
+                <Download size={18} className="text-s5 group-hover:scale-110 transition-transform" />
+              </div>
+            </div>
+            {/* Pulsing glow */}
+            <div className="absolute inset-0 bg-s5 opacity-20 blur-md group-hover:opacity-40 transition-opacity rounded-xl" />
           </Link>
         </div>
       </nav>

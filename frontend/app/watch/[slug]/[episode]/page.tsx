@@ -275,9 +275,9 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       {/* Mobile ep drawer */}
       <AnimatePresence>
         {showEpList && (
-          <motion.div key="drawer" className="fixed inset-0 z-50 lg:hidden flex justify-end"
+          <motion.div key="drawer" className="fixed inset-0 z-[100] lg:hidden flex justify-end"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-s0/80" onClick={() => setShowEpList(false)} />
+            <div className="absolute inset-0 bg-s0/90 backdrop-blur-sm" onClick={() => setShowEpList(false)} />
             <motion.div className="relative w-72 bg-s1 border-l border-[var(--border)] flex flex-col h-full"
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}>
@@ -372,53 +372,74 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 autoPlay
               />
             )}
+
+            {/* Mobile Side Arrow to open Episodes Drawer */}
+            <button
+              onClick={() => setShowEpList(true)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 lg:hidden bg-s1/80 backdrop-blur-md border border-r-0 border-[var(--border)] p-2 rounded-l-xl text-s4 hover:text-s5 shadow-lg flex items-center justify-center translate-x-1 group-hover/player:translate-x-0 transition-transform"
+              aria-label="Show Episodes"
+            >
+              <ChevronLeft size={20} />
+            </button>
           </div>
 
           {/* Info below player */}
-          <div className="px-5 py-5 border-t border-[var(--border)] bg-s1/60">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <h1 className="font-display font-bold text-base text-s5">{anime?.title || '…'}</h1>
-                <p className="text-sm text-s3 mt-0.5">
-                  {currentEp ? `Episode ${currentEp.num} — ${currentEp.title}` : 'Loading…'}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 md:gap-2 md:flex-row md:items-center shrink-0">
-                <div className="flex gap-2 shrink-0">
+          <div className="p-4 md:p-6 bg-s0 flex-1">
+            <div className="max-w-4xl mx-auto flex flex-col gap-6">
+              {/* Header section */}
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div>
+                  <h1 className="font-display font-black text-xl md:text-2xl text-s5 leading-tight">{anime?.title || 'Loading…'}</h1>
+                  <p className="text-sm font-medium text-s4 mt-1">
+                    {currentEp ? `Episode ${currentEp.num} — ${currentEp.title}` : 'Loading…'}
+                  </p>
+                </div>
+                
+                {/* Actions */}
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 shrink-0 mt-2 md:mt-0">
                   <button onClick={downloadCurrent}
                     disabled={downloadProgress.downloading}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-s2 border border-[var(--border)] text-sm font-medium text-s4 hover:text-s5 hover:bg-s2/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Download size={14} />
-                    {downloadProgress.downloading ? 'Downloading...' : currentEp ? `Save Episode ${currentEp.num}` : 'Save Episode'}
+                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-s1 border border-[var(--border)] text-sm font-bold text-s4 hover:text-s5 hover:bg-s2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                    <Download size={16} />
+                    {downloadProgress.downloading ? 'Downloading...' : 'Save Ep'}
                   </button>
                   {nextEp && (
                     <button onClick={() => switchEp(nextEp)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-s5 text-s0 text-sm font-bold hover:bg-s4 transition-all"
-                      style={{ boxShadow: 'var(--shadow-sm)' }}>
-                      <SkipForward size={14} />EP {nextEp.num}
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-s5 to-s4 text-s0 text-sm font-bold hover:opacity-90 transition-all shadow-md">
+                      <SkipForward size={16} />Next EP
                     </button>
                   )}
                 </div>
               </div>
+
+              {/* Download Progress */}
               {downloadProgress.downloading && (
-                <div className="mt-3 p-3 rounded-lg bg-s1 border border-[var(--border)]">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-4 h-4 rounded-full border-2 border-s5 border-t-transparent animate-spin" />
-                    <span className="text-sm text-s5 font-medium">Downloading {downloadProgress.name}</span>
+                <div className="p-4 rounded-2xl bg-s1 border border-s5/30 shadow-lg relative overflow-hidden">
+                  <div className="absolute inset-0 bg-s5/5 animate-pulse" />
+                  <div className="relative flex items-center justify-between gap-4 mb-3">
+                    <div className="flex items-center gap-3">
+                      <Loader2 size={18} className="text-s5 animate-spin" />
+                      <span className="text-sm text-s5 font-bold">Downloading {downloadProgress.name}</span>
+                    </div>
+                    <span className="text-sm font-mono text-s4 font-bold">{downloadProgress.progress}%</span>
                   </div>
-                  <div className="w-full bg-s2 rounded-full h-2 overflow-hidden">
+                  <div className="relative w-full bg-s0 rounded-full h-2.5 overflow-hidden border border-[var(--border)]">
                     <div
-                      className="h-full bg-gradient-to-r from-s5 to-s4 transition-all duration-300 ease-out"
+                      className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-s5 to-s4 transition-all duration-300 ease-out"
                       style={{ width: `${downloadProgress.progress}%` }}
                     />
                   </div>
-                  <p className="text-xs text-s3 mt-1">{downloadProgress.progress}% complete</p>
+                </div>
+              )}
+
+              {/* Synopsis */}
+              {anime?.description && (
+                <div className="p-4 rounded-2xl bg-s1/50 border border-[var(--border-light)]">
+                  <h3 className="text-xs font-bold text-s3 uppercase tracking-wider mb-2">Synopsis</h3>
+                  <p className="text-sm text-s4 leading-relaxed">{anime.description}</p>
                 </div>
               )}
             </div>
-            {anime?.description && (
-              <p className="text-xs text-s3 mt-3 leading-relaxed line-clamp-2">{anime.description}</p>
-            )}
           </div>
         </div>
 

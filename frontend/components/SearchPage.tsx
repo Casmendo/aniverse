@@ -104,7 +104,7 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
           <motion.div
             variants={panelVariants}
             initial="hidden" animate="visible" exit="exit"
-            className="relative z-10 w-full max-w-3xl mx-auto flex flex-col h-full px-4 pt-[72px] pb-24 md:pb-8">
+            className="relative z-10 w-full max-w-3xl mx-auto flex flex-col h-full px-4 pt-[72px]">
 
             {/* Search input */}
             <div className="flex items-center gap-3 mb-6">
