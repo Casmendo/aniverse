@@ -92,12 +92,12 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     try {
       const q = selectedQuality.replace('p', '');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      let url: string = data.stream_url || data.url || data.hls || data.link || data.source || '';
+      // Prefer proxy_m3u8 if the API provides it, fallback to stream_url or url
+      let url: string = data.proxy_m3u8 || data.stream_url || data.url || data.hls || data.link || data.source || '';
 
       if (!url) throw new Error('Video server returned no stream link — try another episode');
 
-      // The API returns relative paths like "/api/player?token=...&_=xxxx"
-      // Prepend the base URL to make it a full iframe-embeddable URL
+      // If it's a relative path (like an iframe token), prepend base URL
       if (url.startsWith('/')) {
         url = `${ANIMAPI_BASE}${url}`;
       }
@@ -370,6 +370,12 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 onEnded={handleEnded}
                 onProgress={handleProgress}
                 autoPlay
+                qualityOptions={qualityOptions}
+                audioOptions={audioOptions}
+                selectedQuality={selectedQuality}
+                selectedAudio={selectedAudio}
+                onQualityChange={setSelectedQuality}
+                onAudioChange={setSelectedAudio}
               />
             )}
 
