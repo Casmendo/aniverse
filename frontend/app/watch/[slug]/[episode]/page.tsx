@@ -312,33 +312,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
 
           {/* Video */}
           <div className="bg-black relative group/player">
-            {/* In-player settings overlay */}
-            <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 opacity-0 group-hover/player:opacity-100 transition-opacity duration-300">
-              <div className="bg-s0/90 backdrop-blur-sm border border-white/10 rounded-xl p-3 flex flex-col gap-3 shadow-2xl">
-                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.1em] text-white/70 font-semibold">
-                  <span>Quality</span>
-                  <div className="flex gap-1">
-                    {qualityOptions.map((q) => (
-                      <button key={q} onClick={() => setSelectedQuality(q)}
-                        className={`px-2 py-0.5 rounded transition ${q === selectedQuality ? 'bg-s5 text-white' : 'hover:bg-white/20 text-white/90'}`}>
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between gap-4 text-[10px] uppercase tracking-[0.1em] text-white/70 font-semibold">
-                  <span>Audio</span>
-                  <div className="flex gap-1">
-                    {audioOptions.map((a) => (
-                      <button key={a} onClick={() => setSelectedAudio(a)}
-                        className={`px-2 py-0.5 rounded transition ${a === selectedAudio ? 'bg-s5 text-white' : 'hover:bg-white/20 text-white/90'}`}>
-                        {a}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Removed outside settings overlay as requested */}
 
             {loadStream ? (
               <div className="w-full aspect-video flex flex-col items-center justify-center gap-3 bg-s0">
