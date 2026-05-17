@@ -140,15 +140,29 @@ export default function VideoPlayer({
         if (data.fatal) {
           if (data.type===Hls.ErrorTypes.NETWORK_ERROR) {
             console.error('HLS Network Error:', data);
-            setError('Network Error: Stream failed to load (likely CORS/403).');
+            // Try to recover network errors silently first
+            if (mediaErrCount.current < 3) {
+              mediaErrCount.current++;
+              hls.startLoad();
+            } else {
+              setError('Network Error: Stream failed to load (likely CORS/403).');
+            }
           }
           else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) {
-            // Only recover ONCE per stream — using a ref so this persists across reloads
-            if (mediaErrCount.current === 0) {
-              mediaErrCount.current++;
+            console.warn('HLS Media Error (attempting recovery):', data);
+            mediaErrCount.current++;
+            if (mediaErrCount.current === 1) {
               hls.recoverMediaError();
+            } else if (mediaErrCount.current === 2) {
+              hls.swapAudioCodec();
+              hls.recoverMediaError();
+            } else {
+              // Time loop detected! The proxy stream has a corrupted segment.
+              // Seek forward 2 seconds to skip the bad frame and continue playing.
+              if (v) v.currentTime += 2;
+              hls.recoverMediaError();
+              mediaErrCount.current = 0; // reset to allow future recoveries
             }
-            // After 1 attempt, silently ignore to prevent infinite looping
           }
           else {
             console.error('HLS Fatal Error:', data);

@@ -44,7 +44,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
 
   // Fetch anime details
   useEffect(() => {
-    animeAPI.getDetail(slug).then(({ data }) => {
+    animeAPI.getDetail(slug, initialTitle).then(({ data }) => {
       const raw = data.data || data.anime || data;
       if (raw) {
         const info = extractAnimeData(raw);
