@@ -314,21 +314,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
           <div className="bg-black relative group/player">
             {/* Removed outside settings overlay as requested */}
 
-            {loadStream ? (
-              <div className="w-full aspect-video flex flex-col items-center justify-center gap-3 bg-s0">
-                <Loader2 size={40} className="text-s3 animate-spin" />
-                <p className="text-s3 text-sm">Loading stream…</p>
-              </div>
-            ) : streamErr ? (
-              <div className="w-full aspect-video flex flex-col items-center justify-center gap-4 bg-s0 px-6 text-center">
-                <span className="text-4xl">⚠️</span>
-                <p className="text-s3 text-sm">{streamErr}</p>
-                <button onClick={() => currentEp && fetchStream(currentEp)}
-                  className="px-5 py-2 rounded-full bg-s2 border border-[var(--border)] text-sm text-s4 hover:text-s5 hover:bg-s2/70 transition-all">
-                  Retry
-                </button>
-              </div>
-            ) : isIframeSource ? (
+            {isIframeSource && !loadStream && !streamErr ? (
               <iframe
                 src={streamUrl}
                 title="AniVerse Player"
@@ -341,6 +327,12 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
               <VideoPlayer
                 streamUrl={streamUrl} slug={slug}
                 episodeId={currentEp?.id || episode}
+                isFetchingStream={loadStream}
+                streamFetchError={streamErr}
+                onRetry={() => currentEp && fetchStream(currentEp)}
+                episodes={episodes}
+                currentEp={currentEp}
+                onEpisodeSelect={switchEp}
                 onEnded={handleEnded}
                 onProgress={handleProgress}
                 autoPlay

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, Sun } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, Sun, List } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,12 @@ interface Props {
   streamUrl:   string;
   slug:        string;
   episodeId:   string;
+  isFetchingStream?: boolean;
+  streamFetchError?: string;
+  onRetry?: () => void;
+  episodes?: any[];
+  currentEp?: any;
+  onEpisodeSelect?: (ep: any) => void;
   onEnded?:    () => void;
   onProgress?: (currentTime:number, duration:number) => void;
   autoPlay?:   boolean;
@@ -23,7 +29,8 @@ interface Props {
 }
 
 export default function VideoPlayer({ 
-  streamUrl, slug, episodeId, onEnded, onProgress, autoPlay=true,
+  streamUrl, slug, episodeId, isFetchingStream, streamFetchError, onRetry,
+  episodes, currentEp, onEpisodeSelect, onEnded, onProgress, autoPlay=true,
   qualityOptions=[], audioOptions=[], selectedQuality, selectedAudio,
   onQualityChange, onAudioChange
 }: Props) {
@@ -49,10 +56,16 @@ export default function VideoPlayer({
   const [hlsReady,  setHlsReady]  = useState(false);
   const [hlsFailed, setHlsFailed] = useState(false);
   
-  // Custom Overlays
+  // Premium Overlays
   const [showSettings, setShowSettings] = useState(false);
+  const [showEpisodes, setShowEpisodes] = useState(false);
+  const [continuePrompt, setContinuePrompt] = useState<{time: number}|null>(null);
+  
   const [indicator, setIndicator] = useState<{type: 'volume'|'brightness', val: number, active: boolean}>({type: 'volume', val: 1, active: false});
   const indicatorTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const [skipVisual, setSkipVisual] = useState<{dir: 'forward'|'backward', active: boolean}>({dir: 'forward', active: false});
+  const skipVisualTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   // Load HLS.js
   useEffect(() => {
@@ -79,7 +92,11 @@ export default function VideoPlayer({
     const startPlayback = () => {
       setBuffering(false);
       const saved = getProgress(slug, episodeId);
-      if (saved && saved.currentTime>10 && saved.currentTime<saved.duration-15) v.currentTime=saved.currentTime;
+      // Premium Continue Watching Prompt (if watched more than 10s and not within 15s of end)
+      if (saved && saved.currentTime > 10 && saved.currentTime < saved.duration - 15) {
+        setContinuePrompt({ time: saved.currentTime });
+        setTimeout(() => setContinuePrompt(null), 8000); // Auto-hide after 8s
+      }
       if (autoPlay) v.play().catch(()=>{});
     };
 
@@ -102,25 +119,35 @@ export default function VideoPlayer({
         enableWorker: true, 
         backBufferLength: 30, 
         maxBufferLength: 60,
-        // Ultra-forgiving timeouts to prevent aborting and looping on slow proxies
         fragLoadingTimeOut: 120000, 
         manifestLoadingTimeOut: 120000,
         levelLoadingTimeOut: 120000,
         fragLoadingMaxRetry: 10,
         manifestLoadingMaxRetry: 10,
         levelLoadingMaxRetry: 10
-      });hlsRef.current = hls;
+      });
+      hlsRef.current = hls;
       hls.loadSource(url); hls.attachMedia(v);
       hls.on(Hls.Events.MANIFEST_PARSED, startPlayback);
       hls.on(Hls.Events.BUFFER_STALLED,  ()=>setBuffering(true));
       hls.on(Hls.Events.BUFFER_APPENDING,()=>setBuffering(false));
+      
+      let mediaErrorCount = 0;
       hls.on(Hls.Events.ERROR, (_:any, data:any) => {
         if (data.fatal) {
           if (data.type===Hls.ErrorTypes.NETWORK_ERROR) {
             console.error('HLS Network Error:', data);
-            setError('Network Error: Stream failed to load (likely CORS/403). Check console.');
+            setError('Network Error: Stream failed to load (likely CORS/403).');
           }
-          else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+          else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) {
+            // Only try to recover ONCE to prevent 1-second infinite looping on corrupted chunks
+            if (mediaErrorCount === 0) {
+              mediaErrorCount++;
+              hls.recoverMediaError();
+            } else {
+              setError('Corrupted Video Stream: The proxy returned an incomplete or invalid video chunk.');
+            }
+          }
           else setError('Playback failed — try another episode');
         }
       });
@@ -128,10 +155,10 @@ export default function VideoPlayer({
   }, [slug, episodeId, getProgress, autoPlay]);
 
   useEffect(() => {
-    if (!streamUrl) return;
+    if (!streamUrl || isFetchingStream) return;
     const t = setTimeout(()=>loadVideo(streamUrl), 400);
     return ()=>clearTimeout(t);
-  }, [streamUrl, loadVideo, hlsReady, hlsFailed]);
+  }, [streamUrl, loadVideo, hlsReady, hlsFailed, isFetchingStream]);
 
   useEffect(()=>()=>{
     if(hlsRef.current) hlsRef.current.destroy();
@@ -163,14 +190,33 @@ export default function VideoPlayer({
   const showControls=()=>{
     setShowCtrl(true);
     clearTimeout(ctrlTimeout.current);
-    if (!showSettings) {
+    if (!showSettings && !showEpisodes) {
       ctrlTimeout.current=setTimeout(()=>{if(playing)setShowCtrl(false);},3000);
     }
   };
 
-  const togglePlay=()=>{const v=videoRef.current;if(!v)return;v.paused?v.play().catch(()=>{}):v.pause();};
-  const seek=(e:React.MouseEvent<HTMLDivElement>)=>{const v=videoRef.current;if(!v||!v.duration)return;const r=e.currentTarget.getBoundingClientRect();v.currentTime=((e.clientX-r.left)/r.width)*v.duration;};
-  const skipTime=(s:number)=>{const v=videoRef.current;if(v)v.currentTime=Math.max(0,Math.min(v.duration||Infinity,v.currentTime+s));};
+  const togglePlay=(e?: any)=>{
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    const v=videoRef.current;if(!v)return;v.paused?v.play().catch(()=>{}):v.pause();
+  };
+  
+  const seek=(e:React.MouseEvent<HTMLDivElement>)=>{
+    e.stopPropagation();
+    const v=videoRef.current;if(!v||!v.duration)return;const r=e.currentTarget.getBoundingClientRect();v.currentTime=((e.clientX-r.left)/r.width)*v.duration;
+  };
+  
+  const triggerSkipVisual = (dir: 'forward'|'backward') => {
+    setSkipVisual({dir, active: true});
+    clearTimeout(skipVisualTimeout.current);
+    skipVisualTimeout.current = setTimeout(() => setSkipVisual(s => ({...s, active: false})), 600);
+  };
+
+  const skipTime=(s:number, e?: any)=>{
+    if(e) { e.preventDefault(); e.stopPropagation(); }
+    const v=videoRef.current;if(!v)return;
+    v.currentTime=Math.max(0,Math.min(v.duration||Infinity,v.currentTime+s));
+    triggerSkipVisual(s > 0 ? 'forward' : 'backward');
+  };
   
   const showIndicator = (type: 'volume'|'brightness', val: number) => {
     setIndicator({type, val, active: true});
@@ -192,8 +238,8 @@ export default function VideoPlayer({
     showIndicator('brightness', clamped / 2); // Normalize 0-1 for progress bar
   };
 
-  const toggleMute=()=>{const v=videoRef.current;if(!v)return;v.muted=!v.muted;setMuted(v.muted);if(!v.muted&&volume===0)changeVol(0.5);};
-  const toggleFS=async()=>{const el=containerRef.current;if(!el)return;if(!document.fullscreenElement){await el.requestFullscreen().catch(()=>{});setFullscreen(true);}else{await document.exitFullscreen().catch(()=>{});setFullscreen(false);}};
+  const toggleMute=(e?:any)=>{if(e) e.stopPropagation(); const v=videoRef.current;if(!v)return;v.muted=!v.muted;setMuted(v.muted);if(!v.muted&&volume===0)changeVol(0.5);};
+  const toggleFS=async(e?:any)=>{if(e) e.stopPropagation(); const el=containerRef.current;if(!el)return;if(!document.fullscreenElement){await el.requestFullscreen().catch(()=>{});setFullscreen(true);}else{await document.exitFullscreen().catch(()=>{});setFullscreen(false);}};
 
   // Touch Swipe Logic
   const touchStart = useRef<{x:number, y:number, vol:number, bright:number}|null>(null);
@@ -203,15 +249,21 @@ export default function VideoPlayer({
   };
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!touchStart.current || e.touches.length !== 1) return;
+    const dx = touchStart.current.x - e.touches[0].clientX;
     const dy = touchStart.current.y - e.touches[0].clientY;
+    
+    // Episodes drawer swipe (from right edge)
+    if (touchStart.current.x > window.innerWidth - 40 && dx > 50) {
+      setShowEpisodes(true);
+      return;
+    }
+
     const containerH = containerRef.current?.clientHeight || window.innerHeight;
     const delta = (dy / containerH) * 1.5; // Swipe full screen = 150% change
 
     if (touchStart.current.x > window.innerWidth / 2) {
-      // Right side -> Volume
       changeVol(touchStart.current.vol + delta);
     } else {
-      // Left side -> Brightness
       changeBright(touchStart.current.bright + (delta * 2));
     }
   };
@@ -220,6 +272,7 @@ export default function VideoPlayer({
   // Screen Click handling
   const handleScreenClick = (e: React.MouseEvent) => {
     if (showSettings) { setShowSettings(false); return; }
+    if (showEpisodes) { setShowEpisodes(false); return; }
     showControls();
     if (clickTimeout.current) {
       // Double click
@@ -269,7 +322,7 @@ export default function VideoPlayer({
   return (
     <div ref={containerRef} className="relative bg-black w-full aspect-video select-none overflow-hidden"
       onMouseMove={showControls}
-      onMouseLeave={() => !showSettings && setShowCtrl(false)}
+      onMouseLeave={() => !showSettings && !showEpisodes && setShowCtrl(false)}
       style={{cursor:showCtrl?'default':'none'}}>
 
       <video ref={videoRef} className="w-full h-full object-contain" playsInline
@@ -278,6 +331,17 @@ export default function VideoPlayer({
         onClick={handleScreenClick}
         onPlay={onPlay_} onPause={onPause_} onWaiting={onWaiting_} onCanPlay={onCanPlay_}
         onTimeUpdate={onTime_} onLoadedMetadata={onMeta_} onEnded={onEnded_} />
+
+      {/* Screen Double-Tap Skip Visuals */}
+      <AnimatePresence>
+        {skipVisual.active && (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm rounded-full w-24 h-24 ${skipVisual.dir === 'forward' ? 'right-1/4' : 'left-1/4'}`}>
+            {skipVisual.dir === 'forward' ? <SkipForward size={32} className="text-white" /> : <SkipBack size={32} className="text-white" />}
+            <span className="text-white font-bold mt-1 text-sm">{skipVisual.dir === 'forward' ? '+10s' : '-10s'}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Touch Indicators (Volume / Brightness) */}
       <AnimatePresence>
@@ -293,43 +357,68 @@ export default function VideoPlayer({
       </AnimatePresence>
 
       {/* Center Screen Skip/Play Overlay */}
-      <div className={`absolute inset-0 pointer-events-none flex items-center justify-center gap-12 transition-opacity duration-300 z-30 ${showCtrl && !showSettings ? 'opacity-100' : 'opacity-0'}`}>
-        <button onClick={(e) => {e.stopPropagation(); skipTime(-10);}} className="pointer-events-auto w-14 h-14 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-sm transition-all md:hidden">
+      <div className={`absolute inset-0 pointer-events-none flex items-center justify-center gap-12 transition-opacity duration-300 z-30 ${showCtrl && !showSettings && !showEpisodes ? 'opacity-100' : 'opacity-0'}`}>
+        <button onClick={(e) => skipTime(-10, e)} onTouchEnd={(e) => skipTime(-10, e)} className="pointer-events-auto w-14 h-14 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-sm transition-all md:hidden">
           <SkipBack size={24} />
         </button>
-        <button onClick={(e) => {e.stopPropagation(); togglePlay();}} className="pointer-events-auto w-16 h-16 rounded-full bg-s5/90 hover:bg-s5 flex items-center justify-center text-white backdrop-blur-sm transition-all shadow-lg shadow-s5/20">
+        <button onClick={togglePlay} onTouchEnd={togglePlay} className="pointer-events-auto w-16 h-16 rounded-full bg-s5/90 hover:bg-s5 flex items-center justify-center text-white backdrop-blur-sm transition-all shadow-lg shadow-s5/20">
           {playing ? <Pause size={32}/> : <Play size={32} fill="white" className="translate-x-0.5"/>}
         </button>
-        <button onClick={(e) => {e.stopPropagation(); skipTime(10);}} className="pointer-events-auto w-14 h-14 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-sm transition-all md:hidden">
+        <button onClick={(e) => skipTime(10, e)} onTouchEnd={(e) => skipTime(10, e)} className="pointer-events-auto w-14 h-14 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white backdrop-blur-sm transition-all md:hidden">
           <SkipForward size={24} />
         </button>
       </div>
 
-      {buffering && !error && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+      {/* Loading Overlay (Buffering OR changing quality) */}
+      {(buffering || isFetchingStream) && !error && !streamFetchError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20 bg-black/30 backdrop-blur-sm">
           <Loader2 size={48} className="text-s5 animate-spin drop-shadow-md" />
+          {isFetchingStream && <p className="text-white text-sm font-bold tracking-wide mt-4 drop-shadow-lg">Loading Stream...</p>}
         </div>
       )}
 
-      {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-s0/90 text-center px-6 z-50">
-          <span className="text-4xl">⚠️</span>
-          <p className="text-s4 text-sm">{error}</p>
-          <button onClick={()=>{setError('');loadVideo(streamUrl);}}
-            className="px-5 py-2 rounded-full bg-s2 border border-[var(--border)] text-sm text-s4 hover:text-s5 transition-all">
-            Retry
+      {/* Error Overlay */}
+      {(error || streamFetchError) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-s0/95 backdrop-blur-md text-center px-6 z-50">
+          <span className="text-5xl">⚠️</span>
+          <p className="text-white font-medium text-sm max-w-md">{streamFetchError || error}</p>
+          <button onClick={(e)=>{e.stopPropagation(); if(streamFetchError) onRetry?.(); else {setError('');loadVideo(streamUrl);}}}
+            className="px-6 py-2.5 mt-2 rounded-full bg-s5 text-white font-bold shadow-lg hover:bg-s4 transition-all">
+            Retry Connection
           </button>
         </div>
       )}
+
+      {/* Continue Watching Prompt */}
+      <AnimatePresence>
+        {continuePrompt && (
+          <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:20 }}
+            className="absolute bottom-20 right-4 md:right-8 z-40 bg-s1/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Saved Progress</span>
+              <span className="text-white text-sm font-bold">Continue from {formatTime(continuePrompt.time)}?</span>
+            </div>
+            <div className="flex items-center gap-2 border-l border-white/10 pl-4 ml-2">
+               <button onClick={(e) => { e.stopPropagation(); videoRef.current!.currentTime = continuePrompt.time; setContinuePrompt(null); }} 
+                  className="px-4 py-1.5 bg-s5 text-white rounded-lg text-xs font-bold hover:bg-s4 transition-colors">
+                 Resume
+               </button>
+               <button onClick={(e) => { e.stopPropagation(); setContinuePrompt(null); }} className="p-1.5 text-white/50 hover:text-white transition-colors bg-white/5 rounded-lg"><X size={14} /></button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Settings Overlay Menu */}
       <AnimatePresence>
         {showSettings && (
           <motion.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute bottom-16 right-4 z-50 w-64 bg-[#0a1216]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-4">
+            className="absolute bottom-16 right-4 z-50 w-64 bg-[#0a1216]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-4"
+            onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
               <span className="text-sm font-bold text-white tracking-wide">SETTINGS</span>
-              <button onClick={() => setShowSettings(false)} className="text-white/50 hover:text-white"><X size={16}/></button>
+              <button onClick={(e) => {e.stopPropagation(); setShowSettings(false)}} className="text-white/50 hover:text-white"><X size={16}/></button>
             </div>
             
             <div className="flex flex-col gap-5">
@@ -337,7 +426,7 @@ export default function VideoPlayer({
                 <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Quality</span>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {qualityOptions.map(q => (
-                    <button key={q} onClick={() => onQualityChange?.(q)}
+                    <button key={q} onClick={(e) => {e.stopPropagation(); onQualityChange?.(q)}}
                       className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${selectedQuality === q ? 'bg-s5 text-white shadow-md shadow-s5/20' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}>
                       {q}
                     </button>
@@ -348,7 +437,7 @@ export default function VideoPlayer({
                 <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Audio</span>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {audioOptions.map(a => (
-                    <button key={a} onClick={() => onAudioChange?.(a)}
+                    <button key={a} onClick={(e) => {e.stopPropagation(); onAudioChange?.(a)}}
                       className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-all ${selectedAudio === a ? 'bg-s5 text-white shadow-md shadow-s5/20' : 'bg-white/5 text-white/70 hover:bg-white/10'}`}>
                       {a}
                     </button>
@@ -360,9 +449,53 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
+      {/* In-Player Episodes Drawer */}
+      <AnimatePresence>
+        {showEpisodes && episodes && (
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute top-0 right-0 bottom-0 w-72 bg-black/80 backdrop-blur-xl border-l border-white/10 z-50 flex flex-col shadow-2xl"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 bg-white/5">
+              <span className="font-display font-bold text-sm text-white flex items-center gap-2"><List size={16}/> EPISODES</span>
+              <button onClick={(e) => {e.stopPropagation(); setShowEpisodes(false)}} className="text-white/50 hover:text-white transition-colors bg-white/5 p-1.5 rounded-lg"><X size={16} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto ep-scroll p-2">
+              {episodes.map(ep => {
+                const active = ep.id === currentEp?.id;
+                return (
+                  <button key={ep.id} onClick={(e) => { e.stopPropagation(); onEpisodeSelect?.(ep); setShowEpisodes(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all mb-1 ${active ? 'bg-s5/20 border border-s5/30 shadow-sm' : 'hover:bg-white/5 border border-transparent'}`}>
+                    <div className="w-14 h-9 rounded-lg bg-white/5 overflow-hidden shrink-0 flex items-center justify-center relative">
+                      {ep.thumbnail ? (
+                        <img src={ep.thumbnail} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ) : (
+                        <span className="text-[9px] font-mono font-bold text-white/40">EP {ep.num}</span>
+                      )}
+                      {active && <div className="absolute inset-0 bg-s5/20 flex items-center justify-center"><Play size={12} fill="white" className="text-white"/></div>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-[9px] font-mono font-bold mb-0.5 ${active ? 'text-s5' : 'text-white/40'}`}>EP {ep.num}</div>
+                      <div className={`text-xs font-medium line-clamp-1 leading-tight ${active ? 'text-white' : 'text-white/70'}`}>{ep.title}</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Invisible Hover Trigger for Episodes Drawer (Desktop) */}
+      {!showEpisodes && episodes && episodes.length > 0 && (
+        <div 
+          className="absolute top-0 right-0 bottom-16 w-6 z-30 cursor-pointer hidden lg:block"
+          onMouseEnter={() => setShowEpisodes(true)}
+        />
+      )}
+
       {/* Bottom Controls Bar */}
       <div className={`absolute bottom-0 left-0 right-0 px-4 pb-4 transition-opacity duration-300 z-40 ${showCtrl?'opacity-100':'opacity-0 pointer-events-none'}`}
-        style={{background:'linear-gradient(0deg,rgba(0,0,0,.85) 0%,transparent 100%)'}}
+        style={{background:'linear-gradient(0deg,rgba(0,0,0,.9) 0%,transparent 100%)'}}
         onClick={e=>e.stopPropagation()}>
 
         {/* Progress */}
@@ -373,11 +506,11 @@ export default function VideoPlayer({
 
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Left Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button onClick={togglePlay} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white">
               {playing ? <Pause size={20}/> : <Play size={20} fill="white"/>}
             </button>
-            <button onClick={()=>skipTime(-10)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white">
+            <button onClick={(e)=>skipTime(-10, e)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white">
               <SkipBack size={17}/>
             </button>
             <button onClick={toggleMute} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-white">
@@ -395,7 +528,15 @@ export default function VideoPlayer({
 
           {/* Right Controls */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <button onClick={()=>setShowSettings(!showSettings)}
+            {episodes && episodes.length > 0 && (
+              <button onClick={(e)=>{e.stopPropagation(); setShowEpisodes(!showEpisodes)}}
+                className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  showEpisodes ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'
+                }`}>
+                <List size={15}/> <span>Episodes</span>
+              </button>
+            )}
+            <button onClick={(e)=>{e.stopPropagation(); setShowSettings(!showSettings)}}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 showSettings ? 'bg-s5 text-white' : 'hover:bg-white/10 text-white/90'
               }`}>
