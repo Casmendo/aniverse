@@ -46,62 +46,77 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
   useEffect(() => {
     (async () => {
       setLoadingAnime(true);
+      let resolvedTitle = initialTitle && !isUuid(initialTitle) ? initialTitle : '';
+      
       try {
+        // Step 1: Try the /info endpoint (works for some anime)
         const { data } = await animeAPI.getDetail(slug);
         const raw = (data && typeof data === 'object')
           ? data.data?.anime || data.data || data.anime || data
           : data;
-        if (!raw || (Array.isArray(raw) && raw.length === 0)) {
-          throw new Error('Anime not found');
-        }
+        if (!raw || (Array.isArray(raw) && raw.length === 0)) throw new Error('Not found');
         const info = extractAnimeData(raw);
-        if (initialTitle && (!info.title || info.title === 'Unknown Anime' || info.title === slug || /^[a-f0-9\-]{20,}$/.test(info.title))) {
-          info.title = initialTitle;
+        // Only accept if it's a real title
+        if (info.title && info.title !== 'Unknown Anime' && !isUuid(info.title)) {
+          resolvedTitle = info.title;
         }
+        if (resolvedTitle) info.title = resolvedTitle;
         setAnime(info);
         document.title = `${info.title} — AniVerse`;
         // Fetch related seasons/series
-        animeAPI.search(info.title).then(({ data }) => {
-          const items = Array.isArray(data) ? data : data.results || data.data || [];
-          // Strips Season X, Part X, S X, and anything after colon or hyphen to get base name
-          const cleaned = info.title.replace(/(Season \d+|Part \d+|S\d+|\d+(st|nd|rd|th) Season|:.*|-.*).*$/i, '').trim();
-          animeAPI.search(cleaned).then(({ data: data2 }) => {
-            const items2 = Array.isArray(data2) ? data2 : data2.results || data2.data || [];
-            const merged = [...items, ...items2];
-            const unique = Array.from(new Map(merged.map(item => [item.session || item.id, item])).values());
-            // Filter strictly to avoid completely unrelated anime, match by checking if the cleaned title is in their title
-            const related = unique.filter(i => {
-              if (i.session === slug || i.id === slug) return false;
-              const t = String(i.title).toLowerCase();
-              return t.includes(cleaned.toLowerCase());
-            });
-            setRelatedSeries(related);
-          }).catch(() => setRelatedSeries(items.filter(i => (i.session !== slug && i.id !== slug))));
-        }).catch(() => {});
+        if (resolvedTitle) {
+          animeAPI.search(resolvedTitle).then(({ data }) => {
+            const items = Array.isArray(data) ? data : data.results || data.data || [];
+            const cleaned = resolvedTitle.replace(/(Season \d+|Part \d+|S\d+|\d+(st|nd|rd|th) Season|:.*|-.*).*$/i, '').trim();
+            animeAPI.search(cleaned).then(({ data: data2 }) => {
+              const items2 = Array.isArray(data2) ? data2 : data2.results || data2.data || [];
+              const merged = [...items, ...items2];
+              const unique = Array.from(new Map(merged.map(item => [item.session || item.id, item])).values());
+              const related = unique.filter(i => {
+                if (i.session === slug || i.id === slug) return false;
+                const t = String(i.title).toLowerCase();
+                return t.includes(cleaned.toLowerCase());
+              });
+              setRelatedSeries(related);
+            }).catch(() => setRelatedSeries(items.filter(i => (i.session !== slug && i.id !== slug))));
+          }).catch(() => {});
+        }
       } catch {
+        // Step 2: /info failed — try to find the title via search API using the slug
         try {
-          const { data } = await animeAPI.getEpisodes(slug);
-          const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
-          const first = Array.isArray(raw) ? raw[0] : null;
-          if (first) {
-            // Try to find the real anime title from multiple possible fields in the episode data
-            const f = first as any;
-            const realTitle = initialTitle ||
-              (f.anime_title && !isUuid(f.anime_title) ? f.anime_title : '') ||
-              (f.anime_name  && !isUuid(f.anime_name)  ? f.anime_name  : '') ||
-              (f.title       && !isUuid(f.title)       ? f.title       : '') ||
-              '';
-            const info = extractAnimeData(f);
-            info.title = realTitle || info.title;
-            if (!info.title || info.title === 'Unknown Anime') info.title = slug;
-            info.slug = slug;
-            setAnime(info);
-            document.title = `${info.title} — AniVerse`;
-          } else {
-            throw new Error('Anime not found');
+          if (!resolvedTitle) {
+            // Search by slug — the API might return this anime in results
+            const { data: searchData } = await animeAPI.search(slug);
+            const searchItems = Array.isArray(searchData) ? searchData : searchData.results || searchData.data || [];
+            const match = searchItems.find((i: any) => i.session === slug || i.id === slug || String(i.id) === slug);
+            if (match?.title && !isUuid(String(match.title))) {
+              resolvedTitle = String(match.title);
+            }
           }
+          
+          // Step 3: Get episodes to build the anime object
+          const { data: epData } = await animeAPI.getEpisodes(slug);
+          const raw = epData.episodes || epData.data || epData.results || (Array.isArray(epData) ? epData : []);
+          const first = Array.isArray(raw) ? raw[0] : null;
+          
+          const info = first ? extractAnimeData(first as Record<string,unknown>) : {
+            slug, title: '', cover: '', banner: '', description: '', genres: [], score: 0, episodes: 0, status: '', year: '', type: '', in_watchlist: false
+          };
+          info.title = resolvedTitle || info.title || 'Unknown Anime';
+          info.slug = slug;
+          if (first) {
+            info.cover = info.cover || String((first as any).snapshot || '');
+          }
+          setAnime(info);
+          document.title = `${info.title} — AniVerse`;
         } catch {
-          toast('Could not load anime','error');
+          // Final fallback
+          if (resolvedTitle) {
+            setAnime({ slug, title: resolvedTitle, cover: '', banner: '', description: '', genres: [], score: 0, episodes: 0, status: '', year: '', type: '', in_watchlist: false });
+            document.title = `${resolvedTitle} — AniVerse`;
+          } else {
+            toast('Could not load anime', 'error');
+          }
         }
       } finally { setLoadingAnime(false); }
     })();

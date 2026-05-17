@@ -37,9 +37,9 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [loadStream, setLoadStream] = useState(true);
   const [streamErr, setStreamErr] = useState('');
   const [showEpList, setShowEpList] = useState(false);
-  const [qualityOptions, setQualityOptions] = useState<string[]>(['best', '1080p', '720p', '480p']);
+  const [qualityOptions, setQualityOptions] = useState<string[]>(['1080', '720', '480', '360']);
   const [audioOptions, setAudioOptions] = useState<string[]>(['jpn', 'eng']);
-  const [selectedQuality, setSelectedQuality] = useState('best');
+  const [selectedQuality, setSelectedQuality] = useState('1080');
   const [selectedAudio, setSelectedAudio] = useState('jpn');
 
   // Fetch anime details
@@ -90,7 +90,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const fetchStream = useCallback(async (ep: ReturnType<typeof extractEpisode>) => {
     setLoadStream(true); setStreamErr(''); setStreamUrl('');
     try {
-      const q = selectedQuality.replace('p', '');
+      // Normalize quality: strip 'p', strip 'best' -> use empty string so API picks best
+      const q = selectedQuality.replace(/p$/i, '').replace('best', '1080');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
       // Prefer proxy_m3u8 if the API provides it, fallback to stream_url or url
       let url: string = data.proxy_m3u8 || data.stream_url || data.url || data.hls || data.link || data.source || '';
@@ -121,14 +122,25 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
         // API returns: { streams: [{quality: "1080", audio: "jpn"}, ...] }
         const streams = data.streams || data.qualities || [];
         if (Array.isArray(streams) && streams.length > 0) {
-          const quals = [...new Set(streams.map((s: any) => String(s.quality || s)))];
+          // Strip 'p' suffix from quality values, deduplicate
+          const quals = [...new Set(streams.map((s: any) => String(s.quality || s).replace(/p$/i, '')))];
           const auds = [...new Set(streams.map((s: any) => String(s.audio || 'jpn')))];
-          if (quals.length) setQualityOptions(quals);
-          if (auds.length) setAudioOptions(auds);
+          if (quals.length) {
+            setQualityOptions(quals);
+            // Auto-select best available quality
+            if (quals.includes('1080')) setSelectedQuality('1080');
+            else setSelectedQuality(quals[0]);
+          }
+          if (auds.length) {
+            setAudioOptions(auds);
+            // Auto-select jpn if available, otherwise first available audio
+            if (auds.includes('jpn')) setSelectedAudio('jpn');
+            else setSelectedAudio(auds[0]);
+          }
         }
       })
       .catch(() => {
-        setQualityOptions(['best', '1080', '720', '480']);
+        setQualityOptions(['1080', '720', '480', '360']);
         setAudioOptions(['jpn', 'eng']);
       });
   }, [currentEp, slug]);
