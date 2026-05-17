@@ -149,8 +149,11 @@ export default function VideoPlayer({
       hls.on(Hls.Events.ERROR, (_:any, data:any) => {
         // Specifically handle the corrupted proxy stream fragment error BEFORE it crashes
         if (data.details === Hls.ErrorDetails?.FRAG_PARSING_ERROR || data.details === 'fragParsingError') {
-          console.warn('HLS Fragment Parsing Error (Corrupt proxy segment). Nudging past dead zone.');
-          if (v) v.currentTime += 0.5;
+          // If we only nudge by 0.5s, we get trapped in the SAME broken chunk.
+          // We must skip the entire duration of the bad fragment to reach the next valid chunk!
+          const skipAmount = data.frag?.duration ? data.frag.duration + 0.2 : 5;
+          console.warn(`HLS Fragment Parsing Error (Corrupt proxy segment). Skipping ${skipAmount.toFixed(1)}s past dead zone.`);
+          if (v) v.currentTime += skipAmount;
         }
 
         if (data.fatal) {
@@ -174,8 +177,8 @@ export default function VideoPlayer({
               hls.recoverMediaError();
             } else {
               // Time loop detected! The proxy stream has a corrupted segment.
-              // Seek forward 0.5 seconds to skip the bad frame and continue playing.
-              if (v) v.currentTime += 0.5;
+              // Seek forward significantly to escape the bad frame chunk and continue playing.
+              if (v) v.currentTime += 5;
               hls.recoverMediaError();
               mediaErrCount.current = 0; // reset to allow future recoveries
             }
