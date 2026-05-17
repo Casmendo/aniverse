@@ -49,7 +49,7 @@ export default function AnimeSection({ title,icon,items,loading,onDownload,onWat
                   const a = extractAnimeData(raw);
                   return (
                     <AnimeCard
-                      key={a.slug||i}
+                      key={`${a.slug || 'item'}-${i}`}
                       slug={a.slug} title={a.title} cover={a.cover}
                       score={a.score} episodes={a.episodes} type={a.type}
                       delay={i*45}

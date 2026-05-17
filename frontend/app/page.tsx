@@ -63,7 +63,14 @@ export default function HomePage() {
       const arr = Array.isArray(r.data) ? r.data : r.data.results || r.data.data || r.data.anime || [];
       return arr.length > 0 ? arr[0] : null;
     }).catch(() => null))).then(results => {
-      setPopular(results.filter(Boolean) as Record<string,unknown>[]);
+      const seen = new Set<string>();
+      const unique = (results.filter(Boolean) as Record<string,unknown>[]).filter(item => {
+        const key = String((item as any).session || (item as any).id || Math.random());
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setPopular(unique);
     }).finally(() => setLoadingP(false));
 
     animeAPI.getGenres().then(({data}) => {
