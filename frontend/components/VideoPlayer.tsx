@@ -123,12 +123,22 @@ export default function VideoPlayer({
         maxBufferLength: 60,
         startLevel: -1,           // Auto-select quality level on start (don't force 1080p)
         abrEwmaDefaultEstimate: 500000,  // Start assuming 500kbps bandwidth, ramp up
+        
+        // Auto-skip buffer holes (CRITICAL for ripped proxy streams)
+        maxBufferHole: 2,           
+        highBufferWatchdogPeriod: 2,
+        nudgeMaxRetry: 5,           
+        maxFragLookUpTolerance: 0.2, 
+
+        // Retry logic
         fragLoadingTimeOut: 120000, 
         manifestLoadingTimeOut: 120000,
         levelLoadingTimeOut: 120000,
-        fragLoadingMaxRetry: 10,
-        manifestLoadingMaxRetry: 10,
-        levelLoadingMaxRetry: 10
+        fragLoadingMaxRetry: 6,
+        manifestLoadingMaxRetry: 6,
+        levelLoadingMaxRetry: 6,
+        
+        stretchShortVideoTrack: true 
       });
       hlsRef.current = hls;
       hls.loadSource(url); hls.attachMedia(v);
@@ -137,11 +147,17 @@ export default function VideoPlayer({
       hls.on(Hls.Events.BUFFER_APPENDING,()=>setBuffering(false));
       
       hls.on(Hls.Events.ERROR, (_:any, data:any) => {
+        // Specifically handle the corrupted proxy stream fragment error BEFORE it crashes
+        if (data.details === Hls.ErrorDetails?.FRAG_PARSING_ERROR || data.details === 'fragParsingError') {
+          console.warn('HLS Fragment Parsing Error (Corrupt proxy segment). Nudging past dead zone.');
+          if (v) v.currentTime += 0.5;
+        }
+
         if (data.fatal) {
           if (data.type===Hls.ErrorTypes.NETWORK_ERROR) {
             console.error('HLS Network Error:', data);
             // Try to recover network errors silently first
-            if (mediaErrCount.current < 3) {
+            if (mediaErrCount.current < 6) {
               mediaErrCount.current++;
               hls.startLoad();
             } else {
@@ -158,8 +174,8 @@ export default function VideoPlayer({
               hls.recoverMediaError();
             } else {
               // Time loop detected! The proxy stream has a corrupted segment.
-              // Seek forward 2 seconds to skip the bad frame and continue playing.
-              if (v) v.currentTime += 2;
+              // Seek forward 0.5 seconds to skip the bad frame and continue playing.
+              if (v) v.currentTime += 0.5;
               hls.recoverMediaError();
               mediaErrCount.current = 0; // reset to allow future recoveries
             }
