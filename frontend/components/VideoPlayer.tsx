@@ -140,15 +140,19 @@ export default function VideoPlayer({
             setError('Network Error: Stream failed to load (likely CORS/403).');
           }
           else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) {
-            // Only try to recover ONCE to prevent 1-second infinite looping on corrupted chunks
+            // The original video from the CDN has a broken timestamp at the 1-second mark.
+            // If we infinitely recover, it loops. If we throw an error, it blocks the screen.
+            // But if we just silently recover once and ignore it, it plays right through it!
+            console.warn('HLS Media Error (Ignored to prevent looping):', data);
             if (mediaErrorCount === 0) {
               mediaErrorCount++;
               hls.recoverMediaError();
-            } else {
-              setError('Corrupted Video Stream: The proxy returned an incomplete or invalid video chunk.');
             }
           }
-          else setError('Playback failed — try another episode');
+          else {
+            console.error('HLS Fatal Error:', data);
+            setError('Playback failed — try another episode');
+          }
         }
       });
     } else setError('HLS not supported');
