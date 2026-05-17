@@ -92,14 +92,35 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     try {
       const q = selectedQuality.replace('p', '');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      // Prefer proxy_m3u8 if the API provides it, fallback to stream_url or url
-      let url: string = data.proxy_m3u8 || data.stream_url || data.url || data.hls || data.link || data.source || '';
+      // Prefer extracting the raw upstream URL to feed into OUR blazing fast proxy
+      let upstreamUrl = '';
 
-      if (!url) throw new Error('Video server returned no stream link — try another episode');
+      if (data.stream_url && data.stream_url.includes('token=')) {
+        try {
+          const tokenStr = data.stream_url.split('token=')[1].split('&')[0];
+          upstreamUrl = decodeURIComponent(tokenStr);
+        } catch(e) {}
+      }
+      if (!upstreamUrl && data.proxy_m3u8 && data.proxy_m3u8.includes('url=')) {
+        try {
+          const urlStr = data.proxy_m3u8.split('url=')[1].split('&')[0];
+          upstreamUrl = decodeURIComponent(urlStr);
+        } catch(e) {}
+      }
 
-      // If it's a relative path (like an iframe token), prepend base URL
-      if (url.startsWith('/')) {
-        url = `${ANIMAPI_BASE}${url}`;
+      // Fallback if we couldn't extract it
+      if (!upstreamUrl) {
+        upstreamUrl = data.proxy_m3u8 || data.stream_url || data.url || data.hls || data.link || data.source || '';
+      }
+
+      if (!upstreamUrl) throw new Error('Video server returned no stream link — try another episode');
+
+      let url = upstreamUrl;
+      // If we successfully got the absolute upstream URL, route it through OUR native Node proxy
+      if (url.startsWith('http') && !url.includes('apis.ayohost.site')) {
+         url = `/api/proxy?url=${encodeURIComponent(url)}`;
+      } else if (url.startsWith('/')) {
+         url = `${ANIMAPI_BASE}${url}`;
       }
 
       setStreamUrl(url);
