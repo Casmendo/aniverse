@@ -98,8 +98,18 @@ export default function VideoPlayer({
       return;
     }
     if (Hls?.isSupported?.()) {
-      const hls = new Hls({ enableWorker:true, backBufferLength:30, maxBufferLength:60 });
-      hlsRef.current = hls;
+      const hls = new Hls({ 
+        enableWorker: true, 
+        backBufferLength: 30, 
+        maxBufferLength: 60,
+        // Ultra-forgiving timeouts to prevent aborting and looping on slow proxies
+        fragLoadingTimeOut: 120000, 
+        manifestLoadingTimeOut: 120000,
+        levelLoadingTimeOut: 120000,
+        fragLoadingMaxRetry: 10,
+        manifestLoadingMaxRetry: 10,
+        levelLoadingMaxRetry: 10
+      });hlsRef.current = hls;
       hls.loadSource(url); hls.attachMedia(v);
       hls.on(Hls.Events.MANIFEST_PARSED, startPlayback);
       hls.on(Hls.Events.BUFFER_STALLED,  ()=>setBuffering(true));
