@@ -50,7 +50,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
       
       try {
         // Step 1: Try the /info endpoint (works for some anime)
-        const { data } = await animeAPI.getDetail(slug);
+        const { data } = await animeAPI.getDetail(slug, resolvedTitle);
         const raw = (data && typeof data === 'object')
           ? data.data?.anime || data.data || data.anime || data
           : data;

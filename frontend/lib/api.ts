@@ -52,7 +52,9 @@ BACKEND.interceptors.response.use(
 export const animeAPI = {
   getAiring:    (page = 1) => ANIMAPI.get('/api/airing', { params: { page } }),
   search:       (q: string) => ANIMAPI.get('/api/search', { params: { q } }),
-  getDetail:    (slug: string) => ANIMAPI.get(`/api/anime/${slug}/info`),
+  // anime_name is REQUIRED for /info to work — without it the backend returns 404
+  getDetail:    (slug: string, animeName?: string) =>
+    ANIMAPI.get(`/api/anime/${slug}/info`, animeName ? { params: { anime_name: animeName } } : {}),
   getEpisodes:  (slug: string, animeName?: string) =>
     ANIMAPI.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
   getStream:    (episodeSession: string, animeSlug: string, quality = 'best', audio = 'jpn') =>
