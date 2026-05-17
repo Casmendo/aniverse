@@ -37,9 +37,10 @@ export default function VideoPlayer({
   const videoRef    = useRef<HTMLVideoElement>(null);
   const hlsRef      = useRef<any>(null);
   const containerRef= useRef<HTMLDivElement>(null);
-  const ctrlTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const saveInterval= useRef<ReturnType<typeof setInterval>>();
-  const clickTimeout= useRef<ReturnType<typeof setTimeout>>();
+  const ctrlTimeout  = useRef<ReturnType<typeof setTimeout>>();
+  const saveInterval  = useRef<ReturnType<typeof setInterval>>();
+  const clickTimeout  = useRef<ReturnType<typeof setTimeout>>();
+  const mediaErrCount = useRef(0); // persists across loadVideo calls — only recover once
 
   const { getProgress, setProgress } = useProgressStore();
 
@@ -86,6 +87,7 @@ export default function VideoPlayer({
     const v = videoRef.current;
     if (!v || !url) return;
     setError(''); setBuffering(true); setPlaying(false);
+    mediaErrCount.current = 0; // reset for this new stream
     if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current=null; }
     v.pause(); v.removeAttribute('src'); v.load();
 
@@ -134,7 +136,6 @@ export default function VideoPlayer({
       hls.on(Hls.Events.BUFFER_STALLED,  ()=>setBuffering(true));
       hls.on(Hls.Events.BUFFER_APPENDING,()=>setBuffering(false));
       
-      let mediaErrorCount = 0;
       hls.on(Hls.Events.ERROR, (_:any, data:any) => {
         if (data.fatal) {
           if (data.type===Hls.ErrorTypes.NETWORK_ERROR) {
@@ -142,14 +143,12 @@ export default function VideoPlayer({
             setError('Network Error: Stream failed to load (likely CORS/403).');
           }
           else if (data.type===Hls.ErrorTypes.MEDIA_ERROR) {
-            // The original video from the CDN has a broken timestamp at the 1-second mark.
-            // If we infinitely recover, it loops. If we throw an error, it blocks the screen.
-            // But if we just silently recover once and ignore it, it plays right through it!
-            console.warn('HLS Media Error (Ignored to prevent looping):', data);
-            if (mediaErrorCount === 0) {
-              mediaErrorCount++;
+            // Only recover ONCE per stream — using a ref so this persists across reloads
+            if (mediaErrCount.current === 0) {
+              mediaErrCount.current++;
               hls.recoverMediaError();
             }
+            // After 1 attempt, silently ignore to prevent infinite looping
           }
           else {
             console.error('HLS Fatal Error:', data);

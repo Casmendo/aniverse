@@ -114,28 +114,24 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     if (currentEp) fetchStream(currentEp);
   }, [currentEp, fetchStream]);
 
-  // Fetch available qualities
+  // Fetch available qualities — only updates the OPTIONS LIST, never triggers a stream reload
   useEffect(() => {
     if (!currentEp) return;
     animeAPI.getStreamQualities(currentEp.id, slug)
       .then(({ data }) => {
-        // API returns: { streams: [{quality: "1080", audio: "jpn"}, ...] }
         const streams = data.streams || data.qualities || [];
         if (Array.isArray(streams) && streams.length > 0) {
-          // Strip 'p' suffix from quality values, deduplicate
           const quals = [...new Set(streams.map((s: any) => String(s.quality || s).replace(/p$/i, '')))];
           const auds = [...new Set(streams.map((s: any) => String(s.audio || 'jpn')))];
           if (quals.length) {
             setQualityOptions(quals);
-            // Auto-select best available quality
-            if (quals.includes('1080')) setSelectedQuality('1080');
-            else setSelectedQuality(quals[0]);
+            // Only fix selection if current choice isn't available (don't re-trigger stream)
+            setSelectedQuality(prev => quals.includes(prev) ? prev : (quals.includes('1080') ? '1080' : quals[0]));
           }
           if (auds.length) {
             setAudioOptions(auds);
-            // Auto-select jpn if available, otherwise first available audio
-            if (auds.includes('jpn')) setSelectedAudio('jpn');
-            else setSelectedAudio(auds[0]);
+            // Only fix audio if current choice isn't available
+            setSelectedAudio(prev => auds.includes(prev) ? prev : (auds.includes('jpn') ? 'jpn' : auds[0]));
           }
         }
       })

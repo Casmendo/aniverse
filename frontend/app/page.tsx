@@ -40,7 +40,16 @@ export default function HomePage() {
       const manualAiring = results.filter(Boolean) as Record<string,unknown>[];
       animeAPI.getAiring().then(({data}) => {
         const fetchAiring = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
-        setAiring([...manualAiring, ...fetchAiring]);
+        const merged = [...manualAiring, ...fetchAiring];
+        // Deduplicate by session/id to prevent React duplicate key warnings
+        const seen = new Set<string>();
+        const unique = merged.filter(item => {
+          const key = String((item as any).session || (item as any).id || Math.random());
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setAiring(unique);
       }).catch(() => setAiring(manualAiring)).finally(() => setLoadingA(false));
     });
 
