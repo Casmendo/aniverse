@@ -14,6 +14,8 @@ import { useDownloadStore } from '@/store/downloadStore';
 export default function AnimePage({ params, searchParams }: { params: { slug:string }, searchParams: { title?: string } }) {
   const { slug } = params;
   const initialTitle = searchParams.title || '';
+  // Helper to detect raw UUID/session strings that are never valid anime titles
+  const isUuid = (s: string) => /^[a-f0-9-]{20,}$/i.test(s) && !s.includes(' ');
   const router   = useRouter();
   const toast    = useToast();
   const { user } = useAuthStore();
@@ -82,12 +84,16 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
           const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
           const first = Array.isArray(raw) ? raw[0] : null;
           if (first) {
-            const info = extractAnimeData(first as Record<string,unknown>);
-            if (initialTitle) {
-              info.title = initialTitle;
-            } else if (!info.title || info.title === 'Unknown Anime') {
-              info.title = String((first as any).anime_title || (first as any).title || slug);
-            }
+            // Try to find the real anime title from multiple possible fields in the episode data
+            const f = first as any;
+            const realTitle = initialTitle ||
+              (f.anime_title && !isUuid(f.anime_title) ? f.anime_title : '') ||
+              (f.anime_name  && !isUuid(f.anime_name)  ? f.anime_name  : '') ||
+              (f.title       && !isUuid(f.title)       ? f.title       : '') ||
+              '';
+            const info = extractAnimeData(f);
+            info.title = realTitle || info.title;
+            if (!info.title || info.title === 'Unknown Anime') info.title = slug;
             info.slug = slug;
             setAnime(info);
             document.title = `${info.title} — AniVerse`;

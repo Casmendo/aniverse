@@ -44,7 +44,7 @@ export default function WatchlistPage() {
               initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
               transition={{ delay:i*0.04, ease:[0.16,1,0.3,1], duration:0.4 }}
               className="card-wrap bg-s1 group relative">
-              <Link href={`/anime/${item.slug}`}>
+              <Link href={`/anime/${item.slug}?title=${encodeURIComponent(item.title)}`}>
                 <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
                   <img src={item.cover||`https://picsum.photos/seed/${item.slug}/300/450`} alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -92,7 +92,7 @@ export default function WatchlistPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
             {recentlyWatched.map((r, i) => (
               <motion.a key={r.slug}
-                href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}` : `/anime/${r.slug}`}
+                href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}?title=${encodeURIComponent(r.title)}&ep=${r.lastEpNum}` : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}
                 initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }}
                 transition={{ delay:i*0.04, ease:[0.16,1,0.3,1], duration:0.4 }}
                 className="card-wrap bg-s1 group">

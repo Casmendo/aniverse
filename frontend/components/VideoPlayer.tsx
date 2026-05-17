@@ -119,6 +119,8 @@ export default function VideoPlayer({
         enableWorker: true, 
         backBufferLength: 30, 
         maxBufferLength: 60,
+        startLevel: -1,           // Auto-select quality level on start (don't force 1080p)
+        abrEwmaDefaultEstimate: 500000,  // Start assuming 500kbps bandwidth, ramp up
         fragLoadingTimeOut: 120000, 
         manifestLoadingTimeOut: 120000,
         levelLoadingTimeOut: 120000,
