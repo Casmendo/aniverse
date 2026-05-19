@@ -142,7 +142,7 @@ export default function Sidebar() {
                   </div>
                   {recentlyWatched.slice(0, 4).map((r) => (
                     <Link key={r.slug}
-                      href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}` : `/anime/${r.slug}`}
+                      href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}?title=${encodeURIComponent(r.title)}&ep=${r.lastEpNum}` : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}
                       onClick={close}
                       className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-s4 hover:bg-s2 hover:text-s5 transition-all">
                       <div className="w-8 h-10 rounded bg-s2 overflow-hidden shrink-0">

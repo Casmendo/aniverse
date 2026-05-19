@@ -78,7 +78,7 @@ export const useDownloadStore = create<DownloadState>()(
         if (isLoggedIn) {
           try {
             await downloadAPI.add(params);
-            await get().fetch();
+            await get().fetch(true);
             return { success: true, duplicate: false };
           } catch (e: any) {
             if (e?.message?.includes('already')) return { success: false, duplicate: true };

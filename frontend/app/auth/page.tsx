@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, CheckCircle2, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
+import { useIntroStore } from '@/store/introStore';
 import { useToast } from '@/components/Toast';
 import { authAPI } from '@/lib/api';
 
@@ -13,7 +14,7 @@ type Tab    = 'login' | 'signup';
 export default function AuthPage() {
   const router = useRouter();
   const toast  = useToast();
-  const { user, login, signup } = useAuthStore();
+  const { user } = useAuthStore();
 
   const [screen, setScreen] = useState<Screen>('tabs');
   const [tab,    setTab]    = useState<Tab>('login');
@@ -67,6 +68,7 @@ export default function AuthPage() {
       const { data } = await authAPI.login({ email: lEmail, password: lPw });
       useAuthStore.setState({ user: data.user, token: data.token });
       toast('Welcome back!', 'success');
+      useIntroStore.getState().triggerIntro();
       router.replace('/');
     } catch (e: any) {
       setErr(e.response?.data?.error || e.message || 'Login failed');
@@ -121,7 +123,10 @@ export default function AuthPage() {
       clearInterval(timerRef.current); clearInterval(resendRef.current);
       useAuthStore.setState({ user: data.user, token: data.token });
       setScreen('success');
-      setTimeout(()=>router.replace('/'), 2000);
+      setTimeout(()=>{
+        useIntroStore.getState().triggerIntro();
+        router.replace('/');
+      }, 2000);
     } catch (e: any) {
       setErr(e.response?.data?.error || e.message || 'Incorrect OTP. Try again.');
       setOtp(['','','','','','']);

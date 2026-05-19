@@ -12,16 +12,16 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
     // Phase 2: progress bar fills
     let p = 0;
     const iv = setInterval(() => {
-      p += Math.random() * 18 + 8;
+      p += Math.random() * 5 + 2; // Slower fill
       if (p >= 100) { p = 100; clearInterval(iv); }
       setProgress(Math.min(100, p));
-    }, 100);
+    }, 200);
 
     // Phase 3: exit
     const t3 = setTimeout(() => {
       setPhase('out');
       setTimeout(onDone, 600);
-    }, 1800);
+    }, 5000); // Extended to ~5 seconds
 
     return () => { clearTimeout(t1); clearTimeout(t3); clearInterval(iv); };
   }, [onDone]);

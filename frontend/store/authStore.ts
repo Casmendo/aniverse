@@ -6,7 +6,8 @@ export interface AniUser {
   username:    string;
   email:       string;
   createdAt:   string;
-  avatar:      string; // first letter of username
+  avatar:      string; // first letter of username OR custom image data URL
+  avatarUrl?:  string; // custom profile picture
 }
 
 interface AuthState {
@@ -15,6 +16,7 @@ interface AuthState {
   // Actions
   logout: () => void;
   update: (username: string) => void;
+  updateAvatar: (url: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -33,6 +35,12 @@ export const useAuthStore = create<AuthState>()(
         if (!user) return;
         const updatedUser = { ...user, username: username.trim(), avatar: username[0].toUpperCase() };
         set({ user: updatedUser });
+      },
+
+      updateAvatar: (url) => {
+        const { user } = get();
+        if (!user) return;
+        set({ user: { ...user, avatarUrl: url } });
       },
     }),
     { name: 'aniverse-auth-v2' }

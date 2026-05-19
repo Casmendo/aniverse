@@ -41,6 +41,19 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [audioOptions, setAudioOptions] = useState<string[]>(['jpn', 'eng']);
   const [selectedQuality, setSelectedQuality] = useState('1080');
   const [selectedAudio, setSelectedAudio] = useState('jpn');
+  const [relatedSeries, setRelatedSeries] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+
+  // Smart base title extraction for related series search
+  const getBaseTitle = (title: string) => title
+    .replace(/\s*:\s*.+$/, '')              // Remove ': Subtitle' (SAO: Alicization → SAO)
+    .replace(/\s*[-–—]\s*.+/, '')         // Remove ' - Subtitle'
+    .replace(/\s+(the\s+)?final\s+(season|part)\s*$/i, '')
+    .replace(/\s+(season|part|cour)\s*\d+\s*$/i, '')
+    .replace(/\s+\d+(st|nd|rd|th)\s+season\s*$/i, '')
+    .replace(/\s+[IVX]{1,5}\s*$/, '')      // Remove trailing roman numerals
+    .replace(/\s+\d+\s*$/, '')             // Remove trailing Arabic numbers
+    .trim();
 
   // Fetch anime details
   useEffect(() => {
@@ -86,6 +99,38 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     }).catch(() => { });
   }, [slug, episode, anime?.title, initialTitle]);
 
+  // Fetch related series (smart search by base title)
+  useEffect(() => {
+    const title = anime?.title || initialTitle;
+    if (!title) return;
+    const query = getBaseTitle(title);
+    if (query.length < 2) return;
+    animeAPI.search(query).then(({ data }) => {
+      const results = data.results || data.data || (Array.isArray(data) ? data : []);
+      const filtered = results
+        .filter((r: any) => {
+          const t = (r.title || r.name || '').toLowerCase();
+          return t && t !== title.toLowerCase();
+        })
+        .slice(0, 20);
+      setRelatedSeries(filtered);
+    }).catch(() => {});
+  }, [anime?.title, initialTitle]);
+
+  // Fetch recommendations from trending (shuffled for variety)
+  useEffect(() => {
+    const shuffle = <T,>(arr: T[]) => [...arr].sort(() => Math.random() - 0.5);
+    animeAPI.getTrending().then(({ data }) => {
+      const results = data.results || data.data || (Array.isArray(data) ? data : []);
+      setRecommendations(shuffle(results).slice(0, 30));
+    }).catch(() => {
+      animeAPI.getAiring().then(({ data }) => {
+        const results = data.results || data.data || (Array.isArray(data) ? data : []);
+        setRecommendations(shuffle(results).slice(0, 30));
+      }).catch(() => {});
+    });
+  }, []);
+
   // ── STREAMING: Use your friend's iframe player logic ──────────────────────
   const fetchStream = useCallback(async (ep: ReturnType<typeof extractEpisode>) => {
     setLoadStream(true); setStreamErr(''); setStreamUrl('');
@@ -93,15 +138,10 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       // Normalize quality: strip 'p', strip 'best' -> use empty string so API picks best
       const q = selectedQuality.replace(/p$/i, '').replace('best', '1080');
       const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      // Prefer proxy_m3u8 if the API provides it, fallback to stream_url or url
-      let url: string = data.proxy_m3u8 || data.stream_url || data.url || data.hls || data.link || data.source || '';
-
-      if (!url) throw new Error('Video server returned no stream link — try another episode');
-
-      // If it's a relative path (like an iframe token), prepend base URL
-      if (url.startsWith('/')) {
-        url = `${ANIMAPI_BASE}${url}`;
-      }
+      // Use proxy_m3u8 for our custom HLS player
+      let url: string = data.proxy_m3u8 || data.stream_url || data.url || '';
+      if (!url) throw new Error('No stream URL found — try another episode.');
+      if (url.startsWith('/')) url = `${ANIMAPI_BASE}${url}`;
 
       setStreamUrl(url);
     } catch (e: any) {
@@ -121,8 +161,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       .then(({ data }) => {
         const streams = data.streams || data.qualities || [];
         if (Array.isArray(streams) && streams.length > 0) {
-          const quals = [...new Set(streams.map((s: any) => String(s.quality || s).replace(/p$/i, '')))];
-          const auds = [...new Set(streams.map((s: any) => String(s.audio || 'jpn')))];
+          const quals = Array.from(new Set(streams.map((s: any) => String(s.quality || s).replace(/p$/i, ''))));
+          const auds = Array.from(new Set(streams.map((s: any) => String(s.audio || 'jpn'))));
           if (quals.length) {
             setQualityOptions(quals);
             // Only fix selection if current choice isn't available (don't re-trigger stream)
@@ -417,6 +457,62 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 <div className="p-4 rounded-2xl bg-s1/50 border border-[var(--border-light)]">
                   <h3 className="text-xs font-bold text-s3 uppercase tracking-wider mb-2">Synopsis</h3>
                   <p className="text-sm text-s4 leading-relaxed">{anime.description}</p>
+                </div>
+              )}
+
+              {/* Related Seasons / Series */}
+              {relatedSeries.length > 0 && (
+                <div>
+                  <h2 className="text-sm font-bold text-s4 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="w-1 h-4 rounded-full bg-s5 inline-block" />
+                    Related Seasons & Movies
+                  </h2>
+                  <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    {relatedSeries.map((r: any, i: number) => {
+                      const a = extractAnimeData(r);
+                      return (
+                        <Link key={a.slug || i} href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`}
+                          className="shrink-0 w-28 group">
+                          <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2"
+                            style={{ boxShadow: 'var(--shadow-sm)' }}>
+                            {a.cover
+                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                              : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
+                            {a.type && <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-white uppercase">{a.type}</span>}
+                          </div>
+                          <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{a.title}</p>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* You May Also Like */}
+              {recommendations.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-sm font-bold text-s4 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="w-1 h-4 rounded-full bg-s5 inline-block" />
+                    You May Also Like
+                  </h2>
+                  <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                    {recommendations.map((r: any, i: number) => {
+                      const a = extractAnimeData(r);
+                      return (
+                        <Link key={a.slug || i} href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`}
+                          className="shrink-0 w-28 group">
+                          <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2"
+                            style={{ boxShadow: 'var(--shadow-sm)' }}>
+                            {a.cover
+                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                              : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
+                            {a.type && <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white uppercase">{a.type}</span>}
+                          </div>
+                          <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{a.title}</p>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

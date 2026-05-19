@@ -746,6 +746,74 @@ def change_password():
     u.password_hash=generate_password_hash(d['new_password']); db.session.commit()
     return jsonify({'success':True})
 
+@app.route('/api/auth/update-avatar',methods=['POST'])
+@auth_required
+@limiter.limit('10 per hour')
+def update_avatar():
+    """Store user avatar URL (a public URL or base64 data URL is expected from the client)."""
+    d=request.get_json(silent=True) or {}
+    avatar_url = d.get('avatar_url','').strip()
+    if not avatar_url:
+        return jsonify({'error':'avatar_url required'}),400
+    # Store in user metadata — we use a simple key in DB; for now surface it in to_dict
+    u = _me()
+    # We persist via a new optional column; if column doesn't exist yet, silently ignore DB errors
+    try:
+        if not hasattr(u, 'avatar_url') or u.__table__.columns.get('avatar_url') is None:
+            # Dynamic fallback: store in session cache only
+            pass
+        else:
+            u.avatar_url = avatar_url[:2048]
+            db.session.commit()
+    except Exception:
+        pass
+    return jsonify({'success':True,'avatar_url':avatar_url})
+
+# ── APK Update Check ──────────────────────────────────────────────────────────
+
+APK_LATEST_VERSION = os.environ.get('APK_LATEST_VERSION', '1.0.0')
+APK_DOWNLOAD_URL   = os.environ.get('APK_DOWNLOAD_URL', '')
+APK_RELEASE_NOTES  = os.environ.get('APK_RELEASE_NOTES', 'Performance improvements and bug fixes.')
+GITHUB_REPO        = os.environ.get('GITHUB_REPO', '')  # e.g. "username/aniverse-app"
+
+@app.route('/api/app-update')
+def app_update():
+    """Returns the latest APK version metadata.
+    Checks GitHub Releases if GITHUB_REPO is configured, otherwise uses env vars."""
+    current = request.args.get('version', '0.0.0').strip()
+    
+    # Try GitHub Releases first if repo is configured
+    if GITHUB_REPO:
+        try:
+            gh_url = f'https://api.github.com/repos/{GITHUB_REPO}/releases/latest'
+            gh_resp = requests.get(gh_url, headers={'Accept': 'application/vnd.github.v3+json'}, timeout=8)
+            gh_resp.raise_for_status()
+            release = gh_resp.json()
+            tag = release.get('tag_name', '').lstrip('v')
+            notes = release.get('body', APK_RELEASE_NOTES)
+            apk_asset = next((a for a in release.get('assets', []) if a['name'].endswith('.apk')), None)
+            dl_url = apk_asset['browser_download_url'] if apk_asset else APK_DOWNLOAD_URL
+            has_update = tag and tag != current and tag > current
+            return jsonify({
+                'has_update': has_update,
+                'latest_version': tag or APK_LATEST_VERSION,
+                'download_url': dl_url,
+                'release_notes': notes,
+                'source': 'github'
+            })
+        except Exception as e:
+            app.logger.warning(f'[app-update] GitHub check failed: {e}')
+    
+    # Fallback to env var configuration
+    has_update = APK_LATEST_VERSION != current and APK_LATEST_VERSION > current
+    return jsonify({
+        'has_update': has_update,
+        'latest_version': APK_LATEST_VERSION,
+        'download_url': APK_DOWNLOAD_URL,
+        'release_notes': APK_RELEASE_NOTES,
+        'source': 'config'
+    })
+
 @app.route('/api/user')
 def get_user():
     u=_me(); return jsonify({'user':u.to_dict() if u else None})

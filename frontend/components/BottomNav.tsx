@@ -7,7 +7,7 @@ const NAV = [
   { href:'/',          icon:Home,     label:'Home' },
   { href:'/downloads', icon:Download, label:'Library' },
   { href:'/watchlist', icon:Bookmark, label:'Watchlist' },
-  { href:'/auth',      icon:User,     label:'Account' },
+  { href:'/profile',   icon:User,     label:'Profile' },
 ];
 
 export default function BottomNav() {

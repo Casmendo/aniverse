@@ -7,14 +7,22 @@ import Sidebar   from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
 import { ToastProvider } from '@/components/Toast';
 import LoadingScreen from '@/components/LoadingScreen';
+import { useIntroStore } from '@/store/introStore';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [booting, setBooting] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const { playIntro, triggerIntro, finishIntro } = useIntroStore();
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check if this is the first time visiting in this session
+    if (!sessionStorage.getItem('aniverse-intro-played')) {
+      triggerIntro();
+      sessionStorage.setItem('aniverse-intro-played', 'true');
+    }
     
     // Handle Android Back Button
     (async () => {
@@ -32,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   const handleLoadDone = () => {
-    setBooting(false);
+    finishIntro();
   };
 
   if (!mounted) return (
@@ -62,13 +70,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-s0 text-s5 font-body">
         <ToastProvider>
-          {booting && <LoadingScreen onDone={handleLoadDone} />}
-          <div className={`transition-opacity duration-500 ${booting ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-            <Navbar />
-            <Sidebar />
-            <main className="relative z-10 pt-[64px] pb-24 min-h-screen max-w-full overflow-x-hidden">
-              {children}
-              
+          {playIntro && <LoadingScreen onDone={handleLoadDone} />}
+          <div className={`transition-opacity duration-500 ${playIntro ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <AuthGuard>
+              <Navbar />
+              <Sidebar />
+              <main className="relative z-10 pt-[64px] pb-24 min-h-screen max-w-full overflow-x-hidden">
+                {children}
+              </main>
               <footer className="py-10 px-6 border-t border-[var(--border)] mt-10">
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2 text-s3 font-mono text-[10px] tracking-widest uppercase">
@@ -77,8 +86,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p className="text-[9px] text-s2 font-mono uppercase tracking-[.3em]">Enter the Multiverse</p>
                 </div>
               </footer>
-            </main>
             <BottomNav />
+            </AuthGuard>
           </div>
         </ToastProvider>
       </body>

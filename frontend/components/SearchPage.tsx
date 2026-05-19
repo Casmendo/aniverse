@@ -4,7 +4,7 @@ import { X, Search, TrendingUp, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { animeAPI } from '@/lib/api';
-import { extractAnimeData, debounce } from '@/lib/utils';
+import { extractAnimeData } from '@/lib/utils';
 import Image from 'next/image';
 
 interface Props {
@@ -41,8 +41,10 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
     localStorage.setItem('aniverse-search-history', JSON.stringify(h));
   };
 
-  const runSearch = useCallback(
-    debounce(async (q: string) => {
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const runSearch = useCallback((q: string) => {
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(async () => {
       if (!q.trim()) { setResults([]); setLoading(false); return; }
       setLoading(true);
       try {
@@ -51,9 +53,8 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
         setResults(items.map((r: Record<string,unknown>) => extractAnimeData(r)));
       } catch { setResults([]); }
       finally { setLoading(false); }
-    }, 320) as (q: string) => void,
-    []
-  );
+    }, 320);
+  }, []);
 
   const handleInput = (v: string) => {
     setQuery(v);
@@ -64,7 +65,7 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
   const go = (slug: string, title: string) => {
     if (query.trim()) saveHistory(query.trim());
     onClose();
-    router.push(`/anime/${slug}`);
+    router.push(`/anime/${slug}?title=${encodeURIComponent(title)}`);
   };
 
   const clearHistory = () => {
