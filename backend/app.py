@@ -88,6 +88,15 @@ class OTPRecord(db.Model):
     username      = db.Column(db.String(64))
     password_hash = db.Column(db.String(256))
 
+class PasswordResetToken(db.Model):
+    __tablename__ = 'password_reset_tokens'
+    id            = db.Column(db.Integer, primary_key=True)
+    email         = db.Column(db.String(256), unique=True, nullable=False)
+    code_hash     = db.Column(db.String(64),  nullable=False)
+    expires_at    = db.Column(db.Float, nullable=False)
+    attempts      = db.Column(db.Integer, default=0)
+    last_sent     = db.Column(db.Float, default=time.time)
+
 class Comment(db.Model):
     __tablename__ = 'comments'
     id         = db.Column(db.Integer, primary_key=True)
@@ -272,6 +281,47 @@ def _send_otp(email, username, otp):
         mail.send(msg)
     except Exception as e:
         app.logger.error(f"Failed to send OTP to {email}: {e}")
+
+def _send_reset_email(email, username, code):
+    if not app.config.get('MAIL_USERNAME'):
+        app.logger.info(f'\n{"─"*44}\nPassword Reset for {email} ({username}): {code}\n{"─"*44}')
+        return
+    msg = Message(
+        subject="AniVerse Password Reset",
+        recipients=[email],
+        html=f"""
+        <div style="font-family: 'Exo 2', sans-serif; background-color: #06141B; padding: 40px 20px; color: #fff; text-align: center; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(83, 198, 193, 0.2);">
+            <div style="margin-bottom: 20px;">
+                <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">
+                    <span style="color: #53C6C1;">Ani</span>Verse
+                </h1>
+                <p style="color: #9BA8AB; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Account Recovery</p>
+            </div>
+            
+            <div style="background-color: rgba(170, 217, 214, 0.05); border: 1px solid rgba(83, 198, 193, 0.2); border-radius: 12px; padding: 30px; margin: 20px 0;">
+                <h2 style="color: #fff; font-size: 20px; margin-top: 0;">Hi, <span style="color: #53C6C1;">{username}</span>!</h2>
+                <p style="color: #CCD0CF; font-size: 14px; margin-bottom: 20px;">You requested a password reset. Use the code below to reset your password.</p>
+                
+                <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #53C6C1; background: rgba(83, 198, 193, 0.1); padding: 15px 20px; display: inline-block; border-radius: 8px; border: 1px dashed rgba(83, 198, 193, 0.5);">
+                    {code}
+                </div>
+                
+                <p style="font-size: 12px; color: #e05d5d; margin-top: 20px; font-weight: bold;">
+                    <span style="font-size: 14px;">⏱</span> This code expires in 10 minutes.
+                </p>
+            </div>
+            
+            <p style="font-size: 11px; color: #4A5C6A; margin-bottom: 0;">
+                If you didn't request a password reset, you can safely ignore this email.<br/>
+                &copy; 2026 AniVerse. All rights reserved.
+            </p>
+        </div>
+        """
+    )
+    try:
+        mail.send(msg)
+    except Exception as e:
+        app.logger.error(f"Failed to send reset email to {email}: {e}")
 
 # ── Health ─────────────────────────────────────────────────────────────────────
 
@@ -768,6 +818,59 @@ def update_avatar():
     except Exception:
         pass
     return jsonify({'success':True,'avatar_url':avatar_url})
+
+@app.route('/api/auth/forgot-password',methods=['POST'])
+@limiter.limit('5 per hour')
+def forgot_password():
+    d=request.get_json(silent=True) or {}
+    email=d.get('email','').strip().lower()
+    if not email: return jsonify({'error':'Email required'}),400
+    u=User.query.filter_by(email=email).first()
+    if not u:
+        return jsonify({'error':'Account not found'}),404
+    code=str(random.randint(100000,999999))
+    rec=PasswordResetToken.query.filter_by(email=email).first()
+    now=time.time()
+    if rec:
+        if now-rec.last_sent < 60:
+            return jsonify({'error':f'Please wait {int(60 - (now - rec.last_sent))}s to resend'}),429
+        rec.code_hash=_hash(code); rec.expires_at=now+600; rec.attempts=0; rec.last_sent=now
+    else:
+        rec=PasswordResetToken(email=email, code_hash=_hash(code), expires_at=now+600, last_sent=now)
+        db.session.add(rec)
+    db.session.commit()
+    _send_reset_email(email, u.username, code)
+    return jsonify({'success':True, 'message':'Password reset code sent'})
+
+@app.route('/api/auth/reset-password',methods=['POST'])
+@limiter.limit('20 per hour')
+def reset_password():
+    d=request.get_json(silent=True) or {}
+    email=d.get('email','').lower()
+    code=str(d.get('otp','')).strip()
+    new_pw=d.get('new_password','')
+    if not email or not code: return jsonify({'error':'Email and code required'}),400
+    if not re.match(r'^\d{6}$',code): return jsonify({'error':'6-digit code required'}),400
+    err=_validate_pw(new_pw); 
+    if err: return jsonify({'error':err}),400
+    
+    rec=PasswordResetToken.query.filter_by(email=email).first()
+    if not rec: return jsonify({'error':'Reset session expired or not found'}),400
+    if time.time()>rec.expires_at:
+        db.session.delete(rec); db.session.commit()
+        return jsonify({'error':'Code expired'}),400
+    if rec.attempts>=5:
+        db.session.delete(rec); db.session.commit()
+        return jsonify({'error':'Too many attempts, request a new code'}),429
+    if _hash(code)!=rec.code_hash:
+        rec.attempts+=1; db.session.commit()
+        return jsonify({'error':f'Invalid code. {5-rec.attempts} attempts remaining'}),400
+    
+    u=User.query.filter_by(email=email).first()
+    if u:
+        u.password_hash = generate_password_hash(new_pw)
+    db.session.delete(rec); db.session.commit()
+    return jsonify({'success':True, 'message':'Password successfully updated'})
 
 # ── APK Update Check ──────────────────────────────────────────────────────────
 

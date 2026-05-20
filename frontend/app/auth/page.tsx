@@ -8,7 +8,7 @@ import { useIntroStore } from '@/store/introStore';
 import { useToast } from '@/components/Toast';
 import { authAPI } from '@/lib/api';
 
-type Screen = 'tabs' | 'otp' | 'success';
+type Screen = 'tabs' | 'otp' | 'success' | 'forgot_email' | 'forgot_reset';
 type Tab    = 'login' | 'signup';
 
 export default function AuthPage() {
@@ -30,6 +30,11 @@ export default function AuthPage() {
   const [sName,  setSName]  = useState('');
   const [sEmail, setSEmail] = useState('');
   const [sPw,    setSPw]    = useState('');
+
+  // Forgot Password
+  const [fEmail, setFEmail] = useState('');
+  const [fPw,    setFPw]    = useState('');
+  const [fPwConf,setFPwConf]= useState('');
 
   // OTP
   const [otp,      setOtp]      = useState(['','','','','','']);
@@ -137,12 +142,47 @@ export default function AuthPage() {
   const handleResend = async () => {
     setErr(''); setLoading(true);
     try {
-      await authAPI.resendOtp(sEmail.trim());
-      toast(`New OTP sent!`, 'success');
+      if (screen === 'forgot_reset') {
+        await authAPI.forgotPassword(fEmail.trim());
+      } else {
+        await authAPI.resendOtp(sEmail.trim());
+      }
+      toast(`New code sent!`, 'success');
       setOtp(['','','','','','']);
       startTimers();
     } catch (e: any) {
       setErr(e.response?.data?.error || e.message || 'Failed to resend');
+    } finally { setLoading(false); }
+  };
+
+  const handleForgotEmail = async () => {
+    setErr(''); setLoading(true);
+    try {
+      if (!fEmail.includes('@')) throw new Error('Valid email required');
+      await authAPI.forgotPassword(fEmail.trim());
+      toast(`Reset code sent to ${fEmail}`, 'info');
+      setScreen('forgot_reset');
+      startTimers();
+    } catch (e: any) {
+      setErr(e.response?.data?.error || e.message || 'Failed to send reset code');
+    } finally { setLoading(false); }
+  };
+
+  const handleResetPassword = async () => {
+    setErr(''); setLoading(true);
+    try {
+      const code = otp.join('');
+      if (code.length !== 6) throw new Error('Enter 6-digit code');
+      if (fPw.length < 8) throw new Error('Password must be at least 8 characters');
+      if (fPw !== fPwConf) throw new Error('Passwords do not match');
+      
+      await authAPI.resetPassword(fEmail.trim(), code, fPw);
+      clearInterval(timerRef.current); clearInterval(resendRef.current);
+      toast('Password reset successfully! Please sign in.', 'success');
+      setScreen('tabs'); setTab('login');
+      setLPw(''); setOtp(['','','','','','']);
+    } catch (e: any) {
+      setErr(e.response?.data?.error || e.message || 'Failed to reset password');
     } finally { setLoading(false); }
   };
 
@@ -214,6 +254,9 @@ export default function AuthPage() {
                       <Field icon={<Mail size={14}/>} type="email"     placeholder="Email"    value={lEmail} onChange={setLEmail} onEnter={handleLogin}/>
                       <Field icon={<Lock size={14}/>} type={showPw?'text':'password'} placeholder="Password" value={lPw}    onChange={setLPw}    onEnter={handleLogin}
                         right={<button onClick={()=>setShowPw(!showPw)} className="text-s3 hover:text-s4 transition-colors">{showPw?<EyeOff size={14}/>:<Eye size={14}/>}</button>}/>
+                      <div className="text-right -mt-1">
+                        <button onClick={()=>{setScreen('forgot_email');setErr('');}} className="text-xs text-s3 hover:text-s5 transition-colors">Forgot Password?</button>
+                      </div>
                       <AuthBtn loading={loading} onClick={handleLogin}>Sign In</AuthBtn>
                       <p className="text-center text-xs text-s3 pt-1">
                         No account?{' '}
@@ -292,6 +335,90 @@ export default function AuthPage() {
                 <button onClick={()=>{setScreen('tabs');setErr('');}}
                   className="mt-3 text-xs text-s3 hover:text-s4 transition-colors">
                   ← Back
+                </button>
+              </motion.div>
+            )}
+
+            {/* ── Forgot Password: Email ── */}
+            {screen === 'forgot_email' && (
+              <motion.div key="forgot_email"
+                initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
+                className="space-y-4">
+                <div className="text-center mb-6">
+                  <h2 className="font-display font-bold text-lg text-s5 mb-1">Reset Password</h2>
+                  <p className="text-xs text-s3">Enter your email to receive a reset code</p>
+                </div>
+
+                {err && (
+                  <div className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">{err}</div>
+                )}
+
+                <Field icon={<Mail size={14}/>} type="email" placeholder="Email" value={fEmail} onChange={setFEmail} onEnter={handleForgotEmail}/>
+
+                <div className="pt-2">
+                  <AuthBtn loading={loading} onClick={handleForgotEmail}>Send Reset Code</AuthBtn>
+                </div>
+
+                <div className="text-center mt-2">
+                  <button onClick={()=>{setScreen('tabs');setErr('');}}
+                    className="text-xs text-s3 hover:text-s4 transition-colors">
+                    ← Back to Login
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Forgot Password: Reset ── */}
+            {screen === 'forgot_reset' && (
+              <motion.div key="forgot_reset"
+                initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}
+                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
+                className="text-center">
+                <h2 className="font-display font-bold text-lg text-s5 mb-1">Create New Password</h2>
+                <p className="text-xs text-s3 mb-6">Enter the 6-digit code sent to <span className="text-s5">{fEmail}</span></p>
+
+                {err && (
+                  <div className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">{err}</div>
+                )}
+
+                <div className="flex gap-2 justify-center mb-6">
+                  {otp.map((d,i) => (
+                    <input key={`f-${i}`} ref={el=>{otpRefs.current[i]=el;}}
+                      value={d} maxLength={1} inputMode="numeric"
+                      className={`otp-box ${d?'filled':''}`}
+                      onChange={e=>{
+                        const val = e.target.value.replace(/\D/g,'').slice(-1);
+                        const n = [...otp]; n[i]=val; setOtp(n);
+                        if (val && i<5) otpRefs.current[i+1]?.focus();
+                      }}
+                      onKeyDown={e=>handleOtpKey(i,e)}
+                      onPaste={handlePaste}
+                      autoFocus={i===0} />
+                  ))}
+                </div>
+
+                <div className="space-y-3 mb-5 text-left">
+                  <Field icon={<Lock size={14}/>} type={showPw?'text':'password'} placeholder="New Password" value={fPw} onChange={setFPw}
+                    right={<button onClick={()=>setShowPw(!showPw)} className="text-s3 hover:text-s4 transition-colors">{showPw?<EyeOff size={14}/>:<Eye size={14}/>}</button>}/>
+                  <Field icon={<CheckCircle2 size={14}/>} type={showPw?'text':'password'} placeholder="Confirm Password" value={fPwConf} onChange={setFPwConf} onEnter={handleResetPassword}/>
+                </div>
+
+                <p className="text-xs text-s3 mb-4 font-mono">
+                  Code expires in <span className="text-s5 font-bold">{fmtTimer(otpTimer)}</span>
+                </p>
+
+                <AuthBtn loading={loading} onClick={handleResetPassword}>Reset Password</AuthBtn>
+
+                <button onClick={handleResend} disabled={!canResend}
+                  className="mt-3 w-full py-3 rounded-xl border border-[var(--border)] text-xs font-semibold text-s4 hover:bg-s1 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <RotateCcw size={12} />
+                  {canResend ? 'Resend Code' : `Resend in ${resendCD}s`}
+                </button>
+
+                <button onClick={()=>{setScreen('tabs');setErr('');setOtp(['','','','','','']);}}
+                  className="mt-3 text-xs text-s3 hover:text-s4 transition-colors">
+                  Cancel
                 </button>
               </motion.div>
             )}
