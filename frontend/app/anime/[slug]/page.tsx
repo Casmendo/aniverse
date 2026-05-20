@@ -10,6 +10,9 @@ import { useToast } from '@/components/Toast';
 import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useDownloadStore } from '@/store/downloadStore';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem } from '@capacitor/filesystem';
+import { downloadAPI } from '@/lib/api';
 
 export default function AnimePage({ params, searchParams }: { params: { slug:string }, searchParams: { title?: string } }) {
   const { slug } = params;
@@ -251,14 +254,50 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
     toast(added ? 'Added to watchlist' : 'Removed from watchlist','info');
   };
 
+  const doActualDownload = async (ep: ReturnType<typeof extractEpisode>) => {
+    try {
+      toast(`Preparing EP ${ep.num} for download...`, 'info');
+      const payload = { anime_slug: slug, episode_session: ep.id, anime_title: anime?.title, episode_number: ep.num, quality: '1080', audio: 'jpn' };
+      const { data } = await downloadAPI.createJob(payload);
+      const jobId = data?.job_id || data?.download_id || data?.id || data?.job?.id || data?.jobId;
+      if (!jobId) throw new Error('Failed to create job');
+
+      const start = Date.now();
+      let fileUrl = '';
+      while (Date.now() - start < 120000) {
+        const { data: st } = await downloadAPI.getJobStatus(jobId);
+        const status = String(st?.status || st?.state || '').toLowerCase();
+        if (['done', 'finished', 'completed'].includes(status)) {
+          fileUrl = await downloadAPI.getJobFile(jobId);
+          break;
+        }
+        if (['failed', 'error'].includes(status)) throw new Error('Download failed');
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if (!fileUrl) throw new Error('Timeout');
+      
+      if (Capacitor.isNativePlatform()) {
+        const status = await Filesystem.requestPermissions();
+        if (status.publicStorage !== 'granted') throw new Error('Storage permission denied');
+      }
+      window.location.assign(fileUrl);
+      
+      if (anime) {
+        await addDownload({
+          anime_slug: slug, anime_title: anime.title, anime_cover: anime.cover,
+          episode_num: ep.num, episode_id: ep.id, episode_title: ep.title,
+        }, !!user);
+      }
+      toast(`Downloading EP ${ep.num}...`, 'success');
+      await new Promise(r => setTimeout(r, 1500));
+    } catch(e: any) {
+      toast(`Error on EP ${ep.num}: ${e.message}`, 'error');
+    }
+  };
+
   const saveEp = async (ep: ReturnType<typeof extractEpisode>) => {
     if (!anime) return;
-    const r = await addDownload({
-      anime_slug:slug, anime_title:anime.title, anime_cover:anime.cover,
-      episode_num:ep.num, episode_id:ep.id, episode_title:ep.title,
-    }, !!user);
-    if (r.duplicate) toast(`EP ${ep.num} already saved`,'info');
-    else if (r.success) toast(`EP ${ep.num} saved!`,'success');
+    await doActualDownload(ep);
   };
 
   const toggleEpSelection = (id: string) => {
@@ -268,15 +307,12 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
   const downloadSelected = async () => {
     if (!anime) return;
     const epsToDownload = episodes.filter(ep => selectedEpisodes.includes(ep.id));
-    for (const ep of epsToDownload) {
-      await addDownload({
-        anime_slug:slug, anime_title:anime.title, anime_cover:anime.cover,
-        episode_num:ep.num, episode_id:ep.id, episode_title:ep.title,
-      }, !!user);
-    }
-    toast(`Started downloading ${epsToDownload.length} episodes!`, 'success');
     setShowDownloadModal(false);
     setSelectedEpisodes([]);
+    for (const ep of epsToDownload) {
+      await doActualDownload(ep);
+    }
+    toast('All selected downloads processed!', 'success');
   };
 
   const stars = (score:number) => Array.from({length:5},(_,i)=>(
