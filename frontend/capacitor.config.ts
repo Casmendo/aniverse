@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     // Load the live Vercel site in the native WebView
-    url: 'https://ani-verse-mauve.vercel.app',
+    url: 'https://aniiverse.name.ng',
     cleartext: true,
     androidScheme: 'https',
   },
