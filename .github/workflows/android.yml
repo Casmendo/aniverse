@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NEXT_PUBLIC_API_URL: https://ayoz1.ayohost.site:3003
+      NEXT_PUBLIC_API_URL: https://api.aniiverse.name.ng
 
     steps:
       - uses: actions/checkout@v4
