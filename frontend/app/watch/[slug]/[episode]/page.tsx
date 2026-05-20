@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Share2, ChevronLeft, List, X } from 'lucide-react';
+import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, BookmarkCheck, Share2, ChevronLeft, List, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,6 +43,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [selectedAudio, setSelectedAudio] = useState('jpn');
   const [relatedSeries, setRelatedSeries] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [selectedEpisodes, setSelectedEpisodes] = useState<string[]>([]);
 
   // Smart base title extraction for related series search
   const getBaseTitle = (title: string) => title
@@ -210,6 +212,34 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     trackEpisode(slug, anime.title, anime.cover, currentEp.id, currentEp.num, currentEp.title, pct);
   }, [anime, currentEp, slug, trackEpisode]);
 
+  const toggleEpSelection = (id: string) => {
+    setSelectedEpisodes(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
+  };
+
+  const downloadSelected = async () => {
+    if (!anime) return;
+    const epsToDownload = episodes.filter(ep => selectedEpisodes.includes(ep.id));
+    for (const ep of epsToDownload) {
+      await addDownload({
+        anime_slug:slug, anime_title:anime.title, anime_cover:anime.cover,
+        episode_num:ep.num, episode_id:ep.id, episode_title:ep.title,
+      }, !!user);
+    }
+    toast(`Started downloading ${epsToDownload.length} episodes!`, 'success');
+    setShowDownloadModal(false);
+    setSelectedEpisodes([]);
+  };
+
+  const saveEp = async (ep: ReturnType<typeof extractEpisode>) => {
+    if (!anime) return;
+    const r = await addDownload({
+      anime_slug:slug, anime_title:anime.title, anime_cover:anime.cover,
+      episode_num:ep.num, episode_id:ep.id, episode_title:ep.title,
+    }, !!user);
+    if (r.duplicate) toast(`EP ${ep.num} already saved`,'info');
+    else if (r.success) toast(`EP ${ep.num} saved!`,'success');
+  };
+
   const [downloadProgress, setDownloadProgress] = useState<{ downloading: boolean; progress: number; name: string }>({
     downloading: false,
     progress: 0,
@@ -330,7 +360,14 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}>
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-                <span className="font-display font-bold text-sm text-s4">EPISODES</span>
+                <span className="font-display font-bold text-sm text-s4 flex items-center gap-2">
+                  EPISODES
+                  {Math.max(anime?.episodes || 0, episodes.length) > 0 && (
+                    <span className="text-s3 text-xs font-normal bg-s2 px-2 py-0.5 rounded">
+                      {Math.max(anime?.episodes || 0, episodes.length) === 1 ? '1 Episode' : `1 - ${Math.max(anime?.episodes || 0, episodes.length)}`}
+                    </span>
+                  )}
+                </span>
                 <button onClick={() => setShowEpList(false)}><X size={16} className="text-s3" /></button>
               </div>
               <EpList episodes={episodes} current={currentEp} onSelect={switchEp} />
@@ -417,11 +454,10 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center gap-2 md:gap-3 shrink-0 mt-2 md:mt-0">
-                  <button onClick={downloadCurrent}
-                    disabled={downloadProgress.downloading}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-s1 border border-[var(--border)] text-sm font-bold text-s4 hover:text-s5 hover:bg-s2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                  <button onClick={() => setShowDownloadModal(true)}
+                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-s1 border border-[var(--border)] text-sm font-bold text-s4 hover:text-s5 hover:bg-s2 transition-all shadow-sm">
                     <Download size={16} />
-                    {downloadProgress.downloading ? 'Downloading...' : 'Save Ep'}
+                    Download EP
                   </button>
                   {nextEp && (
                     <button onClick={() => switchEp(nextEp)}
@@ -521,13 +557,82 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
 
         {/* Desktop episode sidebar */}
         <aside className="hidden lg:flex flex-col w-72 border-l border-[var(--border)] bg-s1/80">
-          <div className="px-4 py-3 border-b border-[var(--border)] shrink-0">
+          <div className="px-4 py-3 border-b border-[var(--border)] shrink-0 flex items-center justify-between">
             <span className="font-display font-bold text-sm text-s4">EPISODES</span>
-            {episodes.length > 0 && <span className="text-s3 text-xs ml-2">({episodes.length})</span>}
+            {Math.max(anime?.episodes || 0, episodes.length) > 0 && (
+              <span className="text-s3 text-[10px] font-bold bg-s2 px-2 py-0.5 rounded border border-[var(--border)]">
+                {Math.max(anime?.episodes || 0, episodes.length) === 1 ? '1 EP' : `1 - ${Math.max(anime?.episodes || 0, episodes.length)}`}
+              </span>
+            )}
           </div>
           <EpList episodes={episodes} current={currentEp} onSelect={switchEp} />
         </aside>
       </div>
+
+      {/* Download Modal */}
+      <AnimatePresence>
+        {showDownloadModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowDownloadModal(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-s1 border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+                <h3 className="font-display font-bold text-lg text-s5">Download Episodes</h3>
+                <button onClick={() => setShowDownloadModal(false)} className="text-s3 hover:text-s5"><X size={20} /></button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-2 ep-scroll">
+                {/* Active Episode Direct Download using the stream URL logic */}
+                {currentEp && (
+                  <div className="mb-4 pb-4 border-b border-[var(--border)]">
+                    <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2">Direct Download (MP4)</p>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-s2/50 border border-[var(--border)]">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-s5">EP {currentEp.num}</div>
+                        <div className="text-sm text-s4 line-clamp-1">{currentEp.title}</div>
+                      </div>
+                      <button onClick={downloadCurrent} disabled={downloadProgress.downloading}
+                        className="p-2.5 rounded-xl bg-s5 text-white hover:bg-s4 transition-all disabled:opacity-50">
+                        {downloadProgress.downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2">Save to Library</p>
+                {episodes.map(ep => {
+                  const isSelected = selectedEpisodes.includes(ep.id);
+                  return (
+                    <div key={ep.id} onClick={() => toggleEpSelection(ep.id)}
+                      className={`flex items-center gap-3 p-3 mb-1 rounded-xl cursor-pointer border transition-all ${isSelected ? 'bg-s5/10 border-s5/30' : 'border-transparent hover:bg-s2'}`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSelected ? 'bg-s5 border-s5' : 'border-s3'}`}>
+                        {isSelected && <BookmarkCheck size={12} className="text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xs font-bold ${isSelected ? 'text-s5' : 'text-s4'}`}>EP {ep.num}</div>
+                        <div className="text-sm text-s5 line-clamp-1 font-medium">{ep.title}</div>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); saveEp(ep); }}
+                        className="p-2.5 rounded-xl bg-s2 text-s4 hover:bg-s5 hover:text-white transition-all">
+                        <Bookmark size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedEpisodes.length > 0 && (
+                <div className="p-4 border-t border-[var(--border)] bg-s2">
+                  <button onClick={downloadSelected}
+                    className="w-full py-3.5 rounded-xl bg-s5 text-white font-bold hover:bg-s4 transition-colors flex items-center justify-center gap-2">
+                    <Bookmark size={18} /> Save {selectedEpisodes.length} Selected
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
