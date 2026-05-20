@@ -31,6 +31,9 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
   const [cmtPage,     setCmtPage]     = useState(1);
   const [cmtText,     setCmtText]     = useState('');
   const [postingCmt,  setPostingCmt]  = useState(false);
+  const [replyingToId,setReplyingToId]= useState<number | null>(null);
+  const [replyText,   setReplyText]   = useState('');
+  const [postingReply,setPostingReply]= useState(false);
   const [loadingAnime,setLoadingAnime]= useState(true);
   const [loadingEps,  setLoadingEps]  = useState(true);
   const [expanded,    setExpanded]    = useState(false);
@@ -201,12 +204,42 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
     finally { setPostingCmt(false); }
   }
 
+  async function postReply(parentId: number) {
+    if (!user) { toast('Sign in to reply','warn'); router.push('/auth'); return; }
+    if (!replyText.trim()) return;
+    setPostingReply(true);
+    try {
+      await commentAPI.post(slug, replyText.trim(), parentId);
+      setReplyText('');
+      setReplyingToId(null);
+      await loadCmts(1, false);
+      toast('Reply posted!','success');
+    } catch(e:any) { toast(e.message,'error'); }
+    finally { setPostingReply(false); }
+  }
+
   async function deleteComment(id:number) {
     if (!confirm('Delete this comment?')) return;
     try {
       await commentAPI.delete(id);
-      setComments(p=>p.filter(c=>c.id!==id));
+      setComments(p => {
+        const isTopLevel = p.some(c => c.id === id);
+        if (isTopLevel) {
+          return p.filter(c => c.id !== id);
+        } else {
+          return p.map(c => {
+            if (c.replies) {
+              return {
+                ...c,
+                replies: c.replies.filter((r: any) => r.id !== id)
+              };
+            }
+            return c;
+          });
+        }
+      });
       setTotalCmts(p=>Math.max(0,p-1));
+      toast('Comment deleted!','success');
     } catch {}
   }
 
@@ -412,27 +445,130 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
             </p>
           )}
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {comments.map(c => (
-              <div key={c.id} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-xs shrink-0 text-s5">
-                  {c.username[0].toUpperCase()}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-bold text-s5">{c.username}</span>
-                    <span className="text-[10px] text-s3">{c.time}</span>
-                    {user?.username===c.username && (
-                      <button onClick={()=>deleteComment(c.id)} className="ml-auto text-s3 hover:text-red-400 transition-colors">
-                        <Trash2 size={12}/>
-                      </button>
-                    )}
+              <div key={c.id} className="relative group/thread">
+                {/* Vertical thread line - only render if there are replies */}
+                {c.replies && c.replies.length > 0 && (
+                  <div className="absolute left-[15px] top-[36px] bottom-[20px] w-[1px] bg-gradient-to-b from-[var(--border)] to-transparent opacity-40 pointer-events-none" />
+                )}
+                
+                {/* Comment card */}
+                <div className="flex gap-3">
+                  {/* Avatar */}
+                  <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-xs shrink-0 text-s5 relative z-10">
+                    {c.username[0].toUpperCase()}
                   </div>
-                  <p className="text-sm text-s4 mt-1 leading-relaxed">{c.text}</p>
+                  
+                  {/* Comment Body */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm font-bold text-s5">{c.username}</span>
+                      <span className="text-[10px] text-s3">{c.time}</span>
+                      {user?.username === c.username && (
+                        <button onClick={() => deleteComment(c.id)} className="ml-auto text-s3 hover:text-red-400 transition-colors">
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-sm text-s4 mt-1 leading-relaxed break-words">{c.text}</p>
+                    
+                    {/* Action Buttons (Reply) */}
+                    <div className="flex items-center gap-4 mt-2">
+                      {user && (
+                        <button
+                          onClick={() => {
+                            setReplyingToId(replyingToId === c.id ? null : c.id);
+                            setReplyText('');
+                          }}
+                          className="text-[11px] font-semibold text-s3 hover:text-s5 transition-colors flex items-center gap-1"
+                        >
+                          Reply
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Inline Reply Input */}
+                    <AnimatePresence>
+                      {replyingToId === c.id && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-3 overflow-hidden"
+                        >
+                          <div className="flex gap-2 items-start pl-2">
+                            <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 mt-1">
+                              {user?.username[0].toUpperCase()}
+                            </div>
+                            <div className="flex-1 flex flex-col gap-2">
+                              <input
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    postReply(c.id);
+                                  }
+                                }}
+                                maxLength={1000}
+                                placeholder={`Reply to ${c.username}...`}
+                                className="w-full px-3 py-2 rounded-lg bg-s2 border border-[var(--border)] text-xs text-s5 outline-none focus:border-[var(--border-hi)] transition-colors placeholder:text-s3"
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => setReplyingToId(null)}
+                                  className="px-2.5 py-1 rounded-md text-[10px] font-semibold text-s4 hover:bg-s2 transition-all"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => postReply(c.id)}
+                                  disabled={postingReply || !replyText.trim()}
+                                  className="px-3 py-1 rounded-md bg-s5 text-s0 text-[10px] font-bold disabled:opacity-40 transition-all flex items-center gap-1"
+                                >
+                                  Send
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
+
+                {/* Nested Replies */}
+                {c.replies && c.replies.length > 0 && (
+                  <div className="pl-11 mt-3 space-y-3">
+                    {c.replies.map((r: any) => (
+                      <div key={r.id} className="flex gap-3 relative group/reply">
+                        {/* L-shaped line connecting reply avatar to the thread line */}
+                        <div className="absolute -left-[29px] -top-[6px] w-[18px] h-[18px] border-l border-b border-[var(--border)] opacity-30 rounded-bl-md pointer-events-none" />
+                        
+                        <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 relative z-10">
+                          {r.username[0].toUpperCase()}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-xs font-bold text-s5">{r.username}</span>
+                            <span className="text-[9px] text-s3">{r.time}</span>
+                            {(user?.username === r.username || user?.username === c.username) && (
+                              <button onClick={() => deleteComment(r.id)} className="ml-auto text-s3 hover:text-red-400 transition-colors">
+                                <Trash2 size={10} />
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-xs text-s4 mt-0.5 leading-relaxed break-words">{r.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
-            {comments.length===0 && <p className="text-s3 text-sm">Be the first to comment!</p>}
+            {comments.length === 0 && <p className="text-s3 text-sm">Be the first to comment!</p>}
           </div>
           {comments.length<totalCmts && (
             <button onClick={()=>loadCmts(cmtPage+1,true)}

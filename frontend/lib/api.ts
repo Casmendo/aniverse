@@ -94,7 +94,7 @@ export const authAPI = {
 // ── Comments (backend) ─────────────────────────────────────────────────────
 export const commentAPI = {
   get:    (slug: string, page = 1) => BACKEND.get(`/api/comments/${slug}`, { params: { page } }),
-  post:   (slug: string, text: string) => BACKEND.post(`/api/comments/${slug}`, { text }),
+  post:   (slug: string, text: string, parent_id?: number) => BACKEND.post(`/api/comments/${slug}`, { text, parent_id }),
   delete: (id: number)               => BACKEND.delete(`/api/comments/delete/${id}`),
 };
 

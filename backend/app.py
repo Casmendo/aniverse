@@ -104,9 +104,11 @@ class Comment(db.Model):
     user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     text       = db.Column(db.String(1000), nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    parent_id  = db.Column(db.Integer, db.ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
+
     def to_dict(self):
         return {'id':self.id,'username':self.author.username,'text':self.text,
-                'time':self.created_at.strftime('%d %b %Y, %H:%M')}
+                'time':self.created_at.strftime('%d %b %Y, %H:%M'),'parent_id':self.parent_id}
 
 class Download(db.Model):
     __tablename__ = 'downloads'
@@ -927,25 +929,56 @@ def get_user():
 def get_comments(slug):
     if not SLUG_RE.match(slug): return jsonify({'error':'Invalid'}),400
     page=request.args.get('page',1,type=int)
-    q=Comment.query.filter_by(anime_slug=slug).order_by(Comment.created_at.desc()).paginate(page=page,per_page=20,error_out=False)
-    return jsonify({'comments':[c.to_dict() for c in q.items],'total':q.total,'pages':q.pages,'current_page':q.page})
+    # Fetch only top-level comments (where parent_id is NULL)
+    q=Comment.query.filter_by(anime_slug=slug,parent_id=None).order_by(Comment.created_at.desc()).paginate(page=page,per_page=20,error_out=False)
+    
+    # For each top-level comment, get replies ordered chronologically
+    comments_list = []
+    for c in q.items:
+        c_dict = c.to_dict()
+        replies = Comment.query.filter_by(parent_id=c.id).order_by(Comment.created_at.asc()).all()
+        c_dict['replies'] = [r.to_dict() for r in replies]
+        comments_list.append(c_dict)
+        
+    return jsonify({'comments':comments_list,'total':q.total,'pages':q.pages,'current_page':q.page})
 
 @app.route('/api/comments/<slug>',methods=['POST'])
 @auth_required
-@limiter.limit('30 per hour')
+@limiter.limit('60 per hour')
 def post_comment(slug):
     if not SLUG_RE.match(slug): return jsonify({'error':'Invalid'}),400
     d=request.get_json(silent=True) or {}; text=d.get('text','').strip()
     if not text: return jsonify({'error':'Empty comment'}),400
     if len(text)>1000: return jsonify({'error':'Too long'}),400
-    u=_me(); c=Comment(anime_slug=slug,user_id=u.id,text=text); db.session.add(c); db.session.commit()
+    
+    parent_id = d.get('parent_id')
+    if parent_id:
+        parent = Comment.query.filter_by(id=parent_id,anime_slug=slug).first()
+        if not parent: return jsonify({'error':'Parent comment not found'}),404
+        # Flatten replies: replies to replies will be attached to top-level comment
+        actual_parent_id = parent.parent_id if parent.parent_id else parent.id
+    else:
+        actual_parent_id = None
+        
+    u=_me(); c=Comment(anime_slug=slug,user_id=u.id,text=text,parent_id=actual_parent_id)
+    db.session.add(c); db.session.commit()
     return jsonify({'success':True,'comment':c.to_dict()}),201
 
 @app.route('/api/comments/delete/<int:cid>',methods=['DELETE'])
 @auth_required
 def delete_comment(cid):
     u=_me(); c=Comment.query.get_or_404(cid)
-    if c.user_id!=u.id: return jsonify({'error':'Not yours'}),403
+    # Check ownership of the comment OR check if it is a reply under user's top-level comment
+    is_owner = (c.user_id == u.id)
+    is_parent_owner = False
+    if c.parent_id:
+        parent = Comment.query.get(c.parent_id)
+        if parent and parent.user_id == u.id:
+            is_parent_owner = True
+            
+    if not (is_owner or is_parent_owner):
+        return jsonify({'error':'Not yours'}),403
+        
     db.session.delete(c); db.session.commit(); return jsonify({'success':True})
 
 # ── Downloads ──────────────────────────────────────────────────────────────────
@@ -1038,6 +1071,12 @@ def update_history():
     db.session.commit()
     return jsonify({'success':True,'history':h.to_dict()})
 
+@app.route('/api/history/clear',methods=['DELETE'])
+@auth_required
+def clear_history():
+    u=_me(); History.query.filter_by(user_id=u.id).delete(); db.session.commit()
+    return jsonify({'success':True})
+
 @app.route('/api/history/<slug>',methods=['DELETE'])
 @auth_required
 def delete_history(slug):
@@ -1057,6 +1096,24 @@ def e500(e): return jsonify({'error':'Server error'}),500
 
 with app.app_context():
     db.create_all()
+    # Dynamic DB update: add parent_id column to comments table if not exists
+    try:
+        from sqlalchemy import text
+        db.session.execute(text("ALTER TABLE comments ADD COLUMN parent_id INTEGER REFERENCES comments(id) ON DELETE CASCADE"))
+        db.session.commit()
+        app.logger.info("Database migration: added parent_id column to comments table")
+    except Exception:
+        db.session.rollback()
+        
+    # Dynamic DB update: add avatar_url column to users table if not exists
+    try:
+        from sqlalchemy import text
+        db.session.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(2048)"))
+        db.session.commit()
+        app.logger.info("Database migration: added avatar_url column to users table")
+    except Exception:
+        db.session.rollback()
+        
     app.logger.info('AniVerse DB ready')
 
 if __name__ == '__main__':
