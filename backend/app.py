@@ -30,6 +30,7 @@ app.config.update(
     SESSION_COOKIE_SAMESITE        = 'None',
     SESSION_COOKIE_SECURE          = os.environ.get('FLASK_ENV') == 'production',
     PERMANENT_SESSION_LIFETIME     = 60 * 60 * 24 * 30,
+    RESEND_API_KEY                 = os.environ.get('RESEND_API_KEY', 're_cPwhq6Wg_4Zs3vt5mfLYLFMSv2DRk34so'),
     MAIL_SERVER                    = os.environ.get('MAIL_SERVER', 'smtp.gmail.com'),
     MAIL_PORT                      = int(os.environ.get('MAIL_PORT', 587)),
     MAIL_USE_TLS                   = True,
@@ -42,7 +43,7 @@ API_BASE     = os.environ.get('API_BASE', 'https://animapi.ayohost.site')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 CORS(app,
-     origins=[FRONTEND_URL,'http://localhost:3000','http://127.0.0.1:3000',
+     origins=[FRONTEND_URL, FRONTEND_URL.replace('https://', 'https://www.'), 'http://localhost:3000','http://127.0.0.1:3000',
               'http://localhost:3001','http://127.0.0.1:3001',
               'http://localhost', 'capacitor://localhost'],
      supports_credentials=True,
@@ -244,86 +245,116 @@ def _validate_pw(pw):
     if not re.search(r'[0-9]',pw): return 'Needs 1 number'
 
 def _send_otp(email, username, otp):
-    if not app.config.get('MAIL_USERNAME'):
+    if not app.config.get('RESEND_API_KEY'):
         app.logger.info(f'\n{"─"*44}\nOTP for {email} ({username}): {otp}\n{"─"*44}')
         return
-    msg = Message(
-        subject="Your AniVerse OTP",
-        recipients=[email],
-        html=f"""
-        <div style="font-family: 'Exo 2', sans-serif; background-color: #06141B; padding: 40px 20px; color: #fff; text-align: center; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(83, 198, 193, 0.2);">
-            <div style="margin-bottom: 20px;">
-                <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">
-                    <span style="color: #53C6C1;">Ani</span>Verse
-                </h1>
-                <p style="color: #9BA8AB; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Enter the Multiverse</p>
+        
+    html_content = f"""
+    <div style="font-family: 'Exo 2', sans-serif; background-color: #06141B; padding: 40px 20px; color: #fff; text-align: center; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(83, 198, 193, 0.2);">
+        <div style="margin-bottom: 20px;">
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">
+                <span style="color: #53C6C1;">Ani</span>Verse
+            </h1>
+            <p style="color: #9BA8AB; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Enter the Multiverse</p>
+        </div>
+        
+        <div style="background-color: rgba(170, 217, 214, 0.05); border: 1px solid rgba(83, 198, 193, 0.2); border-radius: 12px; padding: 30px; margin: 20px 0;">
+            <h2 style="color: #fff; font-size: 20px; margin-top: 0;">Welcome, <span style="color: #53C6C1;">{username}</span>!</h2>
+            <p style="color: #CCD0CF; font-size: 14px; margin-bottom: 20px;">Use the following verification code to access your account.</p>
+            
+            <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #53C6C1; background: rgba(83, 198, 193, 0.1); padding: 15px 20px; display: inline-block; border-radius: 8px; border: 1px dashed rgba(83, 198, 193, 0.5);">
+                {otp}
             </div>
             
-            <div style="background-color: rgba(170, 217, 214, 0.05); border: 1px solid rgba(83, 198, 193, 0.2); border-radius: 12px; padding: 30px; margin: 20px 0;">
-                <h2 style="color: #fff; font-size: 20px; margin-top: 0;">Welcome, <span style="color: #53C6C1;">{username}</span>!</h2>
-                <p style="color: #CCD0CF; font-size: 14px; margin-bottom: 20px;">Use the following verification code to access your account.</p>
-                
-                <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #53C6C1; background: rgba(83, 198, 193, 0.1); padding: 15px 20px; display: inline-block; border-radius: 8px; border: 1px dashed rgba(83, 198, 193, 0.5);">
-                    {otp}
-                </div>
-                
-                <p style="font-size: 12px; color: #e05d5d; margin-top: 20px; font-weight: bold;">
-                    <span style="font-size: 14px;">⏱</span> This code expires in 1 minute.
-                </p>
-            </div>
-            
-            <p style="font-size: 11px; color: #4A5C6A; margin-bottom: 0;">
-                If you didn't request this code, please ignore this email.<br/>
-                &copy; 2026 AniVerse. All rights reserved.
+            <p style="font-size: 12px; color: #e05d5d; margin-top: 20px; font-weight: bold;">
+                <span style="font-size: 14px;">⏱</span> This code expires in 5 minutes.
             </p>
         </div>
-        """
-    )
-    try:
-        mail.send(msg)
-    except Exception as e:
-        app.logger.error(f"Failed to send OTP to {email}: {e}")
+        
+        <p style="font-size: 11px; color: #4A5C6A; margin-bottom: 0;">
+            If you didn't request this code, please ignore this email.<br/>
+            &copy; 2026 AniVerse. All rights reserved.
+        </p>
+    </div>
+    """
+    
+    import threading
+    import requests
+    
+    def send_async_email(app_context, html_body):
+        with app_context:
+            try:
+                api_key = app.config.get('RESEND_API_KEY')
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "from": "AniVerse <noreply@aniiverse.name.ng>",
+                    "to": [email],
+                    "subject": "Your AniVerse OTP",
+                    "html": html_body
+                }
+                res = requests.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
+                if res.status_code >= 400:
+                    app.logger.error(f"Resend API Error: {res.text}")
+            except Exception as e:
+                app.logger.error(f"Failed to send OTP to {email}: {e}")
+                
+    threading.Thread(target=send_async_email, args=(app.app_context(), html_content)).start()
 
 def _send_reset_email(email, username, code):
-    if not app.config.get('MAIL_USERNAME'):
+    if not app.config.get('RESEND_API_KEY'):
         app.logger.info(f'\n{"─"*44}\nPassword Reset for {email} ({username}): {code}\n{"─"*44}')
         return
-    msg = Message(
-        subject="AniVerse Password Reset",
-        recipients=[email],
-        html=f"""
-        <div style="font-family: 'Exo 2', sans-serif; background-color: #06141B; padding: 40px 20px; color: #fff; text-align: center; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(83, 198, 193, 0.2);">
-            <div style="margin-bottom: 20px;">
-                <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">
-                    <span style="color: #53C6C1;">Ani</span>Verse
-                </h1>
-                <p style="color: #9BA8AB; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Account Recovery</p>
+        
+    html_content = f"""
+    <div style="font-family: 'Exo 2', sans-serif; background-color: #06141B; padding: 40px 20px; color: #fff; text-align: center; border-radius: 12px; max-width: 500px; margin: 0 auto; border: 1px solid rgba(83, 198, 193, 0.2);">
+        <div style="margin-bottom: 20px;">
+            <h1 style="color: #fff; margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -1px;">
+                <span style="color: #53C6C1;">Ani</span>Verse
+            </h1>
+            <p style="color: #9BA8AB; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-top: 5px;">Account Recovery</p>
+        </div>
+        
+        <div style="background-color: rgba(170, 217, 214, 0.05); border: 1px solid rgba(83, 198, 193, 0.2); border-radius: 12px; padding: 30px; margin: 20px 0;">
+            <h2 style="color: #fff; font-size: 20px; margin-top: 0;">Hi, <span style="color: #53C6C1;">{username}</span>!</h2>
+            <p style="color: #CCD0CF; font-size: 14px; margin-bottom: 20px;">You requested a password reset. Use the code below to reset your password.</p>
+            
+            <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #53C6C1; background: rgba(83, 198, 193, 0.1); padding: 15px 20px; display: inline-block; border-radius: 8px; border: 1px dashed rgba(83, 198, 193, 0.5);">
+                {code}
             </div>
             
-            <div style="background-color: rgba(170, 217, 214, 0.05); border: 1px solid rgba(83, 198, 193, 0.2); border-radius: 12px; padding: 30px; margin: 20px 0;">
-                <h2 style="color: #fff; font-size: 20px; margin-top: 0;">Hi, <span style="color: #53C6C1;">{username}</span>!</h2>
-                <p style="color: #CCD0CF; font-size: 14px; margin-bottom: 20px;">You requested a password reset. Use the code below to reset your password.</p>
-                
-                <div style="font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #53C6C1; background: rgba(83, 198, 193, 0.1); padding: 15px 20px; display: inline-block; border-radius: 8px; border: 1px dashed rgba(83, 198, 193, 0.5);">
-                    {code}
-                </div>
-                
-                <p style="font-size: 12px; color: #e05d5d; margin-top: 20px; font-weight: bold;">
-                    <span style="font-size: 14px;">⏱</span> This code expires in 10 minutes.
-                </p>
-            </div>
-            
-            <p style="font-size: 11px; color: #4A5C6A; margin-bottom: 0;">
-                If you didn't request a password reset, you can safely ignore this email.<br/>
-                &copy; 2026 AniVerse. All rights reserved.
+            <p style="font-size: 12px; color: #e05d5d; margin-top: 20px; font-weight: bold;">
+                <span style="font-size: 14px;">⏱</span> This code expires in 10 minutes.
             </p>
         </div>
-        """
-    )
-    try:
-        mail.send(msg)
-    except Exception as e:
-        app.logger.error(f"Failed to send reset email to {email}: {e}")
+        
+        <p style="font-size: 11px; color: #4A5C6A; margin-bottom: 0;">
+            If you didn't request a password reset, you can safely ignore this email.<br/>
+            &copy; 2026 AniVerse. All rights reserved.
+        </p>
+    </div>
+    """
+    
+    import threading
+    import requests
+    
+    def send_async_email(app_context, html_body):
+        with app_context:
+            try:
+                api_key = app.config.get('RESEND_API_KEY')
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                payload = {
+                    "from": "AniVerse <noreply@aniiverse.name.ng>",
+                    "to": [email],
+                    "subject": "AniVerse Password Reset",
+                    "html": html_body
+                }
+                res = requests.post("https://api.resend.com/emails", json=payload, headers=headers, timeout=10)
+                if res.status_code >= 400:
+                    app.logger.error(f"Resend API Error: {res.text}")
+            except Exception as e:
+                app.logger.error(f"Failed to send reset email to {email}: {e}")
+                
+    threading.Thread(target=send_async_email, args=(app.app_context(), html_content)).start()
 
 # ── Health ─────────────────────────────────────────────────────────────────────
 
@@ -701,9 +732,9 @@ def signup():
     if rec:
         if now - rec.last_sent < 30:
             return jsonify({'error':f'Please wait {int(30 - (now - rec.last_sent))}s to resend'}),429
-        rec.otp_hash=_hash(otp);rec.expires_at=now+60;rec.attempts=0;rec.last_sent=now;rec.username=username;rec.password_hash=pw_hash
+        rec.otp_hash=_hash(otp);rec.expires_at=now+300;rec.attempts=0;rec.last_sent=now;rec.username=username;rec.password_hash=pw_hash
     else:
-        rec=OTPRecord(email=email,otp_hash=_hash(otp),expires_at=now+60,username=username,password_hash=pw_hash,last_sent=now)
+        rec=OTPRecord(email=email,otp_hash=_hash(otp),expires_at=now+300,username=username,password_hash=pw_hash,last_sent=now)
         db.session.add(rec)
     db.session.commit()
     _send_otp(email,username,otp)
@@ -756,7 +787,7 @@ def resend_otp():
         return jsonify({'error':f'Wait {int(30-(now-rec.last_sent))}s'}),429
         
     otp=str(random.randint(100000,999999))
-    rec.otp_hash=_hash(otp);rec.expires_at=now+60;rec.attempts=0;rec.last_sent=now
+    rec.otp_hash=_hash(otp);rec.expires_at=now+300;rec.attempts=0;rec.last_sent=now
     db.session.commit(); _send_otp(email,rec.username,otp)
     
     resp={'success':True}

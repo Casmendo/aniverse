@@ -41,6 +41,9 @@ export default function VideoPlayer({
   const [muted,      setMuted]      = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [showCtrl,   setShowCtrl]   = useState(true);
+  const [brightness, setBrightness] = useState(1);
+  const [resizeMode, setResizeMode] = useState<'contain' | 'cover' | 'fill'>('contain');
+  const touchStartRef = useRef<{ x: number; y: number; type: 'left' | 'right' | null }>({ x: 0, y: 0, type: null });
   const [showSettings, setShowSettings] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [skipAnim,   setSkipAnim]   = useState<'fwd'|'bck'|null>(null);
@@ -99,8 +102,23 @@ export default function VideoPlayer({
 
   // ── Fullscreen ─────────────────────────────────────────────────────────────
   const toggleFS = useCallback(() => {
-    if (!document.fullscreenElement) containerRef.current?.requestFullscreen();
-    else document.exitFullscreen();
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().then(() => {
+        try {
+          if (screen.orientation && (screen.orientation as any).lock) {
+            (screen.orientation as any).lock('landscape').catch(() => {});
+          }
+        } catch(e) {}
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        try {
+          if (screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+          }
+        } catch(e) {}
+      });
+    }
   }, []);
 
   useEffect(() => {
@@ -139,6 +157,37 @@ export default function VideoPlayer({
       tapCount.current = 0;
     }, 280);
   }, [skipTime, showControls]);
+
+  const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right') => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, type };
+  };
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    if (!start.type) return;
+    const dy = start.y - e.touches[0].clientY; // positive when swiping up
+    // Need a threshold to distinguish from a tap
+    if (Math.abs(dy) > 5) {
+      if (start.type === 'left') {
+        setBrightness(b => Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03))));
+      } else {
+        const v = videoRef.current;
+        if (v) {
+          const newVol = Math.max(0, Math.min(1, v.volume + (dy > 0 ? 0.03 : -0.03)));
+          v.volume = newVol;
+          setVolume(newVol);
+        }
+      }
+      // update startY to make it continuous
+      touchStartRef.current.y = e.touches[0].clientY;
+      // Show controls to provide visual feedback (especially for volume)
+      showControls();
+    }
+  }, [showControls]);
+
+  const handleTouchEnd = () => {
+    touchStartRef.current.type = null;
+  };
 
   // ── Load HLS script dynamically then attach video ─────────────────────────
   const attachHls = useCallback((url: string) => {
@@ -264,11 +313,19 @@ export default function VideoPlayer({
       style={{ cursor: showCtrl ? 'default' : 'none' }}
     >
       {/* Video element — always mounted, never recreated */}
-      <video ref={videoRef} className="w-full h-full absolute inset-0 z-0 bg-black" playsInline />
+      <video ref={videoRef} className="w-full h-full absolute inset-0 z-0 bg-black" playsInline style={{ filter: `brightness(${brightness})`, objectFit: resizeMode }} />
 
       {/* Mobile tap zones */}
-      <div className="absolute top-0 left-0 bottom-14 w-1/3 z-10" onClick={() => handleTap('left')} />
-      <div className="absolute top-0 right-0 bottom-14 w-1/3 z-10" onClick={() => handleTap('right')} />
+      <div className="absolute top-0 left-0 bottom-14 w-1/3 z-10" 
+        onClick={() => handleTap('left')}
+        onTouchStart={e => handleTouchStart(e, 'left')}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd} />
+      <div className="absolute top-0 right-0 bottom-14 w-1/3 z-10" 
+        onClick={() => handleTap('right')}
+        onTouchStart={e => handleTouchStart(e, 'right')}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd} />
 
       {/* Center click area — single tap = play/pause flash */}
       <div className="absolute top-0 left-1/3 right-1/3 bottom-14 z-10 flex items-center justify-center"
@@ -373,6 +430,13 @@ export default function VideoPlayer({
                   </div>
                 </div>
               )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white/50 uppercase tracking-widest">Resize</span>
+                <button onClick={() => setResizeMode(m => m === 'contain' ? 'cover' : m === 'cover' ? 'fill' : 'contain')}
+                  className="px-2 py-1 rounded text-[10px] font-bold uppercase transition-all bg-white/5 text-white hover:bg-white/10">
+                  {resizeMode}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

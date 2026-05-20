@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animeAPI, commentAPI } from '@/lib/api';
 import { extractAnimeData, extractEpisode } from '@/lib/utils';
@@ -39,6 +39,8 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
   const [expanded,    setExpanded]    = useState(false);
   const [relatedSeries, setRelatedSeries] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [selectedEpisodes, setSelectedEpisodes] = useState<string[]>([]);
 
   // Smart base title extraction for related series search
   const getBaseTitle = (title: string) => title
@@ -259,6 +261,24 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
     else if (r.success) toast(`EP ${ep.num} saved!`,'success');
   };
 
+  const toggleEpSelection = (id: string) => {
+    setSelectedEpisodes(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
+  };
+
+  const downloadSelected = async () => {
+    if (!anime) return;
+    const epsToDownload = episodes.filter(ep => selectedEpisodes.includes(ep.id));
+    for (const ep of epsToDownload) {
+      await addDownload({
+        anime_slug:slug, anime_title:anime.title, anime_cover:anime.cover,
+        episode_num:ep.num, episode_id:ep.id, episode_title:ep.title,
+      }, !!user);
+    }
+    toast(`Started downloading ${epsToDownload.length} episodes!`, 'success');
+    setShowDownloadModal(false);
+    setSelectedEpisodes([]);
+  };
+
   const stars = (score:number) => Array.from({length:5},(_,i)=>(
     <svg key={i} width="13" height="13" viewBox="0 0 24 24"
       fill={i<Math.round(score/2)?'#CCD0CF':'none'} stroke="#CCD0CF" strokeWidth="1.5">
@@ -303,7 +323,11 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
             <div className="flex items-center flex-wrap gap-3 mb-4 text-xs">
               {a.score>0 && <span className="flex items-center gap-1.5 font-mono font-bold text-s5"><span className="flex gap-0.5">{stars(a.score)}</span>{a.score.toFixed(1)}</span>}
               {a.status && <span className="flex items-center gap-1.5 text-s4"><span className="w-1.5 h-1.5 rounded-full bg-s4" />{a.status}</span>}
-              {a.episodes>0 && <span className="text-s4">{a.episodes} Episodes</span>}
+              {Math.max(a.episodes, episodes.length) > 0 && (
+                <span className="text-s4">
+                  {Math.max(a.episodes, episodes.length) === 1 ? '1 Episode' : `Episodes 1 - ${Math.max(a.episodes, episodes.length)}`}
+                </span>
+              )}
               {a.year && <span className="text-s4">{a.year}</span>}
               {a.type && <span className="px-2 py-0.5 rounded bg-s2 text-s4 border border-[var(--border)]">{a.type}</span>}
             </div>
@@ -326,9 +350,9 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                 style={{boxShadow:'var(--shadow)'}}>
                 <Play size={16} fill="currentColor" />Watch Now
               </Link>
-              <button onClick={()=>episodes[0]&&saveEp(episodes[0])}
+              <button onClick={() => setShowDownloadModal(true)}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-s5 bg-s1 border border-[var(--border)] hover:bg-s2 hover:-translate-y-0.5 transition-all">
-                <Download size={15}/>Save EP 1
+                <Download size={15}/>Download EP
               </button>
               <button onClick={handleWatchlist}
                 className={`inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm border transition-all hover:-translate-y-0.5 ${
@@ -578,6 +602,53 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
           )}
         </div>
       </div>
+
+      {/* Download Modal */}
+      <AnimatePresence>
+        {showDownloadModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowDownloadModal(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-s1 border border-[var(--border)] rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden">
+              <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
+                <h3 className="font-display font-bold text-lg text-s5">Download Episodes</h3>
+                <button onClick={() => setShowDownloadModal(false)} className="text-s3 hover:text-s5"><X size={20} /></button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-2 ep-scroll">
+                {episodes.map(ep => {
+                  const isSelected = selectedEpisodes.includes(ep.id);
+                  return (
+                    <div key={ep.id} onClick={() => toggleEpSelection(ep.id)}
+                      className={`flex items-center gap-3 p-3 mb-1 rounded-xl cursor-pointer border transition-all ${isSelected ? 'bg-s5/10 border-s5/30' : 'border-transparent hover:bg-s2'}`}>
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSelected ? 'bg-s5 border-s5' : 'border-s3'}`}>
+                        {isSelected && <BookmarkCheck size={12} className="text-white" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-xs font-bold ${isSelected ? 'text-s5' : 'text-s4'}`}>EP {ep.num}</div>
+                        <div className="text-sm text-s5 line-clamp-1 font-medium">{ep.title}</div>
+                      </div>
+                      <button onClick={(e) => { e.stopPropagation(); saveEp(ep); }}
+                        className="p-2.5 rounded-xl bg-s2 text-s4 hover:bg-s5 hover:text-white transition-all">
+                        <Download size={14} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedEpisodes.length > 0 && (
+                <div className="p-4 border-t border-[var(--border)] bg-s2">
+                  <button onClick={downloadSelected}
+                    className="w-full py-3.5 rounded-xl bg-s5 text-white font-bold hover:bg-s4 transition-colors flex items-center justify-center gap-2">
+                    <Download size={18} /> Download {selectedEpisodes.length} Selected
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
