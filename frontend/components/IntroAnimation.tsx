@@ -73,13 +73,13 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
             {phase === 'tagline' && (
               <motion.div
                 key="tagline"
-                className="absolute bottom-12 flex flex-col items-center gap-2"
+                className="absolute bottom-12 flex flex-col items-center gap-3"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="flex items-center gap-2 text-sm text-white/50">
+                <div className="flex items-center gap-3 text-sm">
                   <motion.span
                     animate={{ scale: [1, 1.3, 1] }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}
@@ -88,7 +88,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
                     ♥
                   </motion.span>
                   <span className="font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                    Built with love by <span className="text-white font-bold">leo (dev) & zion (ass)</span>
+                    Crafted with passion
                   </span>
                   <motion.span
                     animate={{ scale: [1, 1.3, 1] }}
@@ -97,6 +97,15 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
                   >
                     ♥
                   </motion.span>
+                </div>
+                <div className="flex items-center gap-2 text-xs tracking-[0.15em] uppercase" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <span className="text-white font-bold">leo</span>
+                  <span style={{ color: '#53C6C1', fontSize: 8 }}>✦</span>
+                  <span className="text-s4 font-medium">dev</span>
+                  <span style={{ color: '#53C6C1', opacity: 0.4 }}>│</span>
+                  <span className="text-white font-bold">zion</span>
+                  <span style={{ color: '#53C6C1', fontSize: 8 }}>✦</span>
+                  <span className="text-s4 font-medium">ass</span>
                 </div>
                 <div className="flex gap-1">
                   {[0,1,2].map(i => (

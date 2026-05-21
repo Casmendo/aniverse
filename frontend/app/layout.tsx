@@ -67,6 +67,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="shortcut icon" href="/icon.svg" />
         <title>AniVerse — Enter the Anime Multiverse</title>
       </head>
       <body className="bg-s0 text-s5 font-body">
@@ -81,8 +83,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </main>
               <footer className="py-10 px-6 border-t border-[var(--border)] mt-10">
                 <div className="flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-2 text-s3 font-mono text-[10px] tracking-widest uppercase">
-                    Build with <span className="text-s4">❤</span> by Leo
+                  <div className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                    <span className="text-white font-bold">leo</span>
+                    <span style={{ color: '#53C6C1', fontSize: 7 }}>✦</span>
+                    <span className="text-s4 font-medium">dev</span>
+                    <span style={{ color: '#53C6C1', opacity: 0.4 }}>│</span>
+                    <span className="text-white font-bold">zion</span>
+                    <span style={{ color: '#53C6C1', fontSize: 7 }}>✦</span>
+                    <span className="text-s4 font-medium">ass</span>
                   </div>
                   <p className="text-[9px] text-s2 font-mono uppercase tracking-[.3em]">Enter the Multiverse</p>
                 </div>

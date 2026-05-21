@@ -377,20 +377,20 @@ def api_airing():
 def api_trending():
     # Try trending endpoint, fall back to page 2 of airing (different content)
     for path in ['/api/top-anime','/api/airing']:
-        try: return jsonify(_get(path))
+        try: return jsonify(_get(path, timeout=6))
         except: continue
     # Last resort: return page 2 of airing
-    try: return jsonify(_get('/api/airing',params={'page':2}))
+    try: return jsonify(_get('/api/airing',params={'page':2}, timeout=10))
     except Exception as e: return jsonify({'error':str(e),'results':[]}),502
 
 @app.route('/api/recommended')
 @cache.cached(timeout=600)
 def api_recommended():
     for path in ['/api/recent-episodes','/api/top-anime','/api/airing']:
-        try: return jsonify(_get(path))
+        try: return jsonify(_get(path, timeout=6))
         except: continue
     # Fallback: page 3 of airing acts as "recommended"
-    try: return jsonify(_get('/api/airing',params={'page':3}))
+    try: return jsonify(_get('/api/airing',params={'page':3}, timeout=10))
     except Exception as e: return jsonify({'error':str(e),'results':[]}),502
 
 @app.route('/api/search')
