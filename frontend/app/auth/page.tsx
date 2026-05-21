@@ -211,6 +211,7 @@ export default function AuthPage() {
                   <div className="space-y-4">
                     <Field icon={<Mail size={16}/>} type="email" placeholder="Email" value={lEmail} onChange={setLEmail}/>
                     <Field icon={<Lock size={16}/>} type="password" placeholder="Password" value={lPw} onChange={setLPw}/>
+                    <button onClick={() => setScreen('forgot_email')} className="text-xs text-white/40 hover:text-white transition-colors w-full text-right">Forgot password?</button>
                     <AuthBtn loading={loading} onClick={handleLogin}>Log In</AuthBtn>
                   </div>
                 ) : (
@@ -218,9 +219,55 @@ export default function AuthPage() {
                     <Field icon={<User size={16}/>} type="text" placeholder="Username" value={sName} onChange={setSName}/>
                     <Field icon={<Mail size={16}/>} type="email" placeholder="Email" value={sEmail} onChange={setSEmail}/>
                     <Field icon={<Lock size={16}/>} type="password" placeholder="Password" value={sPw} onChange={setSPw}/>
+                    <div className="flex gap-1.5 h-1">
+                      {strColors.map((c, i) => <div key={i} className="flex-1 rounded-full transition-colors" style={{ backgroundColor: i < str ? c : '#333' }} />)}
+                    </div>
                     <AuthBtn loading={loading} onClick={handleSignup}>Join AniVerse</AuthBtn>
                   </div>
                 )}
+              </motion.div>
+            )}
+            {screen === 'otp' && (
+              <motion.div key="otp" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6 text-center">
+                <h2 className="text-2xl font-bold text-white">Verification</h2>
+                <p className="text-sm text-white/60">Enter the code sent to {sEmail}</p>
+                {err && <p className="text-red-400 text-xs">{err}</p>}
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                  {otp.map((n, i) => (
+                    <input key={i} ref={el => otpRefs.current[i] = el} type="text" maxLength={1} value={n} onChange={e => handleOtpInput(i, e.target.value)} onKeyDown={e => handleOtpKey(i, e)} className="w-12 h-14 bg-black/40 border border-white/10 rounded-xl text-center text-xl font-bold text-white focus:border-white/30 outline-none" />
+                  ))}
+                </div>
+                <button disabled={!canResend} onClick={handleResend} className="text-xs text-white/40 disabled:opacity-50">
+                  {canResend ? 'Resend Code' : `Resend in ${fmtTimer(resendCD)}`}
+                </button>
+              </motion.div>
+            )}
+            {screen === 'forgot_email' && (
+              <motion.div key="femail" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+                <h2 className="text-xl font-bold text-white">Reset Password</h2>
+                {err && <p className="text-red-400 text-xs text-center">{err}</p>}
+                <Field icon={<Mail size={16}/>} type="email" placeholder="Enter your email" value={fEmail} onChange={setFEmail}/>
+                <AuthBtn loading={loading} onClick={handleForgotEmail}>Send Reset Code</AuthBtn>
+              </motion.div>
+            )}
+            {screen === 'forgot_reset' && (
+              <motion.div key="freset" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+                <h2 className="text-xl font-bold text-white">Verification</h2>
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                  {otp.map((n, i) => (
+                    <input key={i} ref={el => otpRefs.current[i] = el} type="text" maxLength={1} value={n} onChange={e => handleOtpInput(i, e.target.value)} onKeyDown={e => handleOtpKey(i, e)} className="w-10 h-12 bg-black/40 border border-white/10 rounded-xl text-center text-xl font-bold text-white focus:border-white/30 outline-none" />
+                  ))}
+                </div>
+                <Field icon={<Lock size={16}/>} type="password" placeholder="New Password" value={fPw} onChange={setFPw}/>
+                <Field icon={<Lock size={16}/>} type="password" placeholder="Confirm Password" value={fPwConf} onChange={setFPwConf}/>
+                <AuthBtn loading={loading} onClick={handleResetPassword}>Update Password</AuthBtn>
+              </motion.div>
+            )}
+            {screen === 'success' && (
+              <motion.div key="success" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-4 py-8">
+                <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto"><Check size={32}/></div>
+                <h2 className="text-2xl font-bold text-white">Welcome!</h2>
+                <p className="text-white/60">Your account is ready.</p>
               </motion.div>
             )}
           </AnimatePresence>

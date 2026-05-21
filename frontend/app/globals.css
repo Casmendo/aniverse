@@ -9,21 +9,21 @@
   --font-exo:        'Exo 2', sans-serif;
   --font-space-mono: 'Space Mono', monospace;
 
-  /* Midnight & Indigo palette */
-  --s0: #09090b;
-  --s1: #18181b;
-  --s2: #27272a;
-  --s3: #52525b;
-  --s4: #a1a1aa;
-  --s5: #ffffff;
+  /* Original Steel palette + Crimson accent */
+  --s0: #06141B;
+  --s1: #11212D;
+  --s2: #253745;
+  --s3: #4A5C6A;
+  --s4: #9BA8AB;
+  --s5: #CCD0CF;
   --accent: #e11d48;
 
   /* Semantic */
   --bg:       var(--s0);
   --surface:  var(--s1);
   --elevated: var(--s2);
-  --border:   rgba(82,82,91,0.4);
-  --border-hi:rgba(161,161,170,0.25);
+  --border:   rgba(74,92,106,0.4);
+  --border-hi:rgba(155,168,171,0.25);
   --text:     var(--s5);
   --text-dim: var(--s4);
   --text-muted:var(--s3);
