@@ -44,18 +44,18 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
           <svg viewBox="0 0 80 90" fill="none" className="w-20 h-20">
             <defs>
               <linearGradient id="lsGrad" x1="0" y1="0" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#CCD0CF"/>
-                <stop offset="60%" stopColor="#9BA8AB"/>
-                <stop offset="100%" stopColor="#4A5C6A"/>
+                <stop offset="0%" stopColor="var(--s4)"/>
+                <stop offset="60%" stopColor="var(--s3)"/>
+                <stop offset="100%" stopColor="var(--s1)"/>
               </linearGradient>
             </defs>
             {/* Bold futuristic A */}
             <path d="M40 4L76 86H60L53 68H27L20 86H4Z" fill="url(#lsGrad)"/>
-            <path d="M40 24L52 60H28Z" fill="#06141B"/>
+            <path d="M40 24L52 60H28Z" fill="var(--s0)"/>
             {/* Corner accents */}
-            <line x1="0" y1="86" x2="14" y2="86" stroke="#9BA8AB" strokeWidth="3" strokeLinecap="round"/>
-            <line x1="66" y1="86" x2="80" y2="86" stroke="#9BA8AB" strokeWidth="3" strokeLinecap="round"/>
-            <circle cx="40" cy="4" r="3.5" fill="#CCD0CF"/>
+            <line x1="0" y1="86" x2="14" y2="86" stroke="var(--s4)" strokeWidth="3" strokeLinecap="round"/>
+            <line x1="66" y1="86" x2="80" y2="86" stroke="var(--s4)" strokeWidth="3" strokeLinecap="round"/>
+            <circle cx="40" cy="4" r="3.5" fill="var(--s4)"/>
           </svg>
           {/* Animated underline */}
           <div className="absolute -bottom-2 left-0 right-0 h-px bg-s2">
@@ -80,13 +80,13 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
           {Math.round(progress)}%
         </div>
 
-        <div className="absolute bottom-12 flex flex-col items-center gap-2 transition-all duration-700" style={{ opacity: phase === 'bar' ? 1 : 0 }}>
+          <div className="absolute bottom-12 flex flex-col items-center gap-2 transition-all duration-700" style={{ opacity: phase === 'bar' ? 1 : 0 }}>
           <div className="flex items-center gap-2 text-sm text-s3">
-            <span style={{ color: '#e05d5d', fontSize: 16 }}>♥</span>
+            <span style={{ color: 'var(--accent)', fontSize: 16 }}>♥</span>
             <span className="font-mono tracking-wider text-[10px] uppercase">
               Built with love by <span className="text-s5 font-bold">Leo</span>
             </span>
-            <span style={{ color: '#e05d5d', fontSize: 16 }}>♥</span>
+            <span style={{ color: 'var(--accent)', fontSize: 16 }}>♥</span>
           </div>
         </div>
       </div>

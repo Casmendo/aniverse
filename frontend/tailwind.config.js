@@ -8,13 +8,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        s0: '#06141B',   // deep background
-        s1: '#11212D',   // surface
-        s2: '#253745',   // elevated
-        s3: '#4A5C6A',   // muted
-        s4: '#9BA8AB',   // body text
-        s5: '#CCD0CF',   // primary text
-        accent: '#e11d48', // deep rose-crimson accent
+        s0: '#0D1F23',   // deepest background (image top)
+        s1: '#132E35',   // dark surface
+        s2: '#2D4A53',   // primary/brand (chosen main)
+        s3: '#69818D',   // muted mid
+        s4: '#AFB3B7',   // light neutral
+        s5: '#5A636A',   // soft concrete
+        brand: '#2D4A53', // main brand color (alias for s2)
+        accent: '#e11d48', // kept existing accent for CTAs (optional)
       },
       fontFamily: {
         display: ['var(--font-orbitron)', 'monospace'],
@@ -22,8 +23,8 @@ module.exports = {
         mono:    ['var(--font-space-mono)', 'monospace'],
       },
       backgroundImage: {
-        'depth': 'linear-gradient(180deg,#06141B 0%,#11212D 100%)',
-        'surface': 'linear-gradient(135deg,#11212D 0%,#1a2d3d 100%)',
+        'depth': 'linear-gradient(180deg,#0D1F23 0%,#132E35 100%)',
+        'surface': 'linear-gradient(135deg,#132E35 0%,#2D4A53 100%)',
       },
       boxShadow: {
         'depth-sm': '0 2px 8px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.7)',

@@ -377,13 +377,14 @@ export default function VideoPlayer({
               {playing
                 ? <Pause size={34} className="text-white" />
                 : <Play  size={34} fill="white" className="text-white ml-1" />}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Skip animation */}
-      <AnimatePresence>
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, x: -50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -50, scale: 0.9 }}
+              className="w-72 backdrop-blur-xl border border-s5/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden pointer-events-auto"
+              style={{ background: 'var(--s1-95)' }}
+            >
         {skipAnim && (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.2 }}
             className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-2xl p-4 min-w-[96px] shadow-2xl border border-white/10 ${skipAnim.dir === 'fwd' ? 'right-[15%]' : 'left-[15%]'}`}>

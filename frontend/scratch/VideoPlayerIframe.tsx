@@ -105,7 +105,8 @@ export default function VideoPlayer({
       <AnimatePresence>
         {showSettings && (
           <motion.div initial={{ opacity: 0, scale: 0.95, y: -10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="absolute top-16 right-4 z-50 w-64 bg-[#0a1216]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-4"
+            className="absolute top-16 right-4 z-50 w-64 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl p-4"
+            style={{ background: 'var(--s1-95)' }}
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
               <span className="text-sm font-bold text-white tracking-wide">SETTINGS</span>
