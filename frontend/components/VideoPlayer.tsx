@@ -398,8 +398,8 @@ export default function VideoPlayer({
       <AnimatePresence>
         {indicator && (
           <motion.div initial={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} transition={{ duration: 0.2 }}
-            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-12 h-36 shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-0 rounded-l-2xl border-r-0' : 'left-0 rounded-r-2xl border-l-0'}`}>
-            {indicator.type === 'volume' ? <Volume2 size={20} className="text-white mb-3" /> : <Sun size={20} className="text-white mb-3" />}
+            className={`absolute top-1/3 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-14 h-36 rounded-2xl shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-6' : 'left-6'}`}>
+            {indicator.type === 'volume' ? <Volume2 size={22} className="text-white mb-3" /> : <Sun size={22} className="text-white mb-3" />}
             <div className="h-14 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
               <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${indicator.value}%` }} />
             </div>
