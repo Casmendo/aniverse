@@ -48,7 +48,7 @@ export default function VideoPlayer({
   const [isLocked,   setIsLocked]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
-  const [skipAnim,   setSkipAnim]   = useState<'fwd'|'bck'|null>(null);
+  const [skipAnim,   setSkipAnim]   = useState<{ dir: 'fwd' | 'bck', targetTime: number } | null>(null);
   const [indicator,  setIndicator]  = useState<{ type: 'volume' | 'brightness', value: number } | null>(null);
   const indicatorTimer = useRef<ReturnType<typeof setTimeout>>();
   const [errMsg,     setErrMsg]     = useState('');
@@ -65,16 +65,17 @@ export default function VideoPlayer({
   }, []);
 
   // ── Skip animation ─────────────────────────────────────────────────────────
-  const flashSkip = useCallback((dir: 'fwd' | 'bck') => {
-    setSkipAnim(dir);
-    setTimeout(() => setSkipAnim(null), 700);
+  const flashSkip = useCallback((dir: 'fwd' | 'bck', targetTime: number) => {
+    setSkipAnim({ dir, targetTime });
+    setTimeout(() => setSkipAnim(null), 800);
   }, []);
 
   // ── Seek ───────────────────────────────────────────────────────────────────
   const skipTime = useCallback((sec: number) => {
     const v = videoRef.current; if (!v) return;
-    v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + sec));
-    flashSkip(sec > 0 ? 'fwd' : 'bck');
+    const target = Math.max(0, Math.min(v.duration || 0, v.currentTime + sec));
+    v.currentTime = target;
+    flashSkip(sec > 0 ? 'fwd' : 'bck', target);
     showControls();
   }, [flashSkip, showControls]);
 
@@ -384,10 +385,11 @@ export default function VideoPlayer({
       {/* Skip animation */}
       <AnimatePresence>
         {skipAnim && (
-          <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm rounded-full w-20 h-20 ${skipAnim === 'fwd' ? 'right-[15%]' : 'left-[15%]'}`}>
-            {skipAnim === 'fwd' ? <SkipForward size={28} className="text-white" /> : <SkipBack size={28} className="text-white" />}
-            <span className="text-white font-bold text-xs mt-0.5">{skipAnim === 'fwd' ? '+10s' : '-10s'}</span>
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} transition={{ duration: 0.2 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-2xl p-4 min-w-[96px] shadow-2xl border border-white/10 ${skipAnim.dir === 'fwd' ? 'right-[15%]' : 'left-[15%]'}`}>
+            {skipAnim.dir === 'fwd' ? <SkipForward size={28} className="text-white mb-2" /> : <SkipBack size={28} className="text-white mb-2" />}
+            <span className="text-white font-bold text-sm tracking-widest">{formatTime(skipAnim.targetTime)}</span>
+            <span className="text-s5 font-bold text-[10px] mt-0.5">{skipAnim.dir === 'fwd' ? '+10s' : '-10s'}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -395,13 +397,13 @@ export default function VideoPlayer({
       {/* Volume/Brightness Indicator */}
       <AnimatePresence>
         {indicator && (
-          <motion.div initial={{ opacity: 0, scale: 0.8, x: indicator.type === 'volume' ? 20 : -20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: indicator.type === 'volume' ? 20 : -20 }}
-            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-2xl w-16 h-40 shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-6' : 'left-6'}`}>
-            {indicator.type === 'volume' ? <Volume2 size={24} className="text-white mb-3" /> : <Sun size={24} className="text-white mb-3" />}
-            <div className="h-16 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
+          <motion.div initial={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} transition={{ duration: 0.2 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-12 h-36 shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-0 rounded-l-2xl border-r-0' : 'left-0 rounded-r-2xl border-l-0'}`}>
+            {indicator.type === 'volume' ? <Volume2 size={20} className="text-white mb-3" /> : <Sun size={20} className="text-white mb-3" />}
+            <div className="h-14 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
               <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${indicator.value}%` }} />
             </div>
-            <span className="text-white font-bold text-xs">{indicator.value}%</span>
+            <span className="text-white font-bold text-[10px]">{indicator.value}%</span>
           </motion.div>
         )}
       </AnimatePresence>
