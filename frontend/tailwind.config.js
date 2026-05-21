@@ -8,12 +8,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        s0: '#06141B',   // deep black
-        s1: '#11212D',   // surface
-        s2: '#253745',   // elevated
-        s3: '#4A5C6A',   // muted
-        s4: '#9BA8AB',   // body text
-        s5: '#CCD0CF',   // primary text
+        s0: '#09090b',   // deep black background
+        s1: '#18181b',   // surface
+        s2: '#27272a',   // elevated
+        s3: '#52525b',   // muted lines/icons
+        s4: '#a1a1aa',   // body text
+        s5: '#ffffff',   // primary text
+        accent: '#3b82f6', // electric blue accent
       },
       fontFamily: {
         display: ['var(--font-orbitron)', 'monospace'],

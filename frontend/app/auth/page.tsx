@@ -186,260 +186,43 @@ export default function AuthPage() {
     } finally { setLoading(false); }
   };
 
-  const panel = {
-    hidden:  { opacity:0, y:24, scale:0.97 },
-    visible: { opacity:1, y:0,  scale:1,   transition:{ duration:0.5, ease:[0.16,1,0.3,1] } },
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-5 py-10">
-      {/* BG texture */}
-      <div className="fixed inset-0 pointer-events-none" style={{
-        background:'radial-gradient(ellipse 80% 60% at 20% 10%,rgba(37,55,69,0.3) 0%,transparent 60%)',
-      }} />
-
-      <motion.div className="w-full max-w-[420px] relative" variants={panel} initial="hidden" animate="visible">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 font-display font-black text-2xl text-s5 mb-2">
-            <svg viewBox="0 0 34 38" fill="none" className="w-7 h-8">
-              <defs>
-                <linearGradient id="authGrad" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#CCD0CF"/>
-                  <stop offset="100%" stopColor="#4A5C6A"/>
-                </linearGradient>
-              </defs>
-              <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#authGrad)"/>
-              <path d="M17 10L22 26H12Z" fill="#06141B"/>
-            </svg>
-            niVerse
-          </div>
-          <p className="text-s3 text-[10px] font-mono tracking-[.2em] uppercase">Enter the Multiverse</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0a] overflow-hidden relative">
+      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #253745 0%, transparent 70%)' }} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md relative z-10">
+        <div className="flex justify-center mb-8">
+           <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-16 h-16 rounded-full border-2 border-s5/20 flex items-center justify-center">
+             <div className="w-12 h-12 bg-gradient-to-br from-s4 to-s5 rounded-full" />
+           </motion.div>
         </div>
-
-        {/* Card */}
-        <div className="glass rounded-2xl px-7 py-8 border border-[var(--border)]" style={{boxShadow:'var(--shadow-lg)'}}>
+        <div className="bg-[#111] border border-white/10 p-8 rounded-[2rem] shadow-2xl">
           <AnimatePresence mode="wait">
-
-            {/* ── Login / Signup ── */}
             {screen === 'tabs' && (
-              <motion.div key="tabs"
-                initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-                transition={{duration:0.25}}>
-
-                {/* Tab switcher */}
-                <div className="flex p-1 bg-s0 rounded-xl mb-6 gap-1">
+              <motion.div key="tabs" exit={{ opacity: 0, y: -20 }} className="space-y-6">
+                <div className="flex bg-black/40 p-1.5 rounded-full">
                   {(['login','signup'] as Tab[]).map(t => (
-                    <button key={t} onClick={()=>{setTab(t);setErr('');}}
-                      className={`flex-1 py-2.5 rounded-lg text-xs font-display font-bold uppercase tracking-wider transition-all duration-250 ${
-                        tab===t ? 'bg-s2 text-s5' : 'text-s3 hover:text-s4'
-                      }`}>
-                      {t==='login' ? 'Sign In' : 'Sign Up'}
+                    <button key={t} onClick={() => setTab(t)} className={`flex-1 py-3 rounded-full text-sm font-bold transition-all ${tab === t ? 'bg-white text-black' : 'text-white/50 hover:text-white'}`}>
+                      {t === 'login' ? 'Log In' : 'Sign Up'}
                     </button>
                   ))}
                 </div>
-
-                {err && (
-                  <motion.div initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}}
-                    className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">
-                    {err}
-                  </motion.div>
+                {err && <p className="text-red-400 text-xs text-center">{err}</p>}
+                {tab === 'login' ? (
+                  <div className="space-y-4">
+                    <Field icon={<Mail size={16}/>} type="email" placeholder="Email" value={lEmail} onChange={setLEmail}/>
+                    <Field icon={<Lock size={16}/>} type="password" placeholder="Password" value={lPw} onChange={setLPw}/>
+                    <AuthBtn loading={loading} onClick={handleLogin}>Log In</AuthBtn>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Field icon={<User size={16}/>} type="text" placeholder="Username" value={sName} onChange={setSName}/>
+                    <Field icon={<Mail size={16}/>} type="email" placeholder="Email" value={sEmail} onChange={setSEmail}/>
+                    <Field icon={<Lock size={16}/>} type="password" placeholder="Password" value={sPw} onChange={setSPw}/>
+                    <AuthBtn loading={loading} onClick={handleSignup}>Join AniVerse</AuthBtn>
+                  </div>
                 )}
-
-                <AnimatePresence mode="wait">
-                  {tab === 'login' ? (
-                    <motion.div key="login"
-                      initial={{opacity:0,x:-16}} animate={{opacity:1,x:0}} exit={{opacity:0,x:16}}
-                      transition={{duration:0.25}} className="space-y-3">
-                      <Field icon={<Mail size={14}/>} type="email"     placeholder="Email"    value={lEmail} onChange={setLEmail} onEnter={handleLogin}/>
-                      <Field icon={<Lock size={14}/>} type={showPw?'text':'password'} placeholder="Password" value={lPw}    onChange={setLPw}    onEnter={handleLogin}
-                        right={<button onClick={()=>setShowPw(!showPw)} className="text-s3 hover:text-s4 transition-colors">{showPw?<EyeOff size={14}/>:<Eye size={14}/>}</button>}/>
-                      <div className="text-right -mt-1">
-                        <button onClick={()=>{setScreen('forgot_email');setErr('');}} className="text-xs text-s3 hover:text-s5 transition-colors">Forgot Password?</button>
-                      </div>
-                      <AuthBtn loading={loading} onClick={handleLogin}>Sign In</AuthBtn>
-                      <p className="text-center text-xs text-s3 pt-1">
-                        No account?{' '}
-                        <button onClick={()=>setTab('signup')} className="text-s5 font-semibold hover:underline">Sign up</button>
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <motion.div key="signup"
-                      initial={{opacity:0,x:16}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-16}}
-                      transition={{duration:0.25}} className="space-y-3">
-                      <Field icon={<User size={14}/>} type="text"  placeholder="Username (3–32)"  value={sName}  onChange={setSName}/>
-                      <Field icon={<Mail size={14}/>} type="email" placeholder="Email"             value={sEmail} onChange={setSEmail}/>
-                      <Field icon={<Lock size={14}/>} type={showPw?'text':'password'} placeholder="Password (8+, uppercase, number)"
-                        value={sPw} onChange={setSPw} onEnter={handleSignup}
-                        right={<button onClick={()=>setShowPw(!showPw)} className="text-s3 hover:text-s4 transition-colors">{showPw?<EyeOff size={14}/>:<Eye size={14}/>}</button>}/>
-                      {/* Strength bars */}
-                      {sPw && (
-                        <div className="flex gap-1">
-                          {[1,2,3].map(s => (
-                            <div key={s} className="flex-1 h-0.5 rounded-full transition-all duration-300"
-                              style={{background: s<=str ? strColors[str-1] : 'var(--border)'}} />
-                          ))}
-                        </div>
-                      )}
-                      <AuthBtn loading={loading} onClick={handleSignup}>Create Account →</AuthBtn>
-                      <p className="text-center text-xs text-s3 pt-1">
-                        Already have an account?{' '}
-                        <button onClick={()=>setTab('login')} className="text-s5 font-semibold hover:underline">Sign in</button>
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </motion.div>
             )}
-
-            {/* ── OTP ── */}
-            {screen === 'otp' && (
-              <motion.div key="otp"
-                initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}
-                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
-                className="text-center">
-                <div className="text-4xl mb-4">📬</div>
-                <h2 className="font-display font-bold text-lg text-s5 mb-1">Verify your email</h2>
-                <p className="text-xs text-s3 mb-1">A 6-digit code was sent to</p>
-                <p className="text-sm font-bold text-s5 mb-6">{sEmail}</p>
-                <p className="text-xs text-s3 mb-3 italic">(Check the toast notification for DEV code)</p>
-
-                {err && (
-                  <div className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">{err}</div>
-                )}
-
-                <div className="flex gap-2 justify-center mb-5">
-                  {otp.map((d,i) => (
-                    <input key={i} ref={el=>{otpRefs.current[i]=el;}}
-                      value={d} maxLength={1} inputMode="numeric"
-                      className={`otp-box ${d?'filled':''}`}
-                      onChange={e=>handleOtpInput(i,e.target.value)}
-                      onKeyDown={e=>handleOtpKey(i,e)}
-                      onPaste={handlePaste}
-                      autoFocus={i===0} />
-                  ))}
-                </div>
-
-                <p className="text-xs text-s3 mb-4 font-mono">
-                  Expires in <span className="text-s5 font-bold">{fmtTimer(otpTimer)}</span>
-                </p>
-
-                <AuthBtn loading={loading} onClick={()=>verifyOtp(otp.join(''))}>Verify &amp; Continue</AuthBtn>
-
-                <button onClick={handleResend} disabled={!canResend}
-                  className="mt-3 w-full py-3 rounded-xl border border-[var(--border)] text-xs font-semibold text-s4 hover:bg-s1 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <RotateCcw size={12} />
-                  {canResend ? 'Resend Code' : `Resend in ${resendCD}s`}
-                </button>
-
-                <button onClick={()=>{setScreen('tabs');setErr('');}}
-                  className="mt-3 text-xs text-s3 hover:text-s4 transition-colors">
-                  ← Back
-                </button>
-              </motion.div>
-            )}
-
-            {/* ── Forgot Password: Email ── */}
-            {screen === 'forgot_email' && (
-              <motion.div key="forgot_email"
-                initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}
-                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
-                className="space-y-4">
-                <div className="text-center mb-6">
-                  <h2 className="font-display font-bold text-lg text-s5 mb-1">Reset Password</h2>
-                  <p className="text-xs text-s3">Enter your email to receive a reset code</p>
-                </div>
-
-                {err && (
-                  <div className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">{err}</div>
-                )}
-
-                <Field icon={<Mail size={14}/>} type="email" placeholder="Email" value={fEmail} onChange={setFEmail} onEnter={handleForgotEmail}/>
-
-                <div className="pt-2">
-                  <AuthBtn loading={loading} onClick={handleForgotEmail}>Send Reset Code</AuthBtn>
-                </div>
-
-                <div className="text-center mt-2">
-                  <button onClick={()=>{setScreen('tabs');setErr('');}}
-                    className="text-xs text-s3 hover:text-s4 transition-colors">
-                    ← Back to Login
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── Forgot Password: Reset ── */}
-            {screen === 'forgot_reset' && (
-              <motion.div key="forgot_reset"
-                initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0}}
-                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
-                className="text-center">
-                <h2 className="font-display font-bold text-lg text-s5 mb-1">Create New Password</h2>
-                <p className="text-xs text-s3 mb-6">Enter the 6-digit code sent to <span className="text-s5">{fEmail}</span></p>
-
-                {err && (
-                  <div className="px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-4">{err}</div>
-                )}
-
-                <div className="flex gap-2 justify-center mb-6">
-                  {otp.map((d,i) => (
-                    <input key={`f-${i}`} ref={el=>{otpRefs.current[i]=el;}}
-                      value={d} maxLength={1} inputMode="numeric"
-                      className={`otp-box ${d?'filled':''}`}
-                      onChange={e=>{
-                        const val = e.target.value.replace(/\D/g,'').slice(-1);
-                        const n = [...otp]; n[i]=val; setOtp(n);
-                        if (val && i<5) otpRefs.current[i+1]?.focus();
-                      }}
-                      onKeyDown={e=>handleOtpKey(i,e)}
-                      onPaste={handlePaste}
-                      autoFocus={i===0} />
-                  ))}
-                </div>
-
-                <div className="space-y-3 mb-5 text-left">
-                  <Field icon={<Lock size={14}/>} type={showPw?'text':'password'} placeholder="New Password" value={fPw} onChange={setFPw}
-                    right={<button onClick={()=>setShowPw(!showPw)} className="text-s3 hover:text-s4 transition-colors">{showPw?<EyeOff size={14}/>:<Eye size={14}/>}</button>}/>
-                  <Field icon={<CheckCircle2 size={14}/>} type={showPw?'text':'password'} placeholder="Confirm Password" value={fPwConf} onChange={setFPwConf} onEnter={handleResetPassword}/>
-                </div>
-
-                <p className="text-xs text-s3 mb-4 font-mono">
-                  Code expires in <span className="text-s5 font-bold">{fmtTimer(otpTimer)}</span>
-                </p>
-
-                <AuthBtn loading={loading} onClick={handleResetPassword}>Reset Password</AuthBtn>
-
-                <button onClick={handleResend} disabled={!canResend}
-                  className="mt-3 w-full py-3 rounded-xl border border-[var(--border)] text-xs font-semibold text-s4 hover:bg-s1 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  <RotateCcw size={12} />
-                  {canResend ? 'Resend Code' : `Resend in ${resendCD}s`}
-                </button>
-
-                <button onClick={()=>{setScreen('tabs');setErr('');setOtp(['','','','','','']);}}
-                  className="mt-3 text-xs text-s3 hover:text-s4 transition-colors">
-                  Cancel
-                </button>
-              </motion.div>
-            )}
-
-            {/* ── Success ── */}
-            {screen === 'success' && (
-              <motion.div key="success"
-                initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}}
-                transition={{duration:0.4,ease:[0.16,1,0.3,1]}}
-                className="text-center py-4">
-                <CheckCircle2 size={52} className="text-emerald-400 mx-auto mb-4" />
-                <h2 className="font-display font-bold text-xl text-s5 mb-2">Welcome to AniVerse!</h2>
-                <p className="text-sm text-s3 mb-5">Your account is ready. Redirecting…</p>
-                <div className="h-0.5 bg-s2 rounded-full overflow-hidden">
-                  <div className="h-full bg-s5 rounded-full"
-                    style={{animation:'heroBar 2s linear forwards'}} />
-                </div>
-                <style>{`@keyframes heroBar{from{width:0%}to{width:100%}}`}</style>
-              </motion.div>
-            )}
-
           </AnimatePresence>
         </div>
       </motion.div>
@@ -447,33 +230,19 @@ export default function AuthPage() {
   );
 }
 
-function Field({icon,type,placeholder,value,onChange,onEnter,right}:{
-  icon:React.ReactNode; type:string; placeholder:string;
-  value:string; onChange:(v:string)=>void; onEnter?:()=>void; right?:React.ReactNode;
-}) {
+function Field({ icon, type, placeholder, value, onChange }: { icon: React.ReactNode, type: string, placeholder: string, value: string, onChange: (v: string) => void }) {
   return (
-    <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-s0 border border-[var(--border)] focus-within:border-[var(--border-hi)] transition-colors">
-      <span className="text-s3 shrink-0">{icon}</span>
-      <input type={type} placeholder={placeholder} value={value}
-        onChange={e=>onChange(e.target.value)}
-        onKeyDown={e=>e.key==='Enter'&&onEnter?.()}
-        className="flex-1 bg-transparent outline-none text-sm text-s5 placeholder:text-s3 font-body" />
-      {right}
+    <div className="relative group">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white transition-colors">{icon}</div>
+      <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} className="w-full bg-black/40 border border-white/10 py-4 pl-12 pr-4 rounded-2xl text-white outline-none focus:border-white/30 transition-all" />
     </div>
   );
 }
 
-function AuthBtn({loading,onClick,children}:{loading:boolean;onClick:()=>void;children:React.ReactNode}) {
+function AuthBtn({ loading, onClick, children }: { loading: boolean, onClick: () => void, children: React.ReactNode }) {
   return (
-    <button onClick={onClick} disabled={loading}
-      className="w-full py-3.5 rounded-xl bg-s5 text-s0 font-display font-bold text-sm tracking-wider hover:bg-s4 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:cursor-not-allowed"
-      style={{boxShadow:'var(--shadow)'}}>
-      {loading ? (
-        <span className="flex items-center justify-center gap-2">
-          <span className="w-4 h-4 border-2 border-s0 border-t-transparent rounded-full animate-spin" />
-          Loading…
-        </span>
-      ) : children}
+    <button onClick={onClick} disabled={loading} className="w-full py-4 rounded-2xl bg-white text-black font-bold hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center">
+      {loading ? <span className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full" /> : children}
     </button>
   );
 }

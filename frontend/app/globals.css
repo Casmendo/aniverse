@@ -9,20 +9,21 @@
   --font-exo:        'Exo 2', sans-serif;
   --font-space-mono: 'Space Mono', monospace;
 
-  /* Steel palette */
-  --s0: #06141B;
-  --s1: #11212D;
-  --s2: #253745;
-  --s3: #4A5C6A;
-  --s4: #9BA8AB;
-  --s5: #CCD0CF;
+  /* Midnight & Indigo palette */
+  --s0: #09090b;
+  --s1: #18181b;
+  --s2: #27272a;
+  --s3: #52525b;
+  --s4: #a1a1aa;
+  --s5: #ffffff;
+  --accent: #3b82f6;
 
   /* Semantic */
   --bg:       var(--s0);
   --surface:  var(--s1);
   --elevated: var(--s2);
-  --border:   rgba(74,92,106,0.4);
-  --border-hi:rgba(155,168,171,0.25);
+  --border:   rgba(82,82,91,0.4);
+  --border-hi:rgba(161,161,170,0.25);
   --text:     var(--s5);
   --text-dim: var(--s4);
   --text-muted:var(--s3);
@@ -57,9 +58,9 @@ body{
 /* ── Skeleton ── */
 .skeleton{
   background: linear-gradient(90deg,
-    rgba(37,55,69,.4) 25%,
-    rgba(74,92,106,.25) 50%,
-    rgba(37,55,69,.4) 75%);
+    rgba(39,39,42,.4) 25%,
+    rgba(82,82,91,.25) 50%,
+    rgba(39,39,42,.4) 75%);
   background-size:200% 100%;
   animation:shimmer 2s ease-in-out infinite;
 }
@@ -70,13 +71,13 @@ body{
 
 /* ── Glass surface ── */
 .glass{
-  background: rgba(17,33,45,0.85);
+  background: rgba(24,24,27,0.85);
   backdrop-filter: blur(20px) saturate(1.2);
   -webkit-backdrop-filter: blur(20px) saturate(1.2);
   border: 1px solid var(--border);
 }
 .glass-hi{
-  background: rgba(37,55,69,0.6);
+  background: rgba(39,39,42,0.6);
   backdrop-filter: blur(24px) saturate(1.3);
   -webkit-backdrop-filter: blur(24px) saturate(1.3);
   border: 1px solid var(--border-hi);
@@ -99,7 +100,7 @@ body{
 .prog-track{
   position:relative;
   height:3px;
-  background:rgba(74,92,106,.35);
+  background:rgba(82,82,91,.35);
   border-radius:2px;
   cursor:pointer;
   transition:height .18s;
@@ -206,7 +207,7 @@ input[type=range]::-moz-range-thumb{
   position:absolute;
   inset:0;
   border-radius:12px;
-  border:1px solid rgba(155,168,171,.2);
+  border:1px solid rgba(161,161,170,.2);
   opacity:0;
   transition:opacity .3s;
   pointer-events:none;
