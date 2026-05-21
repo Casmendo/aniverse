@@ -8,6 +8,7 @@ import BottomNav from '@/components/BottomNav';
 import { ToastProvider } from '@/components/Toast';
 import LoadingScreen from '@/components/LoadingScreen';
 import { useIntroStore } from '@/store/introStore';
+import GlobalDownloadProgress from '@/components/GlobalDownloadProgress';
 import AuthGuard from '@/components/AuthGuard';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <BottomNav />
             </AuthGuard>
           </div>
+          <GlobalDownloadProgress />
         </ToastProvider>
       </body>
     </html>

@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Clock, Zap, History, X } from 'lucide-react';
+import { Clock, Zap, History, X, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import HeroSlider   from '@/components/HeroSlider';
 import AnimeSection from '@/components/AnimeSection';
 import { animeAPI } from '@/lib/api';
@@ -225,6 +226,23 @@ export default function HomePage() {
         )}
         </div>
       </section>
+
+      {/* Floating Rotating APK Download Button */}
+      <Link href="/apk" className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-24 h-24 group hidden md:flex">
+        <div className="absolute inset-0 animate-[spin_10s_linear_infinite]">
+          <svg viewBox="0 0 100 100" className="w-full h-full text-s5 fill-current">
+            <path id="circlePath" d="M 50, 50 m -38, 0 a 38,38 0 1,1 76,0 a 38,38 0 1,1 -76,0" fill="transparent" />
+            <text className="text-[11.5px] font-bold uppercase tracking-[0.18em]">
+              <textPath href="#circlePath" startOffset="0%">
+                Download App • AniVerse APK •
+              </textPath>
+            </text>
+          </svg>
+        </div>
+        <div className="w-12 h-12 rounded-full bg-s5 text-white flex items-center justify-center shadow-[0_0_20px_rgba(83,198,193,0.4)] group-hover:scale-110 transition-transform duration-300">
+          <Download size={20} />
+        </div>
+      </Link>
     </>
   );
 }

@@ -18,6 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeSerializer
+from email_validator import validate_email, EmailNotValidError
 
 load_dotenv()
 
@@ -719,8 +720,10 @@ def signup():
     password=d.get('password','')
     if not re.match(r'^[a-zA-Z0-9_\-\.]{3,32}$',username):
         return jsonify({'error':'Username: 3-32 chars, letters/numbers/_ -.'}),400
-    if not re.match(r'^[^@]+@[^@]+\.[^@]+$',email):
-        return jsonify({'error':'Valid email required'}),400
+    try:
+        email = validate_email(email, check_deliverability=True).normalized
+    except EmailNotValidError:
+        return jsonify({'error':'Invalid Email'}),400
     err=_validate_pw(password)
     if err: return jsonify({'error':err}),400
     if User.query.filter_by(email=email,is_verified=True).first():
@@ -858,6 +861,10 @@ def forgot_password():
     d=request.get_json(silent=True) or {}
     email=d.get('email','').strip().lower()
     if not email: return jsonify({'error':'Email required'}),400
+    try:
+        email = validate_email(email, check_deliverability=True).normalized
+    except EmailNotValidError:
+        return jsonify({'error':'Invalid Email'}),400
     u=User.query.filter_by(email=email).first()
     if not u:
         return jsonify({'error':'Account not found'}),404

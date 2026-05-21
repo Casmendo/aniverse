@@ -88,7 +88,7 @@ export default function IntroAnimation({ onDone }: { onDone: () => void }) {
                     ♥
                   </motion.span>
                   <span className="font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                    Built with love by <span className="text-white font-bold">Leo</span>
+                    Built with love by <span className="text-white font-bold">leo (dev) & zion (ass)</span>
                   </span>
                   <motion.span
                     animate={{ scale: [1, 1.3, 1] }}

@@ -13,6 +13,7 @@ import { useToast } from '@/components/Toast';
 import { useAuthStore } from '@/store/authStore';
 import { useDownloadStore } from '@/store/downloadStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
+import { processDownload } from '@/lib/downloadService';
 
 const ANIMAPI_BASE = 'https://animapi.ayohost.site';
 
@@ -45,6 +46,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [selectedEpisodes, setSelectedEpisodes] = useState<string[]>([]);
+  const [intro, setIntro] = useState<{start:number, end:number}|undefined>(undefined);
+  const [outro, setOutro] = useState<{start:number, end:number}|undefined>(undefined);
 
   // Smart base title extraction for related series search
   const getBaseTitle = (title: string) => title
@@ -144,6 +147,9 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       let url: string = data.proxy_m3u8 || data.stream_url || data.url || '';
       if (!url) throw new Error('No stream URL found — try another episode.');
       if (url.startsWith('/')) url = `${ANIMAPI_BASE}${url}`;
+      
+      setIntro(data.intro);
+      setOutro(data.outro);
 
       setStreamUrl(url);
     } catch (e: any) {
@@ -216,161 +222,26 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     setSelectedEpisodes(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]);
   };
 
-  const doActualDownload = async (ep: ReturnType<typeof extractEpisode>) => {
-    try {
-      toast(`Preparing EP ${ep.num} for download...`, 'info');
-      const payload = { anime_slug: slug, episode_session: ep.id, anime_title: anime?.title, episode_number: ep.num, quality: '1080', audio: 'jpn' };
-      const { data } = await downloadAPI.createJob(payload);
-      const jobId = data?.job_id || data?.download_id || data?.id || data?.job?.id || data?.jobId;
-      if (!jobId) throw new Error('Failed to create job');
-
-      const start = Date.now();
-      let fileUrl = '';
-      while (Date.now() - start < 120000) {
-        const { data: st } = await downloadAPI.getJobStatus(jobId);
-        const status = String(st?.status || st?.state || '').toLowerCase();
-        if (['done', 'finished', 'completed'].includes(status)) {
-          fileUrl = await downloadAPI.getJobFile(jobId);
-          break;
-        }
-        if (['failed', 'error'].includes(status)) throw new Error('Download failed');
-        await new Promise(r => setTimeout(r, 2000));
-      }
-      if (!fileUrl) throw new Error('Timeout');
-      
-      if (Capacitor.isNativePlatform()) {
-        const status = await Filesystem.requestPermissions();
-        if (status.publicStorage !== 'granted') throw new Error('Storage permission denied');
-      }
-      window.location.assign(fileUrl);
-      
-      if (anime) {
-        await addDownload({
-          anime_slug: slug, anime_title: anime.title, anime_cover: anime.cover,
-          episode_num: ep.num, episode_id: ep.id, episode_title: ep.title,
-        }, !!user);
-      }
-      toast(`Downloading EP ${ep.num}...`, 'success');
-      await new Promise(r => setTimeout(r, 1500));
-    } catch(e: any) {
-      toast(`Error on EP ${ep.num}: ${e.message}`, 'error');
-    }
-  };
-
   const downloadSelected = async () => {
     if (!anime) return;
     const epsToDownload = episodes.filter(ep => selectedEpisodes.includes(ep.id));
     setShowDownloadModal(false);
     setSelectedEpisodes([]);
     for (const ep of epsToDownload) {
-      await doActualDownload(ep);
+      await processDownload(ep, anime, selectedQuality, selectedAudio, toast);
     }
     toast('All selected downloads processed!', 'success');
   };
 
   const saveEp = async (ep: ReturnType<typeof extractEpisode>) => {
     if (!anime) return;
-    await doActualDownload(ep);
+    await processDownload(ep, anime, selectedQuality, selectedAudio, toast);
   };
-
-  const [downloadProgress, setDownloadProgress] = useState<{ downloading: boolean; progress: number; name: string }>({
-    downloading: false,
-    progress: 0,
-    name: '',
-  });
 
   const downloadCurrent = async () => {
     if (!currentEp || !anime) return;
-
-    const downloadName = `${anime.title.replace(/[^a-zA-Z0-9-_\. ]/g, '')}-EP${currentEp.num}.mp4`;
-    setDownloadProgress({ downloading: true, progress: 0, name: downloadName });
-
-    const triggerDownload = async (url: string) => {
-      if (Capacitor.isNativePlatform()) {
-        try {
-          toast('Starting native download...', 'info');
-          const status = await Filesystem.requestPermissions();
-          if (status.publicStorage !== 'granted') {
-            throw new Error('Storage permission denied');
-          }
-          window.location.assign(url);
-          setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
-          setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
-        } catch (err: any) {
-          toast(err.message || 'Native download failed', 'error');
-          setDownloadProgress({ downloading: false, progress: 0, name: '' });
-        }
-      } else {
-        window.location.assign(url);
-        setDownloadProgress({ downloading: false, progress: 100, name: downloadName });
-        setTimeout(() => setDownloadProgress({ downloading: false, progress: 0, name: '' }), 2000);
-      }
-    };
-
-    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    const pollJob = async (jobId: string) => {
-      const start = Date.now();
-      while (Date.now() - start < 120000) {
-        const { data } = await downloadAPI.getJobStatus(jobId);
-        const status = String(data?.status || data?.state || '').toLowerCase();
-        const progress = Number(data?.progress ?? data?.percentage ?? data?.percent ?? 0) || 0;
-        setDownloadProgress((prev) => ({ ...prev, progress: Math.max(prev.progress, Math.min(100, progress)) }));
-
-        if (['done', 'finished', 'completed'].includes(status)) {
-          return downloadAPI.getJobFile(jobId);
-        }
-
-        if (['failed', 'error'].includes(status)) {
-          throw new Error(data?.error || `Download ${status}`);
-        }
-
-        await wait(2000); // Poll every 2 seconds per friend's spec
-      }
-      throw new Error('Download timed out');
-    };
-
-    try {
-      setDownloadProgress((prev) => ({ ...prev, progress: 10 }));
-
-      const payload = {
-        anime_slug: slug,
-        episode_session: currentEp.id,
-        anime_title: anime.title,
-        episode_number: currentEp.num,
-        quality: selectedQuality.replace('p', ''),
-        audio: selectedAudio,
-      };
-
-      setDownloadProgress((prev) => ({ ...prev, progress: 30 }));
-
-      const { data } = await downloadAPI.createJob(payload);
-      const jobId = data?.job_id || data?.download_id || data?.id || data?.job?.id || data?.jobId;
-      if (!jobId) throw new Error('Download job creation failed');
-
-      setDownloadProgress((prev) => ({ ...prev, progress: 40 }));
-      const fileUrl = await pollJob(jobId);
-
-      setDownloadProgress((prev) => ({ ...prev, progress: 95 }));
-      triggerDownload(fileUrl);
-
-      const saved = await addDownload({
-        anime_slug: slug,
-        anime_title: anime.title,
-        anime_cover: anime.cover,
-        episode_num: currentEp.num,
-        episode_id: currentEp.id,
-        episode_title: currentEp.title,
-      }, !!user);
-
-      toast(`Download started: ${downloadName}`, 'success');
-      if (saved.success && !saved.duplicate) {
-        toast('Added to Library', 'success');
-      }
-    } catch (e: any) {
-      setDownloadProgress({ downloading: false, progress: 0, name: '' });
-      toast(e.message || 'Unable to start download', 'error');
-    }
+    setShowDownloadModal(false);
+    await processDownload(currentEp, anime, selectedQuality, selectedAudio, toast);
   };
 
   const nextEp = (() => {
@@ -460,6 +331,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 selectedAudio={selectedAudio}
                 onQualityChange={setSelectedQuality}
                 onAudioChange={setSelectedAudio}
+                intro={intro}
+                outro={outro}
               />
             )}
 
@@ -500,26 +373,6 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                   )}
                 </div>
               </div>
-
-              {/* Download Progress */}
-              {downloadProgress.downloading && (
-                <div className="p-4 rounded-2xl bg-s1 border border-s5/30 shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-s5/5 animate-pulse" />
-                  <div className="relative flex items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <Loader2 size={18} className="text-s5 animate-spin" />
-                      <span className="text-sm text-s5 font-bold">Downloading {downloadProgress.name}</span>
-                    </div>
-                    <span className="text-sm font-mono text-s4 font-bold">{downloadProgress.progress}%</span>
-                  </div>
-                  <div className="relative w-full bg-s0 rounded-full h-2.5 overflow-hidden border border-[var(--border)]">
-                    <div
-                      className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-s5 to-s4 transition-all duration-300 ease-out"
-                      style={{ width: `${downloadProgress.progress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
 
               {/* Synopsis */}
               {anime?.description && (
@@ -614,6 +467,29 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 <button onClick={() => setShowDownloadModal(false)} className="text-s3 hover:text-s5"><X size={20} /></button>
               </div>
               
+              {anime && (
+                <div className="relative w-full h-28 bg-s2 shrink-0">
+                  <img src={anime.banner || anime.cover} alt={anime.title} className="w-full h-full object-cover opacity-60" onError={(e) => (e.currentTarget.style.display='none')} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-s1 to-transparent flex flex-col justify-end p-4">
+                    <span className="font-bold text-sm text-white drop-shadow-md truncate">{anime.title}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[var(--border)] shrink-0 bg-s1/50">
+                <span className="text-xs font-bold text-s4 uppercase tracking-widest">Settings</span>
+                <div className="flex gap-2">
+                  <select value={selectedQuality} onChange={e => setSelectedQuality(e.target.value)}
+                    className="bg-s2 border border-[var(--border)] rounded-lg px-2 py-1 text-xs font-bold text-s5 outline-none cursor-pointer">
+                    {qualityOptions.map(q => <option key={q} value={q}>{q}</option>)}
+                  </select>
+                  <select value={selectedAudio} onChange={e => setSelectedAudio(e.target.value)}
+                    className="bg-s2 border border-[var(--border)] rounded-lg px-2 py-1 text-xs font-bold text-s5 outline-none cursor-pointer uppercase">
+                    {audioOptions.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+              
               <div className="flex-1 overflow-y-auto p-2 ep-scroll">
                 {/* Active Episode Direct Download using the stream URL logic */}
                 {currentEp && (
@@ -624,15 +500,15 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                         <div className="text-xs font-bold text-s5">EP {currentEp.num}</div>
                         <div className="text-sm text-s4 line-clamp-1">{currentEp.title}</div>
                       </div>
-                      <button onClick={downloadCurrent} disabled={downloadProgress.downloading}
-                        className="p-2.5 rounded-xl bg-s5 text-white hover:bg-s4 transition-all disabled:opacity-50">
-                        {downloadProgress.downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                      <button onClick={downloadCurrent}
+                        className="p-2.5 rounded-xl bg-s5 text-white hover:bg-s4 transition-all">
+                        <Download size={16} />
                       </button>
                     </div>
                   </div>
                 )}
 
-                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2">Save to Library</p>
+                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2 mt-4">{!Capacitor.isNativePlatform() ? 'Save to Device' : 'Download to App'}</p>
                 {episodes.map(ep => {
                   const isSelected = selectedEpisodes.includes(ep.id);
                   return (

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List, Sun, Lock, Unlock } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,13 +14,14 @@ interface Props {
   onEnded?: () => void; onProgress?: (t: number, d: number) => void; autoPlay?: boolean;
   qualityOptions?: string[]; audioOptions?: string[]; selectedQuality?: string; selectedAudio?: string;
   onQualityChange?: (q: string) => void; onAudioChange?: (a: string) => void;
+  intro?: { start: number; end: number }; outro?: { start: number; end: number };
 }
 
 export default function VideoPlayer({
   streamUrl, slug, episodeId, isFetchingStream, streamFetchError, onRetry,
   episodes, currentEp, onEpisodeSelect, onEnded, onProgress, autoPlay = true,
   qualityOptions = [], audioOptions = [], selectedQuality, selectedAudio,
-  onQualityChange, onAudioChange,
+  onQualityChange, onAudioChange, intro, outro,
 }: Props) {
   const videoRef     = useRef<HTMLVideoElement>(null);
   const hlsRef       = useRef<any>(null);
@@ -43,10 +44,13 @@ export default function VideoPlayer({
   const [showCtrl,   setShowCtrl]   = useState(true);
   const [brightness, setBrightness] = useState(1);
   const [resizeMode, setResizeMode] = useState<'contain' | 'cover' | 'fill'>('contain');
-  const touchStartRef = useRef<{ x: number; y: number; type: 'left' | 'right' | null }>({ x: 0, y: 0, type: null });
+  const touchStartRef = useRef<{ x: number; y: number; type: 'left' | 'right' | 'center' | null }>({ x: 0, y: 0, type: null });
+  const [isLocked,   setIsLocked]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [skipAnim,   setSkipAnim]   = useState<'fwd'|'bck'|null>(null);
+  const [indicator,  setIndicator]  = useState<{ type: 'volume' | 'brightness', value: number } | null>(null);
+  const indicatorTimer = useRef<ReturnType<typeof setTimeout>>();
   const [errMsg,     setErrMsg]     = useState('');
   const [clickFlash, setClickFlash] = useState(false);
   const [continuePrompt, setContinuePrompt] = useState<{time:number}|null>(null);
@@ -149,6 +153,7 @@ export default function VideoPlayer({
 
   // ── Double-tap to seek (mobile) ────────────────────────────────────────────
   const handleTap = useCallback((side: 'left' | 'right') => {
+    if (isLocked) return;
     tapCount.current++;
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
@@ -156,34 +161,54 @@ export default function VideoPlayer({
       else showControls();
       tapCount.current = 0;
     }, 280);
-  }, [skipTime, showControls]);
+  }, [skipTime, showControls, isLocked]);
 
-  const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right') => {
+  const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right' | 'center') => {
+    if (isLocked) return;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, type };
   };
 
+  const showIndicator = useCallback((type: 'volume' | 'brightness', value: number) => {
+    setIndicator({ type, value });
+    clearTimeout(indicatorTimer.current);
+    indicatorTimer.current = setTimeout(() => setIndicator(null), 1500);
+  }, []);
+
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isLocked) return;
     const start = touchStartRef.current;
     if (!start.type) return;
+    const dx = e.touches[0].clientX - start.x;
     const dy = start.y - e.touches[0].clientY; // positive when swiping up
-    // Need a threshold to distinguish from a tap
-    if (Math.abs(dy) > 5) {
-      if (start.type === 'left') {
-        setBrightness(b => Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03))));
-      } else {
-        const v = videoRef.current;
-        if (v) {
-          const newVol = Math.max(0, Math.min(1, v.volume + (dy > 0 ? 0.03 : -0.03)));
-          v.volume = newVol;
-          setVolume(newVol);
-        }
+
+    if (start.type === 'center') {
+      // Horizontal swipe to seek
+      if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 50) { skipTime(10); start.x = e.touches[0].clientX; }
+        else if (dx < -50) { skipTime(-10); start.x = e.touches[0].clientX; }
       }
-      // update startY to make it continuous
-      touchStartRef.current.y = e.touches[0].clientY;
-      // Show controls to provide visual feedback (especially for volume)
-      showControls();
+    } else {
+      // Vertical swipe for brightness/volume
+      if (Math.abs(dy) > 5 && Math.abs(dy) > Math.abs(dx)) {
+        if (start.type === 'left') {
+          setBrightness(b => {
+            const newB = Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03)));
+            showIndicator('brightness', Math.round(newB * 100));
+            return newB;
+          });
+        } else if (start.type === 'right') {
+          const v = videoRef.current;
+          if (v) {
+            const newVol = Math.max(0, Math.min(1, v.volume + (dy > 0 ? 0.03 : -0.03)));
+            v.volume = newVol;
+            setVolume(newVol);
+            showIndicator('volume', Math.round(newVol * 100));
+          }
+        }
+        start.y = e.touches[0].clientY;
+      }
     }
-  }, [showControls]);
+  }, [showIndicator, isLocked, skipTime]);
 
   const handleTouchEnd = () => {
     touchStartRef.current.type = null;
@@ -327,9 +352,13 @@ export default function VideoPlayer({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd} />
 
-      {/* Center click area — single tap = play/pause flash */}
+      {/* Center click area — single tap = play/pause flash, drag = seek */}
       <div className="absolute top-0 left-1/3 right-1/3 bottom-14 z-10 flex items-center justify-center"
+        onTouchStart={e => handleTouchStart(e, 'center')}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         onClick={() => {
+          if (isLocked) return;
           togglePlay();
           setClickFlash(true);
           setTimeout(() => setClickFlash(false), 400);
@@ -363,6 +392,20 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
+      {/* Volume/Brightness Indicator */}
+      <AnimatePresence>
+        {indicator && (
+          <motion.div initial={{ opacity: 0, scale: 0.8, x: indicator.type === 'volume' ? 20 : -20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, scale: 0.8, x: indicator.type === 'volume' ? 20 : -20 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md rounded-2xl w-16 h-40 shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-6' : 'left-6'}`}>
+            {indicator.type === 'volume' ? <Volume2 size={24} className="text-white mb-3" /> : <Sun size={24} className="text-white mb-3" />}
+            <div className="h-16 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
+              <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${indicator.value}%` }} />
+            </div>
+            <span className="text-white font-bold text-xs">{indicator.value}%</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Buffering spinner */}
       {(buffering || isFetchingStream) && !errMsg && !streamFetchError && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -381,7 +424,7 @@ export default function VideoPlayer({
 
       {/* Continue watching prompt */}
       <AnimatePresence>
-        {continuePrompt && (
+        {continuePrompt && !isLocked && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
             className="absolute bottom-20 right-4 z-40 bg-s1/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-white/10">
             <div className="flex flex-col">
@@ -394,6 +437,24 @@ export default function VideoPlayer({
               <button onClick={() => setContinuePrompt(null)} className="p-1.5 text-white/50 hover:text-white bg-white/5 rounded-lg"><X size={14} /></button>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Skip Intro / Outro buttons */}
+      <AnimatePresence>
+        {!isLocked && intro && current >= intro.start && current <= intro.end && (
+          <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            onClick={() => { if (videoRef.current) videoRef.current.currentTime = intro.end; }}
+            className="absolute bottom-20 right-4 z-40 px-5 py-2.5 bg-s1/95 backdrop-blur-md border border-s5/50 rounded-full text-sm font-bold text-s5 hover:bg-s2 shadow-2xl flex items-center gap-2 transition-all hover:scale-105">
+            <SkipForward size={16} /> Skip Intro
+          </motion.button>
+        )}
+        {!isLocked && outro && current >= outro.start && current <= outro.end && (
+          <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            onClick={() => { if (videoRef.current) videoRef.current.currentTime = outro.end; }}
+            className="absolute bottom-20 right-4 z-40 px-5 py-2.5 bg-s1/95 backdrop-blur-md border border-s5/50 rounded-full text-sm font-bold text-s5 hover:bg-s2 shadow-2xl flex items-center gap-2 transition-all hover:scale-105">
+            <SkipForward size={16} /> Skip Outro
+          </motion.button>
         )}
       </AnimatePresence>
 
@@ -477,9 +538,10 @@ export default function VideoPlayer({
       </AnimatePresence>
 
       {/* Bottom controls bar */}
-      <div className={`absolute bottom-0 left-0 right-0 px-4 pb-4 z-40 transition-opacity duration-300 ${showCtrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.9) 0%, transparent 100%)' }}
-        onClick={e => e.stopPropagation()}>
+      {!isLocked && (
+        <div className={`absolute bottom-0 left-0 right-0 px-4 pb-4 z-40 transition-opacity duration-300 ${showCtrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{ background: 'linear-gradient(0deg, rgba(0,0,0,.9) 0%, transparent 100%)' }}
+          onClick={e => e.stopPropagation()}>
 
         {/* Progress bar */}
         <div className="h-1.5 hover:h-2.5 transition-all mb-3 relative rounded-full bg-white/20 cursor-pointer group" onClick={seekBar}>
@@ -522,12 +584,35 @@ export default function VideoPlayer({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showSettings ? 'bg-s5 text-white' : 'hover:bg-white/10 text-white/90'}`}>
               <Settings size={15} /> <span className="hidden sm:inline">Settings</span>
             </button>
+            <button onClick={() => setIsLocked(true)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              <Lock size={18} />
+            </button>
             <button onClick={toggleFS} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               {fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
             </button>
           </div>
         </div>
       </div>
+      )}
+
+      {/* Locked Overlay */}
+      <AnimatePresence>
+        {isLocked && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/20"
+            onClick={(e) => { e.stopPropagation(); setShowCtrl(true); clearTimeout(ctrlTimer.current); ctrlTimer.current = setTimeout(() => setShowCtrl(false), 3000); }}>
+            <AnimatePresence>
+              {showCtrl && (
+                <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={(e) => { e.stopPropagation(); setIsLocked(false); }}
+                  className="w-16 h-16 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 hover:scale-110 transition-transform">
+                  <Unlock size={28} className="text-white" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
