@@ -14,7 +14,7 @@ module.exports = {
         s3: '#52525b',   // muted lines/icons
         s4: '#a1a1aa',   // body text
         s5: '#ffffff',   // primary text
-        accent: '#3b82f6', // electric blue accent
+        accent: '#e11d48', // deep rose-crimson accent
       },
       fontFamily: {
         display: ['var(--font-orbitron)', 'monospace'],

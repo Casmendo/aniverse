@@ -97,7 +97,7 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
           variants={containerVariants}
           initial="hidden" animate="visible" exit="exit"
           className="fixed inset-0 z-[80] flex flex-col"
-          style={{ background: 'rgba(6,20,27,0.97)', backdropFilter: 'blur(24px)' }}>
+          style={{ background: 'rgba(9,9,11,0.97)', backdropFilter: 'blur(28px)' }}>
 
           {/* Close on bg click */}
           <div className="absolute inset-0" onClick={onClose} />
@@ -109,9 +109,9 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
 
             {/* Search input */}
             <div className="flex items-center gap-3 mb-6">
-              <div className="flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl bg-s1 border border-[var(--border-hi)]"
-                style={{ boxShadow: 'var(--shadow)' }}>
-                <Search size={18} className="text-s3 shrink-0" />
+              <div className="flex-1 flex items-center gap-3 px-5 py-4 rounded-2xl bg-s1 border border-white/10 focus-within:border-accent/40 transition-all"
+                style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
+                <Search size={18} className="text-s4 shrink-0" />
                 <input
                   ref={inputRef}
                   value={query}
@@ -121,17 +121,17 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
                     if (e.key === 'Enter' && results[0]) go(results[0].slug, results[0].title);
                   }}
                   placeholder="Search anime, genres, studios…"
-                  className="flex-1 bg-transparent outline-none text-s5 text-base placeholder:text-s3 font-body"
+                  className="flex-1 bg-transparent outline-none text-white text-base placeholder:text-s4 font-body"
                 />
                 {query && (
                   <button onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus(); }}
-                    className="text-s3 hover:text-s5 transition-colors">
+                    className="text-s4 hover:text-white transition-colors">
                     <X size={16} />
                   </button>
                 )}
               </div>
               <button onClick={onClose}
-                className="w-12 h-12 rounded-xl bg-s1 border border-[var(--border)] flex items-center justify-center text-s4 hover:text-s5 hover:bg-s2 transition-all shrink-0">
+                className="w-12 h-12 rounded-2xl bg-s1 border border-white/10 flex items-center justify-center text-s4 hover:text-white hover:bg-s2 transition-all shrink-0">
                 <X size={18} />
               </button>
             </div>
@@ -140,26 +140,26 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
             {!query && history.length > 0 && (
               <motion.div initial={{ opacity:0,y:8 }} animate={{ opacity:1,y:0 }} transition={{ delay:0.1 }}
                 className="flex items-center gap-2 flex-wrap mb-4">
-                <Clock size={13} className="text-s3" />
-                <span className="text-s3 text-xs font-mono uppercase tracking-wider">Recent</span>
+                <Clock size={13} className="text-s4" />
+                <span className="text-s4 text-xs font-mono uppercase tracking-wider">Recent</span>
                 {history.map((h) => (
                   <button key={h} onClick={() => { setQuery(h); runSearch(h); }}
-                    className="px-3 py-1 rounded-full bg-s1 border border-[var(--border)] text-s4 text-xs hover:bg-s2 hover:text-s5 transition-all">
+                    className="px-3 py-1 rounded-full bg-s2 border border-white/10 text-s4 text-xs hover:bg-s2/80 hover:text-white transition-all">
                     {h}
                   </button>
                 ))}
-                <button onClick={clearHistory} className="text-s3 text-xs hover:text-s4 ml-auto">Clear</button>
+                <button onClick={clearHistory} className="text-s4 text-xs hover:text-white ml-auto">Clear</button>
               </motion.div>
             )}
 
             {/* Header label */}
             <div className="flex items-center gap-2 mb-4">
               {loading ? (
-                <div className="w-3 h-3 rounded-full border-2 border-s3 border-t-s5 animate-spin" />
+                <div className="w-3 h-3 rounded-full border-2 border-s4 border-t-accent animate-spin" />
               ) : (
-                <TrendingUp size={14} className="text-s3" />
+                <TrendingUp size={14} className="text-accent" />
               )}
-              <span className="text-s3 text-xs font-mono uppercase tracking-widest">
+              <span className="text-s4 text-xs font-mono uppercase tracking-widest">
                 {query
                   ? loading ? 'Searching…' : `${results.length} result${results.length !== 1 ? 's' : ''} for "${query}"`
                   : 'Recommended for you'}
@@ -182,7 +182,7 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
                       animate={{ opacity:1, y:0 }}
                       transition={{ delay: i * 0.03, ease:[0.16,1,0.3,1], duration:0.4 }}
                       onClick={() => go(a.slug, a.title)}
-                      className="card-wrap text-left bg-s1 flex flex-col overflow-hidden group">
+                      className="card-wrap text-left bg-s1 border border-white/5 flex flex-col overflow-hidden group hover:border-accent/30 transition-all">
                       {/* Poster */}
                       <div className="relative w-full overflow-hidden" style={{aspectRatio:'2/3'}}>
                         <img src={a.cover || `https://picsum.photos/seed/${a.slug}/300/450`}
@@ -203,9 +203,9 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
                       </div>
                       {/* Title */}
                       <div className="p-2.5">
-                        <p className="text-[11px] font-semibold text-s4 line-clamp-2 leading-tight">{a.title}</p>
+                        <p className="text-[11px] font-semibold text-white line-clamp-2 leading-tight">{a.title}</p>
                         {(a.year || a.type) && (
-                          <p className="text-[10px] text-s3 mt-0.5">{[a.year,a.type].filter(Boolean).join(' · ')}</p>
+                          <p className="text-[10px] text-s4 mt-0.5">{[a.year,a.type].filter(Boolean).join(' · ')}</p>
                         )}
                       </div>
                     </motion.button>
