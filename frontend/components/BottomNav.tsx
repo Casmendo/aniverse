@@ -36,7 +36,7 @@ export default function BottomNav() {
     <>
       <SearchPage isOpen={searchOpen} onClose={() => setSearchOpen(false)} initialRecs={recommendations} />
 
-      <div className="fixed bottom-[18px] left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-[420px] pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-[6px] left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-[420px] pb-[env(safe-area-inset-bottom)]">
         {/* Floating Pill Container */}
         <nav className="relative flex items-center justify-between bg-s1/90 backdrop-blur-2xl border border-white/5 rounded-[28px] px-2 py-4 shadow-[0_24px_48px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.05)]">
           
