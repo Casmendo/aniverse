@@ -187,7 +187,8 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0a] overflow-hidden relative">
+    <div className="min-h-screen flex items-center justify-center p-4 overflow-hidden relative bg-s0" style={{ backgroundImage: "url('/anime_bg.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm z-0" />
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md relative z-10">
         <div className="flex justify-center mb-8">
            <div className="w-32 h-32 flex items-center justify-center">
