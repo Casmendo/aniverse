@@ -82,17 +82,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {children}
               </main>
               <footer className="py-10 px-6 border-t border-[var(--border)] mt-10">
-                <div className="flex flex-col items-center gap-2">
-                  <div className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-mono" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                    <span className="text-white font-bold">leo</span>
-                    <span style={{ color: '#53C6C1', fontSize: 7 }}>✦</span>
-                    <span className="text-s4 font-medium">dev</span>
-                    <span style={{ color: '#53C6C1', opacity: 0.4 }}>│</span>
-                    <span className="text-white font-bold">zion</span>
-                    <span style={{ color: '#53C6C1', fontSize: 7 }}>✦</span>
-                    <span className="text-s4 font-medium">ass</span>
+                <div className="flex flex-col items-center gap-3">
+                  <div className="text-[12px] text-s4 font-mono">© {new Date().getFullYear()} AniVerse. All rights reserved.</div>
+                  <div className="flex items-center gap-2 text-[11px] tracking-widest uppercase font-mono" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                    <span>Built with love by</span>
+                    <span className="text-white font-bold">Leo</span>
+                    <span style={{ color: 'var(--accent)' }}>♥</span>
+                    <span className="text-white font-bold">Zion</span>
+                    <span style={{ color: 'var(--s4)' }}>✦</span>
                   </div>
-                  <p className="text-[9px] text-s2 font-mono uppercase tracking-[.3em]">Enter the Multiverse</p>
                 </div>
               </footer>
             <BottomNav />

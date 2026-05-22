@@ -44,12 +44,12 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
           <svg viewBox="0 0 80 90" fill="none" className="w-20 h-20">
             <defs>
               <linearGradient id="lsGrad" x1="0" y1="0" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="var(--s4)"/>
-                <stop offset="60%" stopColor="var(--s3)"/>
-                <stop offset="100%" stopColor="var(--s1)"/>
+                <stop offset="0%" stopColor="var(--accent)"/>
+                <stop offset="40%" stopColor="var(--s2)"/>
+                <stop offset="100%" stopColor="#34d399"/>
               </linearGradient>
             </defs>
-            {/* Bold futuristic A */}
+            {/* Bold futuristic A with warmer red merge */}
             <path d="M40 4L76 86H60L53 68H27L20 86H4Z" fill="url(#lsGrad)"/>
             <path d="M40 24L52 60H28Z" fill="var(--s0)"/>
             {/* Corner accents */}
@@ -64,7 +64,13 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
           </div>
         </div>
 
-        <div className="font-display font-black tracking-widest text-2xl text-s5 mb-1">
+        <div className="font-display font-black tracking-widest text-2xl mb-1"
+          style={{
+            background: 'linear-gradient(90deg, var(--accent), var(--s2), #34d399)',
+            WebkitBackgroundClip: 'text',
+            backgroundClip: 'text',
+            color: 'transparent'
+          }}>
           ANIVERSE
         </div>
         <div className="font-mono text-s3 text-[10px] tracking-[.3em] uppercase mb-10">
@@ -84,9 +90,9 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
           <div className="flex items-center gap-2 text-sm text-s3">
             <span style={{ color: 'var(--accent)', fontSize: 16 }}>♥</span>
             <span className="font-mono tracking-wider text-[10px] uppercase">
-              Built with love by <span className="text-s5 font-bold">Leo</span>
+              Built with love by <span className="text-s5 font-bold">Leo</span> <span className="text-s5 font-bold">&amp;</span> <span className="text-s5 font-bold">Zion</span>
             </span>
-            <span style={{ color: 'var(--accent)', fontSize: 16 }}>♥</span>
+            <span style={{ color: 'var(--s4)', fontSize: 14, marginLeft: 4 }}>✦</span>
           </div>
         </div>
       </div>

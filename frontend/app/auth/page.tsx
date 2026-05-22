@@ -191,11 +191,20 @@ export default function AuthPage() {
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #253745 0%, transparent 70%)' }} />
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md relative z-10">
         <div className="flex justify-center mb-8">
-           <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-16 h-16 rounded-full border-2 border-s5/20 flex items-center justify-center">
-             <div className="w-12 h-12 bg-gradient-to-br from-s4 to-s5 rounded-full" />
+           <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-20 h-20 flex items-center justify-center">
+             {/* User logo: red 'A' SVG */}
+             <svg viewBox="0 0 80 90" className="w-16 h-16" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+               <defs>
+                 <linearGradient id="aRed" x1="0" y1="0" x2="1" y2="1">
+                   <stop offset="0%" stopColor="var(--accent)" />
+                   <stop offset="100%" stopColor="#ff7b7b" />
+                 </linearGradient>
+               </defs>
+               <path d="M40 4L76 86H60L53 68H27L20 86H4Z" fill="url(#aRed)" />
+             </svg>
            </motion.div>
         </div>
-        <div className="bg-[#111] border border-white/10 p-8 rounded-[2rem] shadow-2xl">
+        <div style={{ background: 'var(--brand)' }} className="border border-white/10 p-8 rounded-[2rem] shadow-2xl">
           <AnimatePresence mode="wait">
             {screen === 'tabs' && (
               <motion.div key="tabs" exit={{ opacity: 0, y: -20 }} className="space-y-6">
