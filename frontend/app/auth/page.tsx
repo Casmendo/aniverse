@@ -188,21 +188,27 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0a] overflow-hidden relative">
-      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #253745 0%, transparent 70%)' }} />
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md relative z-10">
         <div className="flex justify-center mb-8">
-           <motion.div animate={{ rotate: [0, 360] }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="w-20 h-20 flex items-center justify-center">
-             {/* User logo: red 'A' SVG */}
-             <svg viewBox="0 0 80 90" className="w-16 h-16" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+           <div className="w-24 h-24 flex items-center justify-center">
+             <svg viewBox="0 0 80 90" fill="none" className="w-full h-full drop-shadow-[0_0_15px_rgba(255,26,26,0.6)]">
                <defs>
-                 <linearGradient id="aRed" x1="0" y1="0" x2="1" y2="1">
-                   <stop offset="0%" stopColor="var(--accent)" />
-                   <stop offset="100%" stopColor="#ff7b7b" />
+                 <linearGradient id="redGrad1" x1="0" y1="0" x2="0" y2="90">
+                   <stop offset="0%" stopColor="#ff4d4d"/>
+                   <stop offset="100%" stopColor="#cc0000"/>
+                 </linearGradient>
+                 <linearGradient id="redGrad2" x1="0" y1="0" x2="0" y2="90">
+                   <stop offset="0%" stopColor="#990000"/>
+                   <stop offset="100%" stopColor="#4d0000"/>
                  </linearGradient>
                </defs>
-               <path d="M40 4L76 86H60L53 68H27L20 86H4Z" fill="url(#aRed)" />
+               <path fillRule="evenodd" clipRule="evenodd" d="M43 8 L79 90 H63 L56 72 H30 L23 90 H7 Z M43 28 L55 64 H31 Z" fill="url(#redGrad2)"/>
+               <path fillRule="evenodd" clipRule="evenodd" d="M40 4 L76 86 H60 L53 68 H27 L20 86 H4 Z M40 24 L52 60 H28 Z" fill="url(#redGrad1)"/>
+               <line x1="0" y1="86" x2="14" y2="86" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
+               <line x1="66" y1="86" x2="80" y2="86" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
+               <circle cx="40" cy="4" r="3.5" fill="#ff4d4d"/>
              </svg>
-           </motion.div>
+           </div>
         </div>
         <div style={{ background: 'var(--s1)' }} className="border border-white/10 p-8 rounded-[2rem] shadow-2xl">
           <AnimatePresence mode="wait">
