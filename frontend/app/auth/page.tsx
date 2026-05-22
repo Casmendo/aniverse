@@ -204,7 +204,7 @@ export default function AuthPage() {
              </svg>
            </motion.div>
         </div>
-        <div style={{ background: 'var(--brand)' }} className="border border-white/10 p-8 rounded-[2rem] shadow-2xl">
+        <div style={{ background: 'var(--s1)' }} className="border border-white/10 p-8 rounded-[2rem] shadow-2xl">
           <AnimatePresence mode="wait">
             {screen === 'tabs' && (
               <motion.div key="tabs" exit={{ opacity: 0, y: -20 }} className="space-y-6">
