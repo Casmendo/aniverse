@@ -190,23 +190,49 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0a] overflow-hidden relative">
       <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-md relative z-10">
         <div className="flex justify-center mb-8">
-           <div className="w-24 h-24 flex items-center justify-center">
-             <svg viewBox="0 0 80 90" fill="none" className="w-full h-full drop-shadow-[0_0_15px_rgba(255,26,26,0.6)]">
+           <div className="w-32 h-32 flex items-center justify-center">
+             <svg viewBox="0 0 100 100" fill="none" className="w-full h-full drop-shadow-[0_0_25px_rgba(168,85,247,0.5)]">
                <defs>
-                 <linearGradient id="redGrad1" x1="0" y1="0" x2="0" y2="90">
-                   <stop offset="0%" stopColor="#ff4d4d"/>
-                   <stop offset="100%" stopColor="#cc0000"/>
+                 <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                   <stop offset="0%" stopColor="#c084fc" />
+                   <stop offset="20%" stopColor="#4c1d95" />
+                   <stop offset="50%" stopColor="#1e1b4b" />
+                   <stop offset="80%" stopColor="#4c1d95" />
+                   <stop offset="100%" stopColor="#818cf8" />
                  </linearGradient>
-                 <linearGradient id="redGrad2" x1="0" y1="0" x2="0" y2="90">
-                   <stop offset="0%" stopColor="#990000"/>
-                   <stop offset="100%" stopColor="#4d0000"/>
+                 <linearGradient id="edgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                   <stop offset="0%" stopColor="#ffffff" />
+                   <stop offset="25%" stopColor="rgba(255,255,255,0.1)" />
+                   <stop offset="50%" stopColor="#f472b6" />
+                   <stop offset="75%" stopColor="rgba(255,255,255,0.1)" />
+                   <stop offset="100%" stopColor="#38bdf8" />
                  </linearGradient>
+                 <linearGradient id="innerLight" x1="20%" y1="20%" x2="80%" y2="80%">
+                   <stop offset="0%" stopColor="rgba(255,255,255,0.6)" />
+                   <stop offset="50%" stopColor="rgba(255,255,255,0)" />
+                   <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
+                 </linearGradient>
+                 <filter id="glassBlur">
+                   <feGaussianBlur stdDeviation="3" />
+                 </filter>
                </defs>
-               <path fillRule="evenodd" clipRule="evenodd" d="M43 8 L79 90 H63 L56 72 H30 L23 90 H7 Z M43 28 L55 64 H31 Z" fill="url(#redGrad2)"/>
-               <path fillRule="evenodd" clipRule="evenodd" d="M40 4 L76 86 H60 L53 68 H27 L20 86 H4 Z M40 24 L52 60 H28 Z" fill="url(#redGrad1)"/>
-               <line x1="0" y1="86" x2="14" y2="86" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-               <line x1="66" y1="86" x2="80" y2="86" stroke="#ff4d4d" strokeWidth="3" strokeLinecap="round"/>
-               <circle cx="40" cy="4" r="3.5" fill="#ff4d4d"/>
+
+               {/* Base blur shadow */}
+               <path d="M50 5 C50 35, 65 50, 95 50 C65 50, 50 65, 50 95 C50 65, 35 50, 5 50 C35 50, 50 35, 50 5 Z" 
+                     fill="rgba(0,0,0,0.6)" filter="url(#glassBlur)" transform="translate(0, 4)" />
+               
+               {/* Main Body */}
+               <path d="M50 5 C50 35, 65 50, 95 50 C65 50, 50 65, 50 95 C50 65, 35 50, 5 50 C35 50, 50 35, 50 5 Z" 
+                     fill="url(#bodyGrad)" 
+                     stroke="url(#edgeGrad)" 
+                     strokeWidth="2.5" />
+                     
+               {/* Inner Bevel Light */}
+               <path d="M50 14 C50 36, 64 50, 86 50 C64 50, 50 64, 50 86 C50 64, 36 50, 14 50 C36 50, 50 36, 50 14 Z" 
+                     fill="url(#innerLight)" />
+               
+               {/* Arc Highlight Top Left */}
+               <path d="M50 10 C50 30, 70 50, 90 50 C65 48, 52 35, 50 10 Z" fill="rgba(255,255,255,0.15)" transform="rotate(-90 50 50)" />
              </svg>
            </div>
         </div>
