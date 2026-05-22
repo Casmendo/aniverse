@@ -27,7 +27,7 @@ export default function APKPage() {
         clearInterval(iv); 
         setDone(true); 
         // Trigger real download
-        window.location.assign('https://files.catbox.moe/tzk3ao.apk');
+        window.location.assign('https://files.catbox.moe/orvwu7.apk');
       }
       setProgress(Math.min(100,p));
     }, 140);
@@ -46,7 +46,7 @@ export default function APKPage() {
         transition={{ duration:4, ease:'easeInOut', repeat:Infinity }}
         className="w-28 h-28 rounded-[28px] overflow-hidden bg-s1 border border-[var(--border)] flex items-center justify-center mb-8 relative"
         style={{boxShadow:'var(--shadow-lg)'}}>
-        <img src="/logo_new.png" alt="AniVerse" className="w-full h-full object-cover" />
+        <img src="https://files.catbox.moe/35xldc.png" alt="AniVerse" className="w-full h-full object-cover" />
         {/* Notification dot */}
         <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-s5 border-2 border-s1" />
       </motion.div>
