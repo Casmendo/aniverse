@@ -377,8 +377,10 @@ export default function VideoPlayer({
               {playing
                   ? <Pause size={34} className="text-white" />
                   : <Play  size={34} fill="white" className="text-white ml-1" />}
-              </motion.div>
-      </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        </div>
 
       {/* Volume/Brightness Indicator */}
       <AnimatePresence>
