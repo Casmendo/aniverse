@@ -182,15 +182,15 @@ export default function VideoPlayer({
     const dx = e.touches[0].clientX - start.x;
     const dy = start.y - e.touches[0].clientY; // positive when swiping up
 
-    if (start.type === 'center') {
-      // Horizontal swipe to seek
-      if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy)) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal swipe to seek (works from ANY zone)
+      if (Math.abs(dx) > 20) {
         if (dx > 50) { skipTime(10); start.x = e.touches[0].clientX; }
         else if (dx < -50) { skipTime(-10); start.x = e.touches[0].clientX; }
       }
     } else {
-      // Vertical swipe for brightness/volume
-      if (Math.abs(dy) > 5 && Math.abs(dy) > Math.abs(dx)) {
+      // Vertical swipe for brightness/volume (only on left/right zones)
+      if (Math.abs(dy) > 5 && start.type !== 'center') {
         if (start.type === 'left') {
           setBrightness(b => {
             const newB = Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03)));
@@ -534,9 +534,21 @@ export default function VideoPlayer({
           onClick={e => e.stopPropagation()}>
 
         {/* Progress bar */}
-        <div className="h-1.5 hover:h-2.5 transition-all mb-3 relative rounded-full bg-white/20 cursor-pointer group" onClick={seekBar}>
-          <div className="absolute inset-y-0 left-0 bg-s5 rounded-full" style={{ width: `${pct}%` }} />
-          <div className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md" style={{ left: `calc(${pct}% - 7px)` }} />
+        <div className="h-1.5 hover:h-2.5 transition-all mb-3 relative rounded-full bg-white/20 cursor-pointer group flex items-center">
+          <div className="absolute inset-y-0 left-0 bg-s5 rounded-full pointer-events-none" style={{ width: `${pct}%` }} />
+          <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none" style={{ left: `calc(${pct}% - 7px)` }} />
+          <input 
+            type="range" min={0} max={duration || 100} step="0.1" value={current}
+            onInput={(e) => {
+              const v = videoRef.current;
+              if (v) v.currentTime = parseFloat(e.currentTarget.value);
+            }}
+            onChange={(e) => {
+              const v = videoRef.current;
+              if (v) v.currentTime = parseFloat(e.currentTarget.value);
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer m-0"
+          />
         </div>
 
         <div className="flex items-center gap-2">
