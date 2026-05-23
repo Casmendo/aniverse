@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.aniverse.app"
+    namespace "com.casmendo.aniverse"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.aniverse.app"
+        applicationId "com.casmendo.aniverse"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

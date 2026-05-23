@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aniverse.app',
+  appId: 'com.casmendo.aniverse',
   appName: 'AniVerse',
   webDir: 'out',
   server: {
@@ -9,6 +9,13 @@ const config: CapacitorConfig = {
     url: 'https://aniiverse.name.ng',
     cleartext: true,
     androidScheme: 'https',
+    allowNavigation: [
+      'aniiverse.name.ng',
+      'aniverse-orcin.vercel.app',
+      'files.catbox.moe',
+      '*.github.com',
+      '*'
+    ]
   },
   android: {
     allowMixedContent: true,
