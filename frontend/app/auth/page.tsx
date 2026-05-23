@@ -218,7 +218,7 @@ export default function AuthPage() {
             {/* Core Image Container */}
             <div className="w-full h-full rounded-full overflow-hidden border border-white/20 shadow-[inset_0_0_20px_rgba(0,0,0,0.8),0_20px_40px_rgba(0,0,0,0.6)] bg-black/80 backdrop-blur-xl relative flex items-center justify-center"
                  style={{ transform: 'translateZ(20px)' }}>
-               <img src="https://files.catbox.moe/y3fqqr.png" alt="Logo" className="w-[65%] h-[65%] object-contain drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" />
+               <img src="https://files.catbox.moe/y3fqqr.png" alt="Logo" className="w-full h-full object-cover" />
             </div>
           </motion.div>
         </div>
