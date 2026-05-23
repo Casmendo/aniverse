@@ -56,6 +56,7 @@ export default function VideoPlayer({
   const [errMsg,     setErrMsg]     = useState('');
   const [clickFlash, setClickFlash] = useState(false);
   const [continuePrompt, setContinuePrompt] = useState<{time:number}|null>(null);
+  const [swipeSeek,  setSwipeSeek]  = useState<number | null>(null);
 
   const pct = duration > 0 ? (current / duration) * 100 : 0;
 
@@ -161,7 +162,7 @@ export default function VideoPlayer({
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
       if (tapCount.current >= 2) skipTime(side === 'right' ? 10 : -10);
-      else showControls();
+      else setShowCtrl(prev => !prev);
       tapCount.current = 0;
     }, 280);
   }, [skipTime, showControls, isLocked]);
@@ -169,6 +170,7 @@ export default function VideoPlayer({
   const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right' | 'center') => {
     if (isLocked) return;
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, type };
+    setSwipeSeek(null);
   };
 
   const showIndicator = useCallback((type: 'volume' | 'brightness', value: number) => {
@@ -186,9 +188,15 @@ export default function VideoPlayer({
 
     if (Math.abs(dx) > Math.abs(dy)) {
       // Horizontal swipe to seek (works from ANY zone)
-      if (Math.abs(dx) > 20) {
-        if (dx > 50) { skipTime(10); start.x = e.touches[0].clientX; }
-        else if (dx < -50) { skipTime(-10); start.x = e.touches[0].clientX; }
+      if (Math.abs(dx) > 10) {
+        const v = videoRef.current;
+        if (v) {
+          // Calculate seek offset based on dx (e.g., 100px = 60 seconds)
+          const offset = (dx / 150) * 60; // adjust sensitivity
+          let newTime = v.currentTime + offset;
+          newTime = Math.max(0, Math.min(v.duration || 0, newTime));
+          setSwipeSeek(newTime);
+        }
       }
     } else {
       // Vertical swipe for brightness/volume (only on left/right zones)
@@ -214,6 +222,11 @@ export default function VideoPlayer({
   }, [showIndicator, isLocked, skipTime]);
 
   const handleTouchEnd = () => {
+    if (swipeSeek !== null && videoRef.current) {
+      videoRef.current.currentTime = swipeSeek;
+      setSwipeSeek(null);
+      showControls();
+    }
     touchStartRef.current.type = null;
   };
 
@@ -410,6 +423,21 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
+      {/* Swipe Scrub Indicator */}
+      <AnimatePresence>
+        {swipeSeek !== null && duration > 0 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}
+            className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="bg-black/60 backdrop-blur-md px-6 py-4 rounded-2xl flex flex-col items-center gap-2 shadow-2xl border border-white/10">
+              <span className="text-white font-bold font-mono text-lg">{formatTime(swipeSeek)} / {formatTime(duration)}</span>
+              <div className="w-40 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                <div className="h-full bg-s5" style={{ width: `${(swipeSeek / duration) * 100}%` }} />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Buffering spinner */}
       {(buffering || isFetchingStream) && !errMsg && !streamFetchError && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
@@ -571,13 +599,13 @@ export default function VideoPlayer({
             <button onClick={togglePlay} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               {playing ? <Pause size={20} /> : <Play size={20} fill="white" />}
             </button>
-            <button onClick={() => skipTime(-10)} className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+            <button onClick={() => skipTime(-10)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <SkipBack size={18} />
             </button>
-            <button onClick={() => skipTime(10)} className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+            <button onClick={() => skipTime(10)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <SkipForward size={18} />
             </button>
-            <button onClick={toggleMute} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+            <button onClick={toggleMute} className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
@@ -615,7 +643,7 @@ export default function VideoPlayer({
       <AnimatePresence>
         {isLocked && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/20"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-transparent"
             onClick={(e) => { e.stopPropagation(); setShowCtrl(true); clearTimeout(ctrlTimer.current); ctrlTimer.current = setTimeout(() => setShowCtrl(false), 3000); }}>
             <AnimatePresence>
               {showCtrl && (

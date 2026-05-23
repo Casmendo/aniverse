@@ -339,6 +339,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 onAudioChange={setSelectedAudio}
                 intro={intro}
                 outro={outro}
+                />
               );
             })()}
 
