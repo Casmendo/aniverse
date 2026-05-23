@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default function AnimeCard({ slug,title,cover,score,episodes,type,delay=0,inWatchlist,onDownload,onWatchlist }: Props) {
-  const [src, setSrc] = useState(cover || `https://picsum.photos/seed/${slug}/300/450`);
+  const [src, setSrc] = useState(cover );
 
   return (
     <motion.div
@@ -33,7 +33,7 @@ export default function AnimeCard({ slug,title,cover,score,episodes,type,delay=0
         {/* Poster */}
         <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
           <img src={src} alt={title} loading="lazy"
-            onError={() => setSrc(`https://picsum.photos/seed/${slug}/300/450`)}
+            onError={() => setSrc('')}
             className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-108" />
 
           {/* Score */}

@@ -200,7 +200,7 @@ export default function Sidebar() {
                         className="flex items-center gap-3 px-3 py-2 rounded-xl text-s4 hover:bg-white/5 hover:text-white transition-all">
                         <div className="w-7 h-9 rounded-lg bg-s2 overflow-hidden shrink-0">
                           <img src={r.cover} alt={r.title} className="w-full h-full object-cover"
-                            onError={e => { (e.target as HTMLImageElement).src=`https://picsum.photos/seed/${r.slug}/60/90`; }} />
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate text-white">{r.title}</p>

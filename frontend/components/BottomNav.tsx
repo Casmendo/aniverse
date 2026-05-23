@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Download, Search, Bookmark, User } from 'lucide-react';
 import SearchPage from './SearchPage';
 import { animeAPI } from '@/lib/api';
+import { useAuthStore } from '@/store/authStore';
 
 const NAV_LEFT = [
   { href:'/',          icon:Home,     label:'Home' },
@@ -19,6 +20,7 @@ export default function BottomNav() {
   const path = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [recommendations, setRecs]  = useState<Record<string,unknown>[]>([]);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     (async () => {
@@ -74,7 +76,17 @@ export default function BottomNav() {
               const active = path===href || (href!=='/' && path.startsWith(href));
               return (
                 <Link key={href} href={href} className="relative flex flex-col items-center gap-1.5 w-12 group">
-                  <Icon size={22} strokeWidth={active ? 2.5 : 2} className={`transition-all duration-300 ${active ? 'text-white scale-110' : 'text-s4 group-hover:text-white/80'}`} />
+                  {href === '/profile' && user ? (
+                    user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.username} className={`w-[22px] h-[22px] rounded-full object-cover transition-all duration-300 ${active ? 'scale-110 border border-s5 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : ''}`} />
+                    ) : (
+                      <div className={`w-[22px] h-[22px] rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] text-s5 transition-all duration-300 ${active ? 'scale-110 border-s5 shadow-[0_0_10px_rgba(34,197,94,0.3)]' : ''}`}>
+                        {user.avatar || user.username[0].toUpperCase()}
+                      </div>
+                    )
+                  ) : (
+                    <Icon size={22} strokeWidth={active ? 2.5 : 2} className={`transition-all duration-300 ${active ? 'text-white scale-110' : 'text-s4 group-hover:text-white/80'}`} />
+                  )}
                   <span className={`text-[10px] font-bold ${active ? 'text-white' : 'text-s4'} transition-all`}>{label === 'Markets' ? 'Watchlist' : label}</span>
                   {active && <div className="absolute -bottom-4 w-6 h-1 bg-green-500 rounded-t-full shadow-[0_-2px_10px_rgba(34,197,94,0.6)]" />}
                 </Link>

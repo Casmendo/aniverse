@@ -405,7 +405,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                           <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2"
                             style={{ boxShadow: 'var(--shadow-sm)' }}>
                             {a.cover
-                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                               : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
                             {a.type && <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-white uppercase">{a.type}</span>}
                           </div>
@@ -433,7 +433,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                           <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2"
                             style={{ boxShadow: 'var(--shadow-sm)' }}>
                             {a.cover
-                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                              ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                               : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
                             {a.type && <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white uppercase">{a.type}</span>}
                           </div>

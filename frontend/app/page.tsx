@@ -149,9 +149,9 @@ export default function HomePage() {
                 </button>
                 <a href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}?title=${encodeURIComponent(r.title)}&ep=${r.lastEpNum}` : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}>
                   <div className="relative" style={{aspectRatio:'2/3'}}>
-                    <img src={r.cover||`https://picsum.photos/seed/${r.slug}/300/450`} alt={r.title}
+                    <img src={r.cover} alt={r.title}
                       className="w-full h-full object-cover"
-                      onError={e=>{(e.target as HTMLImageElement).src=`https://picsum.photos/seed/${r.slug}/300/450`;}} />
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   {/* Progress bar at bottom */}
                   {r.progress > 0 && (
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-s2/60">

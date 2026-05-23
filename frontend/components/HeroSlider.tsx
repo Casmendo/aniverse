@@ -52,7 +52,7 @@ export default function HeroSlider({ items }: { items: Record<string,unknown>[] 
           {/* BG image */}
           <div className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage:`url('${s.banner || s.cover || `https://picsum.photos/seed/${s.slug}/1920/1080`}')`,
+              backgroundImage:`url('${s.banner || s.cover }')`,
               filter:'brightness(0.28) saturate(0.7)',
               transform:'scale(1.05)',
             }} />

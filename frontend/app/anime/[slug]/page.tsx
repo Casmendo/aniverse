@@ -301,9 +301,9 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
           {/* Poster */}
           <div className="w-[clamp(110px,16vw,190px)] shrink-0 rounded-xl overflow-hidden border border-[var(--border)]"
             style={{boxShadow:'var(--shadow-lg)',aspectRatio:'2/3'}}>
-            <img src={a.cover||`https://picsum.photos/seed/${slug}/300/450`} alt={a.title}
+            <img src={a.cover} alt={a.title}
               className="w-full h-full object-cover"
-              onError={e=>{(e.target as HTMLImageElement).src=`https://picsum.photos/seed/${slug}/300/450`;}} />
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           </div>
 
           {/* Info */}
@@ -393,7 +393,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                     <div className="w-32 h-44 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2.5"
                       style={{ boxShadow: 'var(--shadow-sm)' }}>
                       {a.cover
-                        ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                        ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         : <div className="w-full h-full flex items-center justify-center"><Play size={22} className="text-s3" /></div>}
                       {a.type && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-white uppercase">{a.type}</span>}
                     </div>
@@ -421,7 +421,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                     <div className="w-32 h-44 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2.5"
                       style={{ boxShadow: 'var(--shadow-sm)' }}>
                       {a.cover
-                        ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${a.slug}/200/300`; }} />
+                        ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                         : <div className="w-full h-full flex items-center justify-center"><Play size={22} className="text-s3" /></div>}
                       {a.type && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white uppercase">{a.type}</span>}
                     </div>
@@ -445,9 +445,13 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
 
           {user ? (
             <div className="flex gap-3 mb-6">
-              <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-sm shrink-0 text-s5">
-                {user.username[0].toUpperCase()}
-              </div>
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--border)]" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-sm shrink-0 text-s5">
+                  {user.username[0].toUpperCase()}
+                </div>
+              )}
               <div className="flex-1 flex gap-2">
                 <input value={cmtText} onChange={e=>setCmtText(e.target.value)}
                   onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();postComment();}}}
@@ -518,9 +522,13 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                           className="mt-3 overflow-hidden"
                         >
                           <div className="flex gap-2 items-start pl-2">
-                            <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 mt-1">
-                              {user?.username[0].toUpperCase()}
-                            </div>
+                            {user?.avatarUrl ? (
+                              <img src={user.avatarUrl} alt="Avatar" className="w-6 h-6 rounded-full object-cover shrink-0 border border-[var(--border)] mt-1" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 mt-1">
+                                {user?.username[0].toUpperCase()}
+                              </div>
+                            )}
                             <div className="flex-1 flex flex-col gap-2">
                               <input
                                 value={replyText}

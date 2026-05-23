@@ -100,7 +100,7 @@ function DownloadGroupCard({ group, gi }: { group: any, gi: number }) {
         <div className="w-11 h-[60px] rounded-lg overflow-hidden bg-s2 shrink-0">
           <img src={group.anime_cover} alt={group.anime_title}
             className="w-full h-full object-cover"
-            onError={e=>{(e.target as HTMLImageElement).src=`https://picsum.photos/seed/${group.anime_slug}/80/120`;}} />
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         </div>
         <div className="flex-1 min-w-0">
           <Link href={`/anime/${group.anime_slug}?title=${encodeURIComponent(group.anime_title||'')}`}

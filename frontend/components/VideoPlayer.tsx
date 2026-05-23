@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List, Sun, Lock, Unlock } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List, Sun, Lock, Unlock, RotateCcw, RotateCw } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,13 +46,14 @@ export default function VideoPlayer({
   const [showCtrl,   setShowCtrl]   = useState(true);
   const [brightness, setBrightness] = useState(1);
   const [resizeMode, setResizeMode] = useState<'contain' | 'cover' | 'fill'>('contain');
-  const touchStartRef = useRef<{ x: number; y: number; type: 'left' | 'right' | 'center' | null }>({ x: 0, y: 0, type: null });
+  const indicatorTimer = useRef<NodeJS.Timeout>();
+  const touchStartRef  = useRef<{x:number, y:number, type:string|null}>({ x:0, y:0, type:null });
+  const activeEpRef    = useRef<HTMLButtonElement>(null);
   const [isLocked,   setIsLocked]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [skipAnim,   setSkipAnim]   = useState<{ dir: 'fwd' | 'bck', targetTime: number } | null>(null);
   const [indicator,  setIndicator]  = useState<{ type: 'volume' | 'brightness', value: number } | null>(null);
-  const indicatorTimer = useRef<ReturnType<typeof setTimeout>>();
   const [errMsg,     setErrMsg]     = useState('');
   const [clickFlash, setClickFlash] = useState(false);
   const [continuePrompt, setContinuePrompt] = useState<{time:number}|null>(null);
@@ -64,7 +65,7 @@ export default function VideoPlayer({
   const showControls = useCallback(() => {
     setShowCtrl(true);
     clearTimeout(ctrlTimer.current);
-    ctrlTimer.current = setTimeout(() => setShowCtrl(false), 3000);
+    ctrlTimer.current = setTimeout(() => setShowCtrl(false), 5000);
   }, []);
 
   // ── Skip animation ─────────────────────────────────────────────────────────
@@ -342,7 +343,14 @@ export default function VideoPlayer({
     return () => clearTimeout(t);
   }, [streamUrl, isFetchingStream, attachHls, localPath]);
 
-  // ── Save progress every 5s ─────────────────────────────────────────────────
+  // ── Auto-scroll active episode ─────────────────────────────────────────────
+  useEffect(() => {
+    if (showEpisodes && activeEpRef.current) {
+      activeEpRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  }, [showEpisodes]);
+
+  // ── Native MP4 playback & HLS init ─────────────────────────────────────────────────
   useEffect(() => {
     saveTimer.current = setInterval(() => {
       const v = videoRef.current;
@@ -391,23 +399,36 @@ export default function VideoPlayer({
           setClickFlash(true);
           setTimeout(() => setClickFlash(false), 400);
         }}>
-        <AnimatePresence>
-          {(clickFlash || (showCtrl && !playing && !buffering && !errMsg && !streamFetchError)) && (
-            <motion.div
-              key="center-play"
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.3 }}
-              transition={{ duration: 0.25 }}
-              className="w-20 h-20 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center pointer-events-none shadow-2xl border border-white/10"
-            >
-              {playing
-                  ? <Pause size={34} className="text-white" />
-                  : <Play  size={34} fill="white" className="text-white ml-1" />}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        </div>
+      </div>
+
+      {/* Center Controls Overlay */}
+      <AnimatePresence>
+        {showCtrl && !isLocked && !buffering && !errMsg && !streamFetchError && (
+          <motion.div
+            key="center-controls"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 flex items-center justify-center gap-8 z-20 pointer-events-none"
+          >
+            {/* Rewind */}
+            <button onClick={(e) => { e.stopPropagation(); skipTime(-10); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
+              <RotateCcw size={24} className="text-white" />
+            </button>
+            
+            {/* Play/Pause */}
+            <button onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="w-16 h-16 rounded-full bg-s5/90 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-s4 transition-all border border-white/10 shadow-2xl">
+              {playing ? <Pause size={28} className="text-white" /> : <Play size={28} fill="white" className="text-white ml-1" />}
+            </button>
+            
+            {/* Fast Forward */}
+            <button onClick={(e) => { e.stopPropagation(); skipTime(10); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
+              <RotateCw size={24} className="text-white" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Volume/Brightness Indicator */}
       <AnimatePresence>
@@ -549,7 +570,7 @@ export default function VideoPlayer({
               {episodes.map(ep => {
                 const active = ep.id === currentEp?.id;
                 return (
-                  <button key={ep.id} onClick={() => { onEpisodeSelect?.(ep); setShowEpisodes(false); }}
+                  <button key={ep.id} ref={active ? activeEpRef : null} onClick={() => { onEpisodeSelect?.(ep); setShowEpisodes(false); }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all mb-1 ${active ? 'bg-s5/20 border border-s5/30' : 'hover:bg-white/5 border border-transparent'}`}>
                     <div className="w-14 h-9 rounded-lg bg-white/5 overflow-hidden shrink-0 flex items-center justify-center relative">
                       {ep.thumbnail

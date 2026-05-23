@@ -185,10 +185,10 @@ export default function SearchPage({ isOpen, onClose, initialRecs }: Props) {
                       className="card-wrap text-left bg-s1 border border-white/5 flex flex-col overflow-hidden group hover:border-accent/30 transition-all">
                       {/* Poster */}
                       <div className="relative w-full overflow-hidden" style={{aspectRatio:'2/3'}}>
-                        <img src={a.cover || `https://picsum.photos/seed/${a.slug}/300/450`}
+                        <img src={a.cover }
                           alt={a.title}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          onError={e => { (e.target as HTMLImageElement).src=`https://picsum.photos/seed/${a.slug}/300/450`; }}
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                         {/* Score */}
                         {a.score > 0 && (

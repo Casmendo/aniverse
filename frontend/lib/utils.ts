@@ -56,6 +56,14 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     }
   }
 
+  // Deduplicate title (e.g. "Black CloverBlack Clover" -> "Black Clover")
+  if (title && title.length > 4) {
+    const half = Math.floor(title.length / 2);
+    if (title.length % 2 === 0 && title.slice(0, half) === title.slice(half)) {
+      title = title.slice(0, half);
+    }
+  }
+
   // Final fallback
   if (!title) {
     title = 'Unknown Anime';

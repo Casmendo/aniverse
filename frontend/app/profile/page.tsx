@@ -178,7 +178,7 @@ export default function ProfilePage() {
                   <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2">
                     {r.cover
                       ? <img src={r.cover} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={e => { (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${r.slug}/200/300`; }} />
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
                     {/* Progress bar */}
                     {r.progress > 0 && (
