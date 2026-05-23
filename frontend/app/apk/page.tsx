@@ -27,7 +27,7 @@ export default function APKPage() {
         clearInterval(iv); 
         setDone(true); 
         // Trigger real download
-        window.location.assign('https://files.catbox.moe/orvwu7.apk');
+        window.location.assign('https://files.catbox.moe/4x0taj.apk');
       }
       setProgress(Math.min(100,p));
     }, 140);
