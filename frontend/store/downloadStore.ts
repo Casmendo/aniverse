@@ -8,6 +8,7 @@ export interface DownloadEpisode {
   episode_id:    string;
   episode_title: string;
   saved_at?:     string;
+  localPath?:    string; // native device file path for offline playback
 }
 
 export interface DownloadGroup {
@@ -24,6 +25,7 @@ interface DownloadState {
   add:      (params: {
     anime_slug: string; anime_title: string; anime_cover: string;
     episode_num: number; episode_id: string; episode_title: string;
+    localPath?: string;
   }, isLoggedIn: boolean) => Promise<{ success: boolean; duplicate: boolean }>;
   remove:   (slug: string, epId: number | undefined, isLoggedIn: boolean) => Promise<void>;
   removeAnime: (slug: string, isLoggedIn: boolean) => Promise<void>;
@@ -93,6 +95,7 @@ export const useDownloadStore = create<DownloadState>()(
             episode_num:   params.episode_num,
             episode_id:    params.episode_id,
             episode_title: params.episode_title,
+            localPath:     params.localPath,
           };
           if (idx >= 0) {
             groups[idx] = { ...groups[idx], episodes: [...groups[idx].episodes, newEp] };

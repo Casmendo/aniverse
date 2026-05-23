@@ -80,16 +80,21 @@ export const processDownload = async (
           }]
         });
 
+        const fileName = `${downloadName}.mp4`;
         const downloadRes = await CapacitorHttp.downloadFile({
           url: fileUrl,
-          filePath: `Download/${downloadName}.mp4`,
-          fileDirectory: Directory.ExternalStorage, // Save to public downloads folder
+          filePath: `Download/${fileName}`,
+          fileDirectory: Directory.ExternalStorage,
         });
+
+        // Build a Capacitor-compatible local path for offline playback
+        const localPath = downloadRes.path || `Download/${fileName}`;
 
         // Saved to device successfully, now add to local app library for offline custom player
         await addDownload({
           anime_slug: anime.slug, anime_title: anime.title, anime_cover: anime.cover,
           episode_num: ep.num, episode_id: ep.id, episode_title: ep.title,
+          localPath,
         }, !!user);
         
         await LocalNotifications.schedule({

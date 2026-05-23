@@ -312,13 +312,19 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 allowFullScreen
                 allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               />
-            ) : (
-              <VideoPlayer
-                streamUrl={streamUrl} slug={slug}
-                episodeId={currentEp?.id || episode}
-                isFetchingStream={loadStream}
-                streamFetchError={streamErr}
-                onRetry={() => currentEp && fetchStream(currentEp)}
+            ) : (() => {
+              const { groups } = useDownloadStore.getState();
+              const group = groups.find(g => g.anime_slug === slug);
+              const downloadedEp = group?.episodes.find(e => e.episode_id === currentEp?.id || e.episode_num === currentEp?.num);
+              
+              return (
+                <VideoPlayer
+                  streamUrl={streamUrl} slug={slug}
+                  episodeId={currentEp?.id || episode}
+                  localPath={downloadedEp?.localPath}
+                  isFetchingStream={loadStream}
+                  streamFetchError={streamErr}
+                  onRetry={() => currentEp && fetchStream(currentEp)}
                 episodes={episodes}
                 currentEp={currentEp}
                 onEpisodeSelect={switchEp}
@@ -333,8 +339,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                 onAudioChange={setSelectedAudio}
                 intro={intro}
                 outro={outro}
-              />
-            )}
+              );
+            })()}
 
             {/* Mobile Side Arrow to open Episodes Drawer */}
             <button

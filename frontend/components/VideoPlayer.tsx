@@ -4,6 +4,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForwar
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 
 declare global { interface Window { Hls: any; } }
 
@@ -15,13 +16,14 @@ interface Props {
   qualityOptions?: string[]; audioOptions?: string[]; selectedQuality?: string; selectedAudio?: string;
   onQualityChange?: (q: string) => void; onAudioChange?: (a: string) => void;
   intro?: { start: number; end: number }; outro?: { start: number; end: number };
+  localPath?: string;
 }
 
 export default function VideoPlayer({
   streamUrl, slug, episodeId, isFetchingStream, streamFetchError, onRetry,
   episodes, currentEp, onEpisodeSelect, onEnded, onProgress, autoPlay = true,
   qualityOptions = [], audioOptions = [], selectedQuality, selectedAudio,
-  onQualityChange, onAudioChange, intro, outro,
+  onQualityChange, onAudioChange, intro, outro, localPath
 }: Props) {
   const videoRef     = useRef<HTMLVideoElement>(null);
   const hlsRef       = useRef<any>(null);
@@ -235,6 +237,14 @@ export default function VideoPlayer({
         if (autoPlay) v.play().catch(() => {});
       };
 
+      // Native offline playback (MP4)
+      if (localPath && Capacitor.isNativePlatform()) {
+        const fileSrc = Capacitor.convertFileSrc(localPath);
+        v.src = fileSrc;
+        v.addEventListener('loadedmetadata', startPlayback, { once: true });
+        return;
+      }
+
       if (Hls?.isSupported()) {
         // Exact same config as the friend's iframe — this is the key to stability
         const hls = new Hls({
@@ -310,10 +320,14 @@ export default function VideoPlayer({
 
   // ── Load stream when URL changes ───────────────────────────────────────────
   useEffect(() => {
+    if (localPath) {
+      const t = setTimeout(() => attachHls(''), 200); // URL ignored for localPath
+      return () => clearTimeout(t);
+    }
     if (!streamUrl || isFetchingStream) return;
     const t = setTimeout(() => attachHls(streamUrl), 200);
     return () => clearTimeout(t);
-  }, [streamUrl, isFetchingStream, attachHls]);
+  }, [streamUrl, isFetchingStream, attachHls, localPath]);
 
   // ── Save progress every 5s ─────────────────────────────────────────────────
   useEffect(() => {
