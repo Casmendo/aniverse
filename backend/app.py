@@ -365,30 +365,49 @@ def health(): return jsonify({'status':'ok','version':'2.0.0'})
 # ── Anime Proxy ────────────────────────────────────────────────────────────────
 
 @app.route('/api/airing')
-@cache.cached(timeout=180,query_string=True)
+@cache.cached(timeout=30, query_string=True)
 def api_airing():
-    page = request.args.get('page',1,type=int)
-    for path in ['/api/airing', '/api/latest-release', '/api/top-anime']:
+    page = request.args.get('page', 1, type=int)
+    # /api/airing is broken on animapi — go straight to /api/latest-release which works
+    for path in ['/api/latest-release', '/api/airing', '/api/top-anime']:
         try:
-            return jsonify(_get(path, params={'page':page}, timeout=6))
-        except: continue
-    return jsonify({'error':'All sources failed','results':[]}),502
+            data = _get(path, params={'page': page} if path == '/api/airing' else None, timeout=8)
+            return jsonify(data)
+        except Exception as e:
+            app.logger.warning(f'[airing] {path} failed: {e}')
+            continue
+    return jsonify({'error': 'All anime sources are temporarily unavailable', 'data': [], 'results': []}), 502
+
+@app.route('/api/latest-release')
+@cache.cached(timeout=60)
+def api_latest_release():
+    try:
+        return jsonify(_get('/api/latest-release', timeout=8))
+    except Exception as e:
+        app.logger.warning(f'[latest-release] failed: {e}')
+        return jsonify({'error': str(e), 'data': [], 'results': []}), 502
 
 @app.route('/api/trending')
-@cache.cached(timeout=600)
+@cache.cached(timeout=120)
 def api_trending():
-    for path in ['/api/top-anime', '/api/latest-release']:
-        try: return jsonify(_get(path, timeout=6))
-        except: continue
-    return jsonify({'error':'All sources failed','results':[]}),502
+    for path in ['/api/latest-release', '/api/top-anime']:
+        try:
+            return jsonify(_get(path, timeout=8))
+        except Exception as e:
+            app.logger.warning(f'[trending] {path} failed: {e}')
+            continue
+    return jsonify({'error': 'All trending sources failed', 'data': [], 'results': []}), 502
 
 @app.route('/api/recommended')
-@cache.cached(timeout=600)
+@cache.cached(timeout=120)
 def api_recommended():
-    for path in ['/api/recent-episodes', '/api/latest-release']:
-        try: return jsonify(_get(path, timeout=6))
-        except: continue
-    return jsonify({'error':'All sources failed','results':[]}),502
+    for path in ['/api/latest-release', '/api/recent-episodes']:
+        try:
+            return jsonify(_get(path, timeout=8))
+        except Exception as e:
+            app.logger.warning(f'[recommended] {path} failed: {e}')
+            continue
+    return jsonify({'error': 'All recommended sources failed', 'data': [], 'results': []}), 502
 
 @app.route('/api/search')
 @limiter.limit('60 per minute')
