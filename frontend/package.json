@@ -16,7 +16,7 @@
     "@capacitor/filesystem": "^6.0.4",
     "@capacitor/local-notifications": "^6.1.3",
     "@capacitor/screen-orientation": "^6.0.4",
-    "@capgo/capacitor-downloader": "^8.1.24",
+    "@capgo/capacitor-downloader": "^0.0.12",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.8",
