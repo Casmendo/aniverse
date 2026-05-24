@@ -368,30 +368,27 @@ def health(): return jsonify({'status':'ok','version':'2.0.0'})
 @cache.cached(timeout=180,query_string=True)
 def api_airing():
     page = request.args.get('page',1,type=int)
-    try: return jsonify(_get('/api/airing',params={'page':page}))
-    except requests.Timeout: return jsonify({'error':'Timeout','results':[]}),504
-    except Exception as e: app.logger.error(f'[airing]{e}'); return jsonify({'error':str(e),'results':[]}),502
+    for path in ['/api/airing', '/api/latest-release', '/api/top-anime']:
+        try:
+            return jsonify(_get(path, params={'page':page}, timeout=6))
+        except: continue
+    return jsonify({'error':'All sources failed','results':[]}),502
 
 @app.route('/api/trending')
 @cache.cached(timeout=600)
 def api_trending():
-    # Try trending endpoint, fall back to page 2 of airing (different content)
-    for path in ['/api/top-anime','/api/airing']:
+    for path in ['/api/top-anime', '/api/latest-release']:
         try: return jsonify(_get(path, timeout=6))
         except: continue
-    # Last resort: return page 2 of airing
-    try: return jsonify(_get('/api/airing',params={'page':2}, timeout=10))
-    except Exception as e: return jsonify({'error':str(e),'results':[]}),502
+    return jsonify({'error':'All sources failed','results':[]}),502
 
 @app.route('/api/recommended')
 @cache.cached(timeout=600)
 def api_recommended():
-    for path in ['/api/recent-episodes','/api/top-anime','/api/airing']:
+    for path in ['/api/recent-episodes', '/api/latest-release']:
         try: return jsonify(_get(path, timeout=6))
         except: continue
-    # Fallback: page 3 of airing acts as "recommended"
-    try: return jsonify(_get('/api/airing',params={'page':3}, timeout=10))
-    except Exception as e: return jsonify({'error':str(e),'results':[]}),502
+    return jsonify({'error':'All sources failed','results':[]}),502
 
 @app.route('/api/search')
 @limiter.limit('60 per minute')

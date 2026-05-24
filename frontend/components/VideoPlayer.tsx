@@ -140,8 +140,21 @@ export default function VideoPlayer({
   const togglePiP = useCallback(async () => {
     const v = videoRef.current; if (!v) return;
     try {
-      if (document.pictureInPictureElement) await document.exitPictureInPicture();
-      else await v.requestPictureInPicture();
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        // Must wait for metadata to be loaded (readyState >= 1) before requesting PiP
+        if (v.readyState < 1) {
+          await new Promise<void>((resolve, reject) => {
+            const onMeta = () => { v.removeEventListener('loadedmetadata', onMeta); resolve(); };
+            const onErr  = () => { v.removeEventListener('error', onErr); reject(new Error('Video failed to load')); };
+            v.addEventListener('loadedmetadata', onMeta);
+            v.addEventListener('error', onErr);
+            setTimeout(() => { v.removeEventListener('loadedmetadata', onMeta); reject(new Error('PiP timeout')); }, 5000);
+          });
+        }
+        await v.requestPictureInPicture();
+      }
     } catch (err) { console.error('PiP error', err); }
   }, []);
 

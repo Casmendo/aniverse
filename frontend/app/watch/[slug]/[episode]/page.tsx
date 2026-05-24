@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, BookmarkCheck, Share2, ChevronLeft, List, X } from 'lucide-react';
+import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Check, Share2, ChevronLeft, List, X } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +15,7 @@ import { useDownloadStore } from '@/store/downloadStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { processDownload } from '@/lib/downloadService';
 
-const ANIMAPI_BASE = 'https://animapi.ayohost.site';
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.aniiverse.name.ng';
 
 export default function WatchPage({ params, searchParams }: { params: { slug: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
   const { slug, episode } = params;
@@ -146,7 +146,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       // Use proxy_m3u8 for our custom HLS player
       let url: string = data.proxy_m3u8 || data.stream_url || data.url || '';
       if (!url) throw new Error('No stream URL found — try another episode.');
-      if (url.startsWith('/')) url = `${ANIMAPI_BASE}${url}`;
+      if (url.startsWith('/')) url = `${BACKEND_BASE}${url}`;
       
       setIntro(data.intro);
       setOutro(data.outro);
@@ -192,7 +192,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   // Track episode in watchlist store
   useEffect(() => {
     if (anime && currentEp) {
-      trackEpisode(slug, anime.title, anime.cover, currentEp.id, currentEp.num, currentEp.title, 0);
+      trackEpisode(slug, anime.title, anime.cover || anime.banner || '', currentEp.id, currentEp.num, currentEp.title, 0);
       document.title = `EP ${currentEp.num} — ${anime.title} — AniVerse`;
     }
   }, [currentEp, anime]);
@@ -215,7 +215,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const handleProgress = useCallback((currentTime: number, duration: number) => {
     if (!anime || !currentEp || !duration) return;
     const pct = Math.round((currentTime / duration) * 100);
-    trackEpisode(slug, anime.title, anime.cover, currentEp.id, currentEp.num, currentEp.title, pct);
+    trackEpisode(slug, anime.title, anime.cover || anime.banner || '', currentEp.id, currentEp.num, currentEp.title, pct);
   }, [anime, currentEp, slug, trackEpisode]);
 
   const toggleEpSelection = (id: string) => {
@@ -476,7 +476,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
               
               {anime && (
                 <div className="relative w-full h-28 bg-s2 shrink-0">
-                  <img src={anime.banner || anime.cover} alt={anime.title} className="w-full h-full object-cover opacity-60" onError={(e) => (e.currentTarget.style.display='none')} />
+                  <img src={anime.cover || anime.banner} alt={anime.title} className="w-full h-full object-cover opacity-60" onError={(e) => (e.currentTarget.style.display='none')} />
                   <div className="absolute inset-0 bg-gradient-to-t from-s1 to-transparent flex flex-col justify-end p-4">
                     <span className="font-bold text-sm text-white drop-shadow-md truncate">{anime.title}</span>
                   </div>
@@ -522,7 +522,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                     <div key={ep.id} onClick={() => toggleEpSelection(ep.id)}
                       className={`flex items-center gap-3 p-3 mb-1 rounded-xl cursor-pointer border transition-all ${isSelected ? 'bg-s5/10 border-s5/30' : 'border-transparent hover:bg-s2'}`}>
                       <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSelected ? 'bg-s5 border-s5' : 'border-s3'}`}>
-                        {isSelected && <BookmarkCheck size={12} className="text-white" />}
+                        {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-xs font-bold ${isSelected ? 'text-s5' : 'text-s4'}`}>EP {ep.num}</div>
@@ -530,7 +530,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); saveEp(ep); }}
                         className="p-2.5 rounded-xl bg-s2 text-s4 hover:bg-s5 hover:text-white transition-all">
-                        <Bookmark size={14} />
+                        <Download size={14} />
                       </button>
                     </div>
                   );
