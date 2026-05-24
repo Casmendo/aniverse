@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useDownloadStore  } from '@/store/downloadStore';
 import { useAuthStore } from '@/store/authStore';
+import AnimePoster from '@/components/AnimePoster';
 
 const GENRES = [
   'Action','Adventure','Comedy','Drama','Fantasy',
@@ -39,18 +40,33 @@ export default function HomePage() {
       return arr.length > 0 ? arr[0] : null;
     }).catch(() => null))).then(results => {
       const manualAiring = results.filter(Boolean) as Record<string,unknown>[];
-      animeAPI.getAiring().then(({data}) => {
+      animeAPI.getAiring().then(async ({data}) => {
         const fetchAiring = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
         const merged = [...manualAiring, ...fetchAiring];
-        // Deduplicate by session/id to prevent React duplicate key warnings
+        // Deduplicate by session/id
         const seen = new Set<string>();
         const unique = merged.filter(item => {
           const key = String((item as any).session || (item as any).id || Math.random());
           if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
+          seen.add(key); return true;
         });
-        setAiring(unique);
+
+        // Enrich items that only have snapshot (no poster) by searching their title
+        const enriched = await Promise.all(unique.map(async (item: any) => {
+          if (item.poster || item.cover || item.image) return item;
+          if (!item.anime_title) return item;
+          try {
+            const { data: sd } = await animeAPI.search(item.anime_title);
+            const sItems = Array.isArray(sd) ? sd : sd.data || sd.results || [];
+            const match = sItems.find((s: any) =>
+              s.session === item.anime_session || s.title?.toLowerCase() === item.anime_title?.toLowerCase()
+            ) || sItems[0];
+            if (match?.poster) return { ...item, poster: match.poster };
+          } catch {}
+          return item;
+        }));
+
+        setAiring(enriched);
       }).catch(() => setAiring(manualAiring)).finally(() => setLoadingA(false));
     });
 
@@ -149,9 +165,8 @@ export default function HomePage() {
                 </button>
                 <a href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}?title=${encodeURIComponent(r.title)}&ep=${r.lastEpNum}` : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}>
                   <div className="relative" style={{aspectRatio:'2/3'}}>
-                    <img src={r.cover} alt={r.title}
-                      className="w-full h-full object-cover"
-                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <AnimePoster src={r.cover} title={r.title}
+                      className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
                   {/* Progress bar at bottom */}
                   {r.progress > 0 && (
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-s2/60">

@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useToast } from '@/components/Toast';
+import AnimePoster from '@/components/AnimePoster';
 import { authAPI } from '@/lib/api';
 
 const APP_VERSION = '1.0.0';
@@ -177,8 +178,7 @@ export default function ProfilePage() {
                   : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}>
                   <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2">
                     {r.cover
-                      ? <img src={r.cover} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      ? <AnimePoster src={r.cover} title={r.title} className="w-full h-full group-hover:scale-105 transition-transform duration-300" />
                       : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
                     {/* Progress bar */}
                     {r.progress > 0 && (

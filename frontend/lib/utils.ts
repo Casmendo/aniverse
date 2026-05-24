@@ -75,8 +75,8 @@ export function extractAnimeData(raw: Record<string, unknown>) {
   return {
     slug,
     title,
-    cover:       String(raw.cover || raw.image || raw.poster || raw.thumbnail || raw.snapshot || ''),
-    banner:      String(raw.banner || raw.cover || raw.image || raw.snapshot || ''),
+    cover:       String(raw.cover || raw.image || raw.poster || raw.anime_poster || raw.thumbnail || raw.snapshot || ''),
+    banner:      String(raw.banner || raw.cover || raw.image || raw.poster || raw.snapshot || ''),
     description: String(raw.description || raw.synopsis || raw.overview || ''),
     score:       parseFloat(String(raw.score || raw.rating || 0)) || 0,
     status:      String(raw.status || ''),

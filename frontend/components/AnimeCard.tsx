@@ -18,8 +18,17 @@ interface Props {
   onWatchlist?:() => void;
 }
 
+/** Generate a deterministic gradient hue from a string */
+function titleHue(title: string) {
+  let h = 0;
+  for (let i = 0; i < title.length; i++) h = (h * 31 + title.charCodeAt(i)) & 0xffff;
+  return h % 360;
+}
+
 export default function AnimeCard({ slug,title,cover,score,episodes,type,delay=0,inWatchlist,onDownload,onWatchlist }: Props) {
-  const [src, setSrc] = useState(cover );
+  const [imgFailed, setImgFailed] = useState(false);
+  const hue = titleHue(title);
+  const showPlaceholder = !cover || imgFailed;
 
   return (
     <motion.div
@@ -32,9 +41,21 @@ export default function AnimeCard({ slug,title,cover,score,episodes,type,delay=0
       <Link href={`/anime/${slug}?title=${encodeURIComponent(title)}`} className="block">
         {/* Poster */}
         <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
-          <img src={src} alt={title} loading="lazy"
-            onError={() => setSrc('')}
-            className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-108" />
+          {showPlaceholder ? (
+            <div
+              className="w-full h-full flex flex-col items-center justify-center gap-2 p-3"
+              style={{ background: `linear-gradient(135deg, hsl(${hue},50%,18%) 0%, hsl(${(hue+40)%360},45%,10%) 100%)` }}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl text-white/80"
+                style={{ background: `hsl(${hue},55%,28%)` }}>
+                {title.replace(/[^a-zA-Z0-9]/g, '').slice(0,2).toUpperCase() || '??'}
+              </div>
+              <p className="text-[9px] text-white/50 text-center font-mono line-clamp-3 leading-tight">{title}</p>
+            </div>
+          ) : (
+            <img src={cover} alt={title} loading="lazy"
+              onError={() => setImgFailed(true)}
+              className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-108" />
+          )}
 
           {/* Score */}
           {score && score > 0 && (
