@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Bookmark, BookmarkX, Play, X, Clock } from 'lucide-react';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useToast } from '@/components/Toast';
-import AnimePoster from '@/components/AnimePoster';
 
 export default function WatchlistPage() {
   const toast = useToast();
@@ -47,8 +46,9 @@ export default function WatchlistPage() {
               className="card-wrap bg-s1 group relative">
               <Link href={`/anime/${item.slug}?title=${encodeURIComponent(item.title)}`}>
                 <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
-                  <AnimePoster src={item.cover} title={item.title}
-                    className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                  <img src={item.cover} alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   <div className="absolute inset-0 bg-s0/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="w-10 h-10 rounded-full bg-s5 flex items-center justify-center">
                       <Play size={16} fill="#06141B" className="text-s0 ml-0.5" />
@@ -97,8 +97,9 @@ export default function WatchlistPage() {
                 transition={{ delay:i*0.04, ease:[0.16,1,0.3,1], duration:0.4 }}
                 className="card-wrap bg-s1 group">
                 <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
-                  <AnimePoster src={r.cover} title={r.title}
-                    className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                  <img src={r.cover} alt={r.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   {r.progress > 0 && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-s2">
                       <div className="h-full bg-s5" style={{width:`${r.progress}%`}} />

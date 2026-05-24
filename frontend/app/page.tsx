@@ -10,7 +10,6 @@ import { useToast } from '@/components/Toast';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useDownloadStore  } from '@/store/downloadStore';
 import { useAuthStore } from '@/store/authStore';
-import AnimePoster from '@/components/AnimePoster';
 
 const GENRES = [
   'Action','Adventure','Comedy','Drama','Fantasy',
@@ -165,8 +164,9 @@ export default function HomePage() {
                 </button>
                 <a href={r.lastEpId ? `/watch/${r.slug}/${r.lastEpId}?title=${encodeURIComponent(r.title)}&ep=${r.lastEpNum}` : `/anime/${r.slug}?title=${encodeURIComponent(r.title)}`}>
                   <div className="relative" style={{aspectRatio:'2/3'}}>
-                    <AnimePoster src={r.cover} title={r.title}
-                      className="w-full h-full transition-transform duration-500 group-hover:scale-105" />
+                    <img src={r.cover} alt={r.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                   {/* Progress bar at bottom */}
                   {r.progress > 0 && (
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-s2/60">

@@ -85,7 +85,20 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
         if (info.title && info.title !== 'Unknown Anime' && !isUuid(info.title)) {
           resolvedTitle = info.title;
         }
-        if (resolvedTitle) info.title = resolvedTitle;
+        if (resolvedTitle) {
+          info.title = resolvedTitle;
+          // Try to fetch poster from search since /info often returns empty poster
+          if (!info.cover) {
+            try {
+              const { data: sData } = await animeAPI.search(resolvedTitle);
+              const items = Array.isArray(sData) ? sData : sData.results || sData.data || [];
+              const match = items.find((i: any) => i.session === slug || i.id === slug) || items[0];
+              if (match && (match.poster || match.image || match.cover)) {
+                info.cover = match.poster || match.image || match.cover;
+              }
+            } catch {}
+          }
+        }
         setAnime(info);
         document.title = `${info.title} — AniVerse`;
         // Fetch related seasons/series
