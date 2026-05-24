@@ -8,8 +8,36 @@ const ANIMAPI = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Simple in-memory cache for GET requests (5 minute TTL)
+const apiCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+ANIMAPI.interceptors.request.use((config) => {
+  if (config.method?.toLowerCase() === 'get') {
+    const key = config.url + JSON.stringify(config.params || {});
+    const cached = apiCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      config.adapter = () => Promise.resolve({
+        data: cached.data,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+        request: {}
+      });
+    }
+  }
+  return config;
+});
+
 ANIMAPI.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    if (r.config.method?.toLowerCase() === 'get') {
+      const key = r.config.url + JSON.stringify(r.config.params || {});
+      apiCache.set(key, { data: r.data, timestamp: Date.now() });
+    }
+    return r;
+  },
   (err) => {
     const msg =
       err?.response?.data?.error ||
@@ -34,11 +62,33 @@ BACKEND.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  if (config.method?.toLowerCase() === 'get') {
+    const key = 'BACKEND_' + config.url + JSON.stringify(config.params || {});
+    const cached = apiCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      config.adapter = () => Promise.resolve({
+        data: cached.data,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config,
+        request: {}
+      });
+    }
+  }
+  
   return config;
 });
 
 BACKEND.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    if (r.config.method?.toLowerCase() === 'get') {
+      const key = 'BACKEND_' + r.config.url + JSON.stringify(r.config.params || {});
+      apiCache.set(key, { data: r.data, timestamp: Date.now() });
+    }
+    return r;
+  },
   (err) => {
     const msg =
       err?.response?.data?.error ||

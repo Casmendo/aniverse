@@ -156,14 +156,23 @@ export default function VideoPlayer({
     return () => document.removeEventListener('keydown', onKey);
   }, [skipTime, toggleFS, toggleMute, showControls]);
 
-  // ── Double-tap to seek (mobile) ────────────────────────────────────────────
-  const handleTap = useCallback((side: 'left' | 'right') => {
+  const handleTap = useCallback((side: 'left' | 'right' | 'center') => {
     if (isLocked) return;
     tapCount.current++;
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
-      if (tapCount.current >= 2) skipTime(side === 'right' ? 10 : -10);
-      else setShowCtrl(prev => !prev);
+      if (tapCount.current >= 2 && side !== 'center') {
+        skipTime(side === 'right' ? 10 : -10);
+      } else {
+        setShowCtrl(prev => {
+          if (prev) {
+            clearTimeout(ctrlTimer.current);
+            return false;
+          }
+          showControls();
+          return true;
+        });
+      }
       tapCount.current = 0;
     }, 280);
   }, [skipTime, showControls, isLocked]);
@@ -393,12 +402,7 @@ export default function VideoPlayer({
         onTouchStart={e => handleTouchStart(e, 'center')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={() => {
-          if (isLocked) return;
-          togglePlay();
-          setClickFlash(true);
-          setTimeout(() => setClickFlash(false), 400);
-        }}>
+        onClick={() => handleTap('center')}>
       </div>
 
       {/* Center Controls Overlay */}
@@ -455,6 +459,27 @@ export default function VideoPlayer({
                 <div className="h-full bg-s5" style={{ width: `${(swipeSeek / duration) * 100}%` }} />
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Skip Animation Overlay (+10 / -10) */}
+      <AnimatePresence>
+        {skipAnim && (
+          <motion.div
+            key={`skip-${skipAnim.dir}-${skipAnim.targetTime}`}
+            initial={{ opacity: 0, scale: 0.8, x: skipAnim.dir === 'fwd' ? 20 : -20 }}
+            animate={{ opacity: 1, scale: 1, x: skipAnim.dir === 'fwd' ? 40 : -40 }}
+            exit={{ opacity: 0, scale: 1.2, x: skipAnim.dir === 'fwd' ? 60 : -60 }}
+            transition={{ duration: 0.4 }}
+            className={`absolute top-1/2 -translate-y-1/2 z-40 pointer-events-none flex flex-col items-center justify-center ${skipAnim.dir === 'fwd' ? 'right-1/4' : 'left-1/4'}`}
+          >
+            <div className="w-16 h-16 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center mb-2 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+              {skipAnim.dir === 'fwd' ? <RotateCw size={28} className="text-white" /> : <RotateCcw size={28} className="text-white" />}
+            </div>
+            <span className="text-white font-black text-xl drop-shadow-md">
+              {skipAnim.dir === 'fwd' ? '+10s' : '-10s'}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
