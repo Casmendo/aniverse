@@ -479,10 +479,15 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                 
                 {/* Comment card */}
                 <div className="flex gap-3">
-                  {/* Avatar */}
-                  <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-xs shrink-0 text-s5 relative z-10">
-                    {c.username[0].toUpperCase()}
-                  </div>
+                  {/* Avatar — show real profile pic if it's the logged-in user */}
+                  {user?.username === c.username && user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={c.username} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-xs shrink-0 text-s5 relative z-10"
+                      style={{ background: `hsl(${(c.username.charCodeAt(0) * 47) % 360}, 45%, 30%)` }}>
+                      {c.username[0].toUpperCase()}
+                    </div>
+                  )}
                   
                   {/* Comment Body */}
                   <div className="flex-1 min-w-0">
@@ -574,9 +579,14 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                         {/* L-shaped line connecting reply avatar to the thread line */}
                         <div className="absolute -left-[29px] -top-[6px] w-[18px] h-[18px] border-l border-b border-[var(--border)] opacity-30 rounded-bl-md pointer-events-none" />
                         
-                        <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 relative z-10">
-                          {r.username[0].toUpperCase()}
-                        </div>
+                        {user?.username === r.username && user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={r.username} className="w-6 h-6 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 relative z-10"
+                            style={{ background: `hsl(${(r.username.charCodeAt(0) * 47) % 360}, 45%, 30%)` }}>
+                            {r.username[0].toUpperCase()}
+                          </div>
+                        )}
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2">

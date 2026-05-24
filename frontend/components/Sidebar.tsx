@@ -13,7 +13,7 @@ export default function Sidebar() {
   const router   = useRouter();
   const path     = usePathname();
   const { isOpen, close } = useSidebarStore();
-  const { user, logout, update } = useAuthStore();
+  const { user, logout, update, updateAvatar } = useAuthStore();
   const { watchlist, recentlyWatched } = useWatchlistStore();
   const toast = useToast();
   const [editMode, setEditMode] = useState(false);
@@ -96,8 +96,10 @@ export default function Sidebar() {
               {/* Auth */}
               {user ? (
                 <>
-                  <div className="w-10 h-10 rounded-2xl bg-s2 border border-white/10 flex items-center justify-center font-black text-white text-sm cursor-default select-none">
-                    {user.username[0].toUpperCase()}
+                  <div className="w-10 h-10 rounded-2xl overflow-hidden bg-s2 border border-white/10 flex items-center justify-center font-black text-white text-sm cursor-default select-none">
+                    {user.avatarUrl
+                      ? <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                      : <span>{user.username[0].toUpperCase()}</span>}
                   </div>
                   <button onClick={handleLogout}
                     className="w-10 h-10 flex items-center justify-center rounded-2xl text-s4 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -138,8 +140,10 @@ export default function Sidebar() {
               <div className="px-3 pb-4 mb-2 border-b border-white/5">
                 {!editMode ? (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-s2 border border-white/10 flex items-center justify-center font-black text-white text-base shrink-0">
-                      {user ? user.username[0].toUpperCase() : '?'}
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden bg-s2 border border-white/10 flex items-center justify-center font-black text-white text-base shrink-0">
+                      {user?.avatarUrl
+                        ? <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                        : <span>{user ? user.username[0].toUpperCase() : '?'}</span>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm text-white truncate">{user?.username || 'Guest'}</p>
