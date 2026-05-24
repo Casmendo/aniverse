@@ -5,6 +5,9 @@ import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { Camera, PictureInPicture2 } from 'lucide-react';
+import { useToast } from '@/components/Toast';
 
 declare global { interface Window { Hls: any; } }
 
@@ -35,6 +38,7 @@ export default function VideoPlayer({
   const hlsLoadedRef = useRef(false);
 
   const { getProgress, setProgress } = useProgressStore();
+  const toast = useToast();
 
   const [playing,    setPlaying]    = useState(false);
   const [buffering,  setBuffering]  = useState(true);
@@ -109,24 +113,68 @@ export default function VideoPlayer({
     v.muted = !v.muted; setMuted(v.muted);
   }, []);
 
-  // ── Fullscreen ─────────────────────────────────────────────────────────────
-  const toggleFS = useCallback(() => {
+  // ── Fullscreen & Orientation ─────────────────────────────────────────────────────────────
+  const toggleFS = useCallback(async () => {
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().then(() => {
-        try {
-          if (screen.orientation && (screen.orientation as any).lock) {
-            (screen.orientation as any).lock('landscape').catch(() => {});
-          }
-        } catch(e) {}
-      });
+      try { await containerRef.current?.requestFullscreen(); } catch {}
+      try {
+        if (Capacitor.isNativePlatform()) {
+          await ScreenOrientation.lock({ orientation: 'landscape' });
+        } else if (screen.orientation && (screen.orientation as any).lock) {
+          (screen.orientation as any).lock('landscape').catch(() => {});
+        }
+      } catch(e) {}
     } else {
-      document.exitFullscreen().then(() => {
-        try {
-          if (screen.orientation && screen.orientation.unlock) {
-            screen.orientation.unlock();
-          }
-        } catch(e) {}
-      });
+      try { await document.exitFullscreen(); } catch {}
+      try {
+        if (Capacitor.isNativePlatform()) {
+          await ScreenOrientation.unlock();
+        } else if (screen.orientation && screen.orientation.unlock) {
+          screen.orientation.unlock();
+        }
+      } catch(e) {}
+    }
+  }, []);
+
+  // ── Picture-in-Picture ──────────────────────────────────────────────────────
+  const togglePiP = useCallback(async () => {
+    const v = videoRef.current; if (!v) return;
+    try {
+      if (document.pictureInPictureElement) await document.exitPictureInPicture();
+      else await v.requestPictureInPicture();
+    } catch (err) { console.error('PiP error', err); }
+  }, []);
+
+  // ── Screenshot ──────────────────────────────────────────────────────────────
+  const takeScreenshot = useCallback(async () => {
+    const v = videoRef.current; if (!v) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const base64Data = canvas.toDataURL('image/jpeg').split(',')[1];
+        const fileName = `AniVerse_Screenshot_${Date.now()}.jpg`;
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents
+        });
+        toast('Screenshot saved to Documents', 'success');
+      } else {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/jpeg');
+        link.download = `AniVerse_Screenshot_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast('Screenshot downloaded', 'success');
+      }
+    } catch (e) {
+      toast('Failed to save screenshot', 'error');
     }
   }, []);
 
@@ -676,6 +724,12 @@ export default function VideoPlayer({
             </button>
             <button onClick={() => setIsLocked(true)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <Lock size={18} />
+            </button>
+            <button onClick={takeScreenshot} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Screenshot">
+              <Camera size={18} />
+            </button>
+            <button onClick={togglePiP} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Picture in Picture">
+              <PictureInPicture2 size={18} />
             </button>
             <button onClick={toggleFS} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               {fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}

@@ -81,14 +81,23 @@ export const processDownload = async (
         });
 
         const fileName = `${downloadName}.mp4`;
-        const downloadRes = await CapacitorHttp.downloadFile({
-          url: fileUrl,
-          filePath: `Download/${fileName}`,
-          fileDirectory: Directory.ExternalStorage,
-        });
-
-        // Build a Capacitor-compatible local path for offline playback
-        const localPath = downloadRes.path || `Download/${fileName}`;
+        let localPath = '';
+        try {
+          const { CapacitorDownloader } = await import('@capgo/capacitor-downloader');
+          const dlRes = await CapacitorDownloader.download({
+            url: fileUrl,
+            destination: fileName,
+          });
+          localPath = dlRes.path || '';
+        } catch (err) {
+          // Fallback if plugin fails or is missing
+          const downloadRes = await CapacitorHttp.downloadFile({
+            url: fileUrl,
+            filePath: `Download/${fileName}`,
+            fileDirectory: Directory.ExternalStorage,
+          });
+          localPath = downloadRes.path || `Download/${fileName}`;
+        }
 
         // Saved to device successfully, now add to local app library for offline custom player
         await addDownload({
@@ -99,8 +108,8 @@ export const processDownload = async (
         
         await LocalNotifications.schedule({
           notifications: [{
-            title: 'AniVerse Download Complete',
-            body: `${downloadName} is ready to watch offline!`,
+            title: '✅ Download Complete!',
+            body: `${downloadName} saved! Added to your Download folder.`,
             id: notifId,
           }]
         });
@@ -113,7 +122,7 @@ export const processDownload = async (
       window.location.assign(fileUrl);
     }
     
-    toast(`Download ready: EP ${ep.num}`, 'success');
+    toast(`✅ Successfully downloaded EP ${ep.num}! Added to your Downloads folder.`, 'success');
     setTimeout(() => removeItem(jobId), 3000);
     
   } catch(e: any) {

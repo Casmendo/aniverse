@@ -100,21 +100,20 @@ BACKEND.interceptors.response.use(
 
 // ── Anime endpoints (direct to animapi — no backend needed) ────────────────
 export const animeAPI = {
-  getAiring:    (page = 1) => ANIMAPI.get('/api/airing', { params: { page } }),
-  search:       (q: string) => ANIMAPI.get('/api/search', { params: { q } }),
-  // anime_name is REQUIRED for /info to work — without it the backend returns 404
+  getAiring:    (page = 1) => BACKEND.get('/api/airing', { params: { page } }),
+  search:       (q: string) => BACKEND.get('/api/search', { params: { q } }),
   getDetail:    (slug: string, animeName?: string) =>
-    ANIMAPI.get(`/api/anime/${slug}/info`, animeName ? { params: { anime_name: animeName } } : {}),
+    BACKEND.get(`/api/anime/${slug}`, animeName ? { params: { anime_name: animeName } } : {}),
   getEpisodes:  (slug: string, animeName?: string) =>
-    ANIMAPI.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
+    BACKEND.get(`/api/anime/${slug}/episodes`, animeName ? { params: { anime_name: animeName } } : {}),
   getStream:    (episodeSession: string, animeSlug: string, quality = 'best', audio = 'jpn') =>
-    ANIMAPI.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
+    BACKEND.get('/api/stream', { params: { episode_session: episodeSession, anime_slug: animeSlug, quality, audio } }),
   getStreamQualities: (episodeSession: string, animeSlug: string) =>
-    ANIMAPI.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
-  getTrending:  () => ANIMAPI.get('/api/top-anime'),
-  getRecommended: () => ANIMAPI.get('/api/latest-release'),
-  getGenres:    () => ANIMAPI.get('/api/genres'),
-  getGenre:     (genre: string, page = 1) => ANIMAPI.get('/api/genre', { params: { genre, page } }),
+    BACKEND.get('/api/stream/qualities', { params: { episode_session: episodeSession, anime_slug: animeSlug } }),
+  getTrending:  () => BACKEND.get('/api/trending'),
+  getRecommended: () => BACKEND.get('/api/recommended'),
+  getGenres:    () => BACKEND.get('/api/genres'),
+  getGenre:     (genre: string, page = 1) => BACKEND.get(`/api/genre/${genre}`, { params: { page } }),
 };
 
 // ── Auth endpoints (backend — needs Pterodactyl) ────────────────────────────
