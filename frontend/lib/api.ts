@@ -90,6 +90,9 @@ BACKEND.interceptors.response.use(
     return r;
   },
   (err) => {
+    if (err?.response?.status === 401) {
+      useAuthStore.getState().logout();
+    }
     const msg =
       err?.response?.data?.error ||
       err?.message ||
