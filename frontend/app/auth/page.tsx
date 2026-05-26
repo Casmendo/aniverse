@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, Mail, Lock, User, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, CheckCircle2, RotateCcw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useIntroStore } from '@/store/introStore';
