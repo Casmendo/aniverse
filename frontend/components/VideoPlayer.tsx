@@ -69,7 +69,7 @@ export default function VideoPlayer({
   const showControls = useCallback(() => {
     setShowCtrl(true);
     clearTimeout(ctrlTimer.current);
-    ctrlTimer.current = setTimeout(() => setShowCtrl(false), 5000);
+    // Removed 5s timeout to make controls permanent until clicked again
   }, []);
 
   // ── Skip animation ─────────────────────────────────────────────────────────
