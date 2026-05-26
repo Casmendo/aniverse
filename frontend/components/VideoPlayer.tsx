@@ -223,20 +223,15 @@ export default function VideoPlayer({
     clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => {
       if (tapCount.current >= 2 && side !== 'center') {
+        // Double tap: skip forward/back
         skipTime(side === 'right' ? 10 : -10);
       } else {
-        setShowCtrl(prev => {
-          if (prev) {
-            clearTimeout(ctrlTimer.current);
-            return false;
-          }
-          showControls();
-          return true;
-        });
+        // Single tap: pure toggle — show if hidden, hide if shown
+        setShowCtrl(prev => !prev);
       }
       tapCount.current = 0;
     }, 280);
-  }, [skipTime, showControls, isLocked]);
+  }, [skipTime, isLocked]);
 
   const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right' | 'center') => {
     if (isLocked) return;
@@ -439,8 +434,6 @@ export default function VideoPlayer({
     <div
       ref={containerRef}
       className="relative bg-black w-full aspect-video select-none overflow-hidden"
-      onMouseMove={showControls}
-      onMouseLeave={() => !showSettings && !showEpisodes && setShowCtrl(false)}
       style={{ cursor: showCtrl ? 'default' : 'none' }}
     >
       {/* Video element — always mounted, never recreated */}
