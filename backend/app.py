@@ -604,9 +604,13 @@ def get_stream():
     if audio: params['audio'] = audio
     try:
         result = _get('/api/stream', params=params)
+        
+        # Pass through the upstream proxy_m3u8 if it exists (since our backend proxy gets blocked by Cloudflare)
+        proxy_m3u8 = result.get('proxy_m3u8')
+        
         url = result.get('stream_url') or result.get('url') or result.get('hls') or ''
         
-        # If it's the iframe player, we MUST extract the token and proxy it to bypass Cloudflare
+        # If it's the iframe player, extract the token
         if url and ('token=' in url or '/api/player' in url):
             from urllib.parse import urlparse, parse_qs, unquote
             full = url if url.startswith('http') else f'{API_BASE}{url}'
@@ -617,13 +621,20 @@ def get_stream():
                 real_url = unquote(token)
                 import urllib.parse
                 encoded = urllib.parse.quote(real_url, safe='')
-                proxy_url = f'/api/proxy-stream?url={encoded}'
-                return jsonify({'stream_url': proxy_url, 'direct_url': real_url})
+                # Fallback to our proxy, but prioritize upstream proxy_m3u8
+                return jsonify({
+                    'stream_url': f'/api/proxy-stream?url={encoded}',
+                    'direct_url': real_url,
+                    'proxy_m3u8': proxy_m3u8
+                })
 
         if url and url.startswith('/'):
             url = f'{API_BASE}{url}'
-        if url:
-            return jsonify({'stream_url': url})
+            
+        return jsonify({
+            'stream_url': url,
+            'proxy_m3u8': proxy_m3u8
+        })
     except Exception as e:
         app.logger.error(f'[stream]{e}')
     return jsonify({'error': 'Stream unavailable'}), 502
