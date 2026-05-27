@@ -81,22 +81,23 @@ export const processDownload = async (
         });
 
         const fileName = `${downloadName}.mp4`;
+        const folderPath = `AniVerse/${fileName}`;
         let localPath = '';
         try {
           const { CapacitorDownloader } = await import('@capgo/capacitor-downloader');
           const dlRes = await CapacitorDownloader.download({
             url: fileUrl,
-            destination: fileName,
+            destination: folderPath,
           });
           localPath = dlRes.path || '';
         } catch (err) {
           // Fallback if plugin fails or is missing
           const downloadRes = await CapacitorHttp.downloadFile({
             url: fileUrl,
-            filePath: `Download/${fileName}`,
+            filePath: `Download/${folderPath}`,
             fileDirectory: Directory.ExternalStorage,
           });
-          localPath = downloadRes.path || `Download/${fileName}`;
+          localPath = downloadRes.path || `Download/${folderPath}`;
         }
 
         // Saved to device successfully, now add to local app library for offline custom player

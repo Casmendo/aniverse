@@ -77,17 +77,7 @@ export const useDownloadStore = create<DownloadState>()(
           return { success: false, duplicate: true };
         }
 
-        if (isLoggedIn) {
-          try {
-            await downloadAPI.add(params);
-            await get().fetch(true);
-            return { success: true, duplicate: false };
-          } catch (e: any) {
-            if (e?.message?.includes('already')) return { success: false, duplicate: true };
-          }
-        }
-
-        // Local fallback
+        // 1. ALWAYS store locally first to preserve localPath for offline APK playback
         set((state) => {
           const groups = [...state.groups];
           const idx    = groups.findIndex((g) => g.anime_slug === params.anime_slug);
@@ -109,6 +99,18 @@ export const useDownloadStore = create<DownloadState>()(
           }
           return { groups };
         });
+
+        // 2. Sync to backend if logged in
+        if (isLoggedIn) {
+          try {
+            await downloadAPI.add(params);
+            // Fetch merges backend with local (local overwrites backend due to array order in mergeGroups, keeping localPath safe)
+            await get().fetch(true);
+          } catch (e: any) {
+            if (e?.message?.includes('already')) return { success: false, duplicate: true };
+          }
+        }
+
         return { success: true, duplicate: false };
       },
 
