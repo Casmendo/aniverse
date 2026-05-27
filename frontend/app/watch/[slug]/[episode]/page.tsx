@@ -322,6 +322,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                   streamUrl={streamUrl} slug={slug}
                   episodeId={currentEp?.id || episode}
                   localPath={downloadedEp?.localPath}
+                  poster={anime?.poster}
                   isFetchingStream={loadStream}
                   streamFetchError={streamErr}
                   onRetry={() => currentEp && fetchStream(currentEp)}

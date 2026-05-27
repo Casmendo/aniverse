@@ -33,7 +33,7 @@ export default function AnimeCard({ slug,title,cover,score,episodes,type,delay=0
         {/* Poster */}
         <div className="relative overflow-hidden" style={{aspectRatio:'2/3'}}>
           <img src={src} alt={title} loading="lazy"
-            onError={() => setSrc('')}
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-108" />
 
           {/* Score */}

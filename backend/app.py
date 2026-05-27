@@ -65,12 +65,14 @@ class User(db.Model):
     username      = db.Column(db.String(64),  nullable=False)
     email         = db.Column(db.String(256), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    avatar        = db.Column(db.String(512))
     is_verified   = db.Column(db.Boolean, default=False)
     created_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     comments  = db.relationship('Comment',  backref='author', lazy='dynamic', cascade='all,delete-orphan')
     downloads = db.relationship('Download', backref='user',   lazy='dynamic', cascade='all,delete-orphan')
     watchlist = db.relationship('Watchlist',backref='user',   lazy='dynamic', cascade='all,delete-orphan')
     history   = db.relationship('History',  backref='user',   lazy='dynamic', cascade='all,delete-orphan')
+    notifications = db.relationship('Notification', foreign_keys='Notification.user_id', lazy='dynamic', cascade='all,delete-orphan')
 
     def to_dict(self):
         return {'id':self.id,'username':self.username,'email':self.email,
@@ -109,8 +111,40 @@ class Comment(db.Model):
     parent_id  = db.Column(db.Integer, db.ForeignKey('comments.id', ondelete='CASCADE'), nullable=True)
 
     def to_dict(self):
-        return {'id':self.id,'username':self.author.username,'text':self.text,
-                'time':self.created_at.strftime('%d %b %Y, %H:%M'),'parent_id':self.parent_id}
+        return {
+            'id':self.id,
+            'user_id': self.user_id,
+            'username':self.author.username,
+            'email':self.author.email,
+            'avatar':self.author.avatar,
+            'text':self.text,
+            'time':self.created_at.strftime('%d %b %Y, %H:%M'),
+            'parent_id':self.parent_id
+        }
+
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False) # receiver
+    sender_id   = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False) # sender
+    anime_slug  = db.Column(db.String(256), nullable=False)
+    comment_id  = db.Column(db.Integer, db.ForeignKey('comments.id', ondelete='CASCADE'), nullable=False)
+    read        = db.Column(db.Boolean, default=False)
+    created_at  = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    
+    sender      = db.relationship('User', foreign_keys=[sender_id])
+    comment     = db.relationship('Comment', foreign_keys=[comment_id])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'anime_slug': self.anime_slug,
+            'sender': self.sender.username if self.sender else 'Someone',
+            'sender_avatar': self.sender.avatar if self.sender else None,
+            'text': self.comment.text if self.comment else '',
+            'read': self.read,
+            'created_at': self.created_at.strftime('%d %b %Y, %H:%M')
+        }
 
 class Download(db.Model):
     __tablename__ = 'downloads'
@@ -161,6 +195,8 @@ class History(db.Model):
                 'cover':self.anime_cover,'lastEpNum':self.last_ep_num,
                 'lastEpId':self.last_ep_id,'lastEpTitle':self.last_ep_title,
                 'progress':self.progress,'updated_at':self.updated_at.isoformat()}
+
+
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -859,28 +895,19 @@ def change_password():
     u.password_hash=generate_password_hash(d['new_password']); db.session.commit()
     return jsonify({'success':True})
 
-@app.route('/api/auth/update-avatar',methods=['POST'])
+@app.route('/api/auth/update-avatar', methods=['POST'])
 @auth_required
 @limiter.limit('10 per hour')
-def update_avatar():
-    """Store user avatar URL (a public URL or base64 data URL is expected from the client)."""
-    d=request.get_json(silent=True) or {}
-    avatar_url = d.get('avatar_url','').strip()
+def update_avatar_legacy():
+    """Legacy avatar endpoint - now stored in avatar column."""
+    d = request.get_json(silent=True) or {}
+    avatar_url = (d.get('avatar_url') or d.get('avatarUrl', '')).strip()
     if not avatar_url:
-        return jsonify({'error':'avatar_url required'}),400
-    # Store in user metadata — we use a simple key in DB; for now surface it in to_dict
+        return jsonify({'error': 'avatar_url required'}), 400
     u = _me()
-    # We persist via a new optional column; if column doesn't exist yet, silently ignore DB errors
-    try:
-        if not hasattr(u, 'avatar_url') or u.__table__.columns.get('avatar_url') is None:
-            # Dynamic fallback: store in session cache only
-            pass
-        else:
-            u.avatar_url = avatar_url[:2048]
-            db.session.commit()
-    except Exception:
-        pass
-    return jsonify({'success':True,'avatar_url':avatar_url})
+    u.avatar = avatar_url[:2048]
+    db.session.commit()
+    return jsonify({'success': True, 'avatar': u.avatar})
 
 @app.route('/api/auth/forgot-password',methods=['POST'])
 @limiter.limit('5 per hour')
@@ -988,6 +1015,46 @@ def app_update():
 def get_user():
     u=_me(); return jsonify({'user':u.to_dict() if u else None})
 
+@app.route('/api/user/avatar', methods=['POST'])
+@auth_required
+def set_user_avatar():
+    u = _me()
+    d = request.get_json(silent=True) or {}
+    avatar_url = d.get('avatarUrl', '').strip()
+    if avatar_url:
+        u.avatar = avatar_url[:2048]
+        db.session.commit()
+    return jsonify({'success': True, 'avatar': u.avatar})
+
+@app.route('/api/admin/stats')
+@auth_required
+def admin_stats():
+    u = _me()
+    if u.email != 'isahmusa9921@gmail.com':
+        return jsonify({'error': 'Unauthorized'}), 403
+    total_users = User.query.count()
+    return jsonify({'total_users': total_users})
+
+@app.route('/api/notifications')
+@auth_required
+def get_notifications():
+    u = _me()
+    notifs = Notification.query.filter_by(user_id=u.id).order_by(Notification.created_at.desc()).all()
+    return jsonify({'notifications': [n.to_dict() for n in notifs]})
+
+@app.route('/api/notifications/read', methods=['POST'])
+@auth_required
+def mark_notif_read():
+    u = _me()
+    d = request.get_json(silent=True) or {}
+    nid = d.get('id')
+    if nid:
+        n = Notification.query.get(nid)
+        if n and n.user_id == u.id:
+            n.read = True
+            db.session.commit()
+    return jsonify({'success': True})
+
 # ── Comments ───────────────────────────────────────────────────────────────────
 
 @app.route('/api/comments/<slug>')
@@ -1026,7 +1093,16 @@ def post_comment(slug):
         actual_parent_id = None
         
     u=_me(); c=Comment(anime_slug=slug,user_id=u.id,text=text,parent_id=actual_parent_id)
-    db.session.add(c); db.session.commit()
+    db.session.add(c); db.session.flush()
+
+    # Create notification for parent comment owner if it's a reply and not their own comment
+    if parent_id:
+        parent_comment = Comment.query.get(parent_id)
+        if parent_comment and parent_comment.user_id != u.id:
+            n = Notification(user_id=parent_comment.user_id, sender_id=u.id, anime_slug=slug, comment_id=c.id)
+            db.session.add(n)
+
+    db.session.commit()
     return jsonify({'success':True,'comment':c.to_dict()}),201
 
 @app.route('/api/comments/delete/<int:cid>',methods=['DELETE'])
@@ -1035,13 +1111,14 @@ def delete_comment(cid):
     u=_me(); c=Comment.query.get_or_404(cid)
     # Check ownership of the comment OR check if it is a reply under user's top-level comment
     is_owner = (c.user_id == u.id)
+    is_admin = (u.email == 'isahmusa9921@gmail.com')
     is_parent_owner = False
     if c.parent_id:
         parent = Comment.query.get(c.parent_id)
         if parent and parent.user_id == u.id:
             is_parent_owner = True
             
-    if not (is_owner or is_parent_owner):
+    if not (is_owner or is_parent_owner or is_admin):
         return jsonify({'error':'Not yours'}),403
         
     db.session.delete(c); db.session.commit(); return jsonify({'success':True})

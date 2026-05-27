@@ -30,7 +30,11 @@ export default function HomePage() {
   const [genreItems, setGenreItems] = useState<Record<string,unknown>[]>([]);
   const [loadingA,   setLoadingA]   = useState(true);
   const [loadingP,   setLoadingP]   = useState(true);
+  const [loadingLR,  setLoadingLR]  = useState(true);
+  const [loadingMW,  setLoadingMW]  = useState(true);
   const [loadingG,   setLoadingG]   = useState(false);
+  const [latestReleases, setLatestReleases] = useState<Record<string,unknown>[]>([]);
+  const [mostWatched, setMostWatched] = useState<Record<string,unknown>[]>([]);
 
   useEffect(() => {
     const hardcodedAiring = ['witch hat atelier', 'dr stone', 're zero', 'classroom of the elite', 'wistoria season 2'];
@@ -68,6 +72,16 @@ export default function HomePage() {
         setAiring(enriched);
       }).catch(() => setAiring(manualAiring)).finally(() => setLoadingA(false));
     });
+
+    animeAPI.getRecommended().then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
+      setLatestReleases(arr);
+    }).finally(() => setLoadingLR(false));
+
+    animeAPI.getTrending().then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
+      setMostWatched(arr);
+    }).finally(() => setLoadingMW(false));
 
     const hardcodedPopular = [
       'wistoria', 'jack of all trades', 'eminence in shadow', 'dr stone', 'one piece',
@@ -198,6 +212,14 @@ export default function HomePage() {
       {/* Airing Now */}
       <AnimeSection title="Airing Now" loading={loadingA} items={airing} watchedSlugs={watchedSlugs}
         icon={<Clock size={14} className="text-s4" />}
+        onDownload={handleDownload} onWatchlist={handleWatchlist} />
+
+      <AnimeSection title="Latest Releases" loading={loadingLR} items={latestReleases} watchedSlugs={watchedSlugs}
+        icon={<Zap size={14} className="text-s4" />}
+        onDownload={handleDownload} onWatchlist={handleWatchlist} />
+
+      <AnimeSection title="Most Watched" loading={loadingMW} items={mostWatched} watchedSlugs={watchedSlugs}
+        icon={<History size={14} className="text-s4" />}
         onDownload={handleDownload} onWatchlist={handleWatchlist} />
 
       <AnimeSection title="Popular Anime" loading={loadingP} items={popular} watchedSlugs={watchedSlugs}

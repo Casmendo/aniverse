@@ -20,13 +20,14 @@ interface Props {
   onQualityChange?: (q: string) => void; onAudioChange?: (a: string) => void;
   intro?: { start: number; end: number }; outro?: { start: number; end: number };
   localPath?: string;
+  poster?: string;
 }
 
 export default function VideoPlayer({
   streamUrl, slug, episodeId, isFetchingStream, streamFetchError, onRetry,
   episodes, currentEp, onEpisodeSelect, onEnded, onProgress, autoPlay = true,
   qualityOptions = [], audioOptions = [], selectedQuality, selectedAudio,
-  onQualityChange, onAudioChange, intro, outro, localPath
+  onQualityChange, onAudioChange, intro, outro, localPath, poster
 }: Props) {
   const videoRef     = useRef<HTMLVideoElement>(null);
   const hlsRef       = useRef<any>(null);
@@ -51,7 +52,7 @@ export default function VideoPlayer({
   const [brightness, setBrightness] = useState(1);
   const [resizeMode, setResizeMode] = useState<'contain' | 'cover' | 'fill'>('contain');
   const indicatorTimer = useRef<NodeJS.Timeout>();
-  const touchStartRef  = useRef<{x:number, y:number, type:string|null}>({ x:0, y:0, type:null });
+  const touchStartRef  = useRef<{x:number, y:number, type:string|null, axisLocked: 'x'|'y'|null}>({ x:0, y:0, type:null, axisLocked: null });
   const activeEpRef    = useRef<HTMLButtonElement>(null);
   const [isLocked,   setIsLocked]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -62,15 +63,29 @@ export default function VideoPlayer({
   const [clickFlash, setClickFlash] = useState(false);
   const [continuePrompt, setContinuePrompt] = useState<{time:number}|null>(null);
   const [swipeSeek,  setSwipeSeek]  = useState<number | null>(null);
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(0);
 
-  const pct = duration > 0 ? (current / duration) * 100 : 0;
+  // Use scrubTime if dragging, otherwise use actual current time
+  const displayCurrent = isScrubbing ? scrubTime : current;
+  const pct = duration > 0 ? (displayCurrent / duration) * 100 : 0;
 
   // ── Controls auto-hide ─────────────────────────────────────────────────────
   const showControls = useCallback(() => {
     setShowCtrl(true);
     clearTimeout(ctrlTimer.current);
-    // Removed 5s timeout to make controls permanent until clicked again
+    ctrlTimer.current = setTimeout(() => {
+      setShowCtrl(false);
+    }, 3500);
   }, []);
+
+  const handleMouseMove = useCallback(() => {
+    if (!showCtrl) showControls();
+    else {
+      clearTimeout(ctrlTimer.current);
+      ctrlTimer.current = setTimeout(() => setShowCtrl(false), 3500);
+    }
+  }, [showCtrl, showControls]);
 
   // ── Skip animation ─────────────────────────────────────────────────────────
   const flashSkip = useCallback((dir: 'fwd' | 'bck', targetTime: number) => {
@@ -79,11 +94,11 @@ export default function VideoPlayer({
   }, []);
 
   // ── Seek ───────────────────────────────────────────────────────────────────
-  const skipTime = useCallback((sec: number) => {
+  const skipTime = useCallback((sec: number, showFlash = true) => {
     const v = videoRef.current; if (!v) return;
     const target = Math.max(0, Math.min(v.duration || 0, v.currentTime + sec));
     v.currentTime = target;
-    flashSkip(sec > 0 ? 'fwd' : 'bck', target);
+    if (showFlash) flashSkip(sec > 0 ? 'fwd' : 'bck', target);
     showControls();
   }, [flashSkip, showControls]);
 
@@ -235,7 +250,7 @@ export default function VideoPlayer({
 
   const handleTouchStart = (e: React.TouchEvent, type: 'left' | 'right' | 'center') => {
     if (isLocked) return;
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, type };
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, type, axisLocked: null };
     setSwipeSeek(null);
   };
 
@@ -252,35 +267,41 @@ export default function VideoPlayer({
     const dx = e.touches[0].clientX - start.x;
     const dy = start.y - e.touches[0].clientY; // positive when swiping up
 
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal swipe to seek (works from ANY zone)
-      if (Math.abs(dx) > 10) {
+    if (!start.axisLocked) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+        start.axisLocked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      } else {
+        return; // wait for clear intent
+      }
+    }
+
+    if (start.axisLocked === 'x') {
+      // Horizontal swipe to seek (works ONLY from center zone)
+      if (start.type === 'center') {
         const v = videoRef.current;
         if (v) {
-          // Calculate seek offset based on dx (e.g., 100px = 60 seconds)
           const offset = (dx / 150) * 60; // adjust sensitivity
           let newTime = v.currentTime + offset;
           newTime = Math.max(0, Math.min(v.duration || 0, newTime));
           setSwipeSeek(newTime);
         }
       }
-    } else {
+    } else if (start.axisLocked === 'y') {
       // Vertical swipe for brightness/volume (only on left/right zones)
-      if (Math.abs(dy) > 5 && start.type !== 'center') {
-        if (start.type === 'left') {
-          setBrightness(b => {
-            const newB = Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03)));
-            showIndicator('brightness', Math.round(newB * 100));
-            return newB;
-          });
-        } else if (start.type === 'right') {
-          const v = videoRef.current;
-          if (v) {
-            const newVol = Math.max(0, Math.min(1, v.volume + (dy > 0 ? 0.03 : -0.03)));
-            v.volume = newVol;
-            setVolume(newVol);
-            showIndicator('volume', Math.round(newVol * 100));
-          }
+      if (start.type === 'left') {
+        setBrightness(b => {
+          const newB = Math.max(0.1, Math.min(1, b + (dy > 0 ? 0.03 : -0.03)));
+          showIndicator('brightness', Math.round(newB * 100));
+          return newB;
+        });
+        start.y = e.touches[0].clientY;
+      } else if (start.type === 'right') {
+        const v = videoRef.current;
+        if (v) {
+          const newVol = Math.max(0, Math.min(1, v.volume + (dy > 0 ? 0.03 : -0.03)));
+          v.volume = newVol;
+          setVolume(newVol);
+          showIndicator('volume', Math.round(newVol * 100));
         }
         start.y = e.touches[0].clientY;
       }
@@ -433,26 +454,34 @@ export default function VideoPlayer({
   return (
     <div
       ref={containerRef}
+      onMouseMove={handleMouseMove}
       className="relative bg-black w-full aspect-video select-none overflow-hidden"
       style={{ cursor: showCtrl ? 'default' : 'none' }}
     >
       {/* Video element — always mounted, never recreated */}
-      <video ref={videoRef} className="w-full h-full absolute inset-0 z-0 bg-black" playsInline style={{ filter: `brightness(${brightness})`, objectFit: resizeMode }} />
+      <video
+        ref={videoRef}
+        preload="metadata"
+        poster={poster}
+        className={`w-full h-full absolute inset-0 z-0 bg-black object-${resizeMode}`}
+        playsInline
+        style={{ filter: `brightness(${brightness})` }}
+      />
 
       {/* Mobile tap zones */}
-      <div className="absolute top-0 left-0 bottom-14 w-1/3 z-10" 
+      <div className="absolute top-0 left-0 bottom-14 w-1/5 z-10" 
         onClick={() => handleTap('left')}
         onTouchStart={e => handleTouchStart(e, 'left')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd} />
-      <div className="absolute top-0 right-0 bottom-14 w-1/3 z-10" 
+      <div className="absolute top-0 right-0 bottom-14 w-1/5 z-10" 
         onClick={() => handleTap('right')}
         onTouchStart={e => handleTouchStart(e, 'right')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd} />
 
       {/* Center click area — single tap = play/pause flash, drag = seek */}
-      <div className="absolute top-0 left-1/3 right-1/3 bottom-14 z-10 flex items-center justify-center"
+      <div className="absolute top-0 left-1/5 right-1/5 bottom-14 z-10 flex items-center justify-center"
         onTouchStart={e => handleTouchStart(e, 'center')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -471,7 +500,7 @@ export default function VideoPlayer({
             className="absolute inset-0 flex items-center justify-center gap-8 z-20 pointer-events-none"
           >
             {/* Rewind */}
-            <button onClick={(e) => { e.stopPropagation(); skipTime(-10); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
+            <button onClick={(e) => { e.stopPropagation(); skipTime(-10, false); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
               <RotateCcw size={24} className="text-white" />
             </button>
             
@@ -481,7 +510,7 @@ export default function VideoPlayer({
             </button>
             
             {/* Fast Forward */}
-            <button onClick={(e) => { e.stopPropagation(); skipTime(10); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
+            <button onClick={(e) => { e.stopPropagation(); skipTime(10, false); }} className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center pointer-events-auto hover:bg-black/70 transition-all border border-white/10">
               <RotateCw size={24} className="text-white" />
             </button>
           </motion.div>
@@ -680,16 +709,28 @@ export default function VideoPlayer({
           <div className="absolute inset-y-0 left-0 bg-s5 rounded-full pointer-events-none" style={{ width: `${pct}%` }} />
           <div className="absolute w-3.5 h-3.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none" style={{ left: `calc(${pct}% - 7px)` }} />
           <input 
-            type="range" min={0} max={duration || 100} step="0.1" value={current}
-            onInput={(e) => {
+            type="range" min={0} max={duration || 100} step="0.1" value={displayCurrent}
+            onPointerDown={() => {
+              setIsScrubbing(true);
+              setScrubTime(current);
+            }}
+            onPointerUp={(e) => {
+              setIsScrubbing(false);
               const v = videoRef.current;
               if (v) v.currentTime = parseFloat(e.currentTarget.value);
+            }}
+            onInput={(e) => {
+              const val = parseFloat(e.currentTarget.value);
+              setScrubTime(val);
+              if (videoRef.current) videoRef.current.currentTime = val;
             }}
             onChange={(e) => {
-              const v = videoRef.current;
-              if (v) v.currentTime = parseFloat(e.currentTarget.value);
+              const val = parseFloat(e.currentTarget.value);
+              setScrubTime(val);
+              if (videoRef.current) videoRef.current.currentTime = val;
             }}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer m-0"
+            style={{ WebkitTapHighlightColor: 'transparent' }}
           />
         </div>
 
@@ -699,10 +740,10 @@ export default function VideoPlayer({
             <button onClick={togglePlay} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               {playing ? <Pause size={20} /> : <Play size={20} fill="white" />}
             </button>
-            <button onClick={() => skipTime(-10)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+            <button onClick={() => skipTime(-10, false)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <SkipBack size={18} />
             </button>
-            <button onClick={() => skipTime(10)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+            <button onClick={() => skipTime(10, false)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <SkipForward size={18} />
             </button>
             <button onClick={toggleMute} className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
@@ -711,7 +752,7 @@ export default function VideoPlayer({
             <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
               onChange={e => changeVol(parseFloat(e.target.value))}
               className="w-16 hidden sm:block accent-s5 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
-            <span className="text-white/70 text-[11px] font-mono ml-1">{formatTime(current)} / {formatTime(duration)}</span>
+            <span className="text-white/70 text-[11px] font-mono ml-1">{formatTime(displayCurrent)} / {formatTime(duration)}</span>
           </div>
 
           <div className="flex-1" />

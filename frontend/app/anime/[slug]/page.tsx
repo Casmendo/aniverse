@@ -2,9 +2,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2, X } from 'lucide-react';
+import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2, X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animeAPI, commentAPI } from '@/lib/api';
+const ADMIN_EMAIL = 'isahmusa9921@gmail.com';
 import { extractAnimeData, extractEpisode } from '@/lib/utils';
 import { useToast } from '@/components/Toast';
 import { useAuthStore } from '@/store/authStore';
@@ -492,11 +493,11 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                 
                 {/* Comment card */}
                 <div className="flex gap-3">
-                  {/* Avatar — show real profile pic if it's the logged-in user */}
-                  {user?.username === c.username && user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={c.username} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
+                  {/* Avatar — show real profile pic if available */}
+                  {c.avatar ? (
+                    <img src={c.avatar} alt={c.username} className="w-8 h-8 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-xs shrink-0 text-s5 relative z-10"
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 text-white relative z-10"
                       style={{ background: `hsl(${(c.username.charCodeAt(0) * 47) % 360}, 45%, 30%)` }}>
                       {c.username[0].toUpperCase()}
                     </div>
@@ -504,10 +505,13 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                   
                   {/* Comment Body */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2">
+                    <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="text-sm font-bold text-s5">{c.username}</span>
+                      {c.email === ADMIN_EMAIL && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">Admin</span>
+                      )}
                       <span className="text-[10px] text-s3">{c.time}</span>
-                      {user?.username === c.username && (
+                      {(user?.username === c.username || user?.email === ADMIN_EMAIL) && (
                         <button onClick={() => deleteComment(c.id)} className="ml-auto text-s3 hover:text-red-400 transition-colors">
                           <Trash2 size={12} />
                         </button>
@@ -592,20 +596,23 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                         {/* L-shaped line connecting reply avatar to the thread line */}
                         <div className="absolute -left-[29px] -top-[6px] w-[18px] h-[18px] border-l border-b border-[var(--border)] opacity-30 rounded-bl-md pointer-events-none" />
                         
-                        {user?.username === r.username && user?.avatarUrl ? (
-                          <img src={user.avatarUrl} alt={r.username} className="w-6 h-6 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
+                        {r.avatar ? (
+                          <img src={r.avatar} alt={r.username} className="w-6 h-6 rounded-full object-cover shrink-0 border border-[var(--border)] relative z-10" />
                         ) : (
-                          <div className="w-6 h-6 rounded-full bg-s2 border border-[var(--border)] flex items-center justify-center font-bold text-[10px] shrink-0 text-s5 relative z-10"
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 text-white relative z-10"
                             style={{ background: `hsl(${(r.username.charCodeAt(0) * 47) % 360}, 45%, 30%)` }}>
                             {r.username[0].toUpperCase()}
                           </div>
                         )}
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline gap-2">
+                          <div className="flex items-baseline gap-2 flex-wrap">
                             <span className="text-xs font-bold text-s5">{r.username}</span>
+                            {r.email === ADMIN_EMAIL && (
+                              <span className="text-[8px] font-bold px-1 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">Admin</span>
+                            )}
                             <span className="text-[9px] text-s3">{r.time}</span>
-                            {(user?.username === r.username || user?.username === c.username) && (
+                            {(user?.username === r.username || user?.email === ADMIN_EMAIL) && (
                               <button onClick={() => deleteComment(r.id)} className="ml-auto text-s3 hover:text-red-400 transition-colors">
                                 <Trash2 size={10} />
                               </button>
@@ -644,7 +651,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
               
               {anime && (
                 <div className="relative w-full h-28 bg-s2 shrink-0">
-                  <img src={anime.banner || anime.cover} alt={anime.title} className="w-full h-full object-cover opacity-60" onError={(e) => (e.currentTarget.style.display='none')} />
+                  <img src={anime.cover || anime.banner} alt={anime.title} className="w-full h-full object-cover opacity-60" onError={(e) => (e.currentTarget.style.display='none')} />
                   <div className="absolute inset-0 bg-gradient-to-t from-s1 to-transparent flex flex-col justify-end p-4">
                     <span className="font-bold text-sm text-white drop-shadow-md truncate">{anime.title}</span>
                   </div>
@@ -673,7 +680,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
                     <div key={ep.id} onClick={() => toggleEpSelection(ep.id)}
                       className={`flex items-center gap-3 p-3 mb-1 rounded-xl cursor-pointer border transition-all ${isSelected ? 'bg-s5/10 border-s5/30' : 'border-transparent hover:bg-s2'}`}>
                       <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSelected ? 'bg-s5 border-s5' : 'border-s3'}`}>
-                        {isSelected && <BookmarkCheck size={12} className="text-white" />}
+                        {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-xs font-bold ${isSelected ? 'text-s5' : 'text-s4'}`}>EP {ep.num}</div>

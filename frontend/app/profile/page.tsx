@@ -1,37 +1,49 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Camera, Pencil, Check, X, LogOut, Smartphone, RefreshCw,
   Download, ChevronRight, Play, History, Trash2, User, Shield,
-  ArrowDownToLine
+  ArrowDownToLine, Users, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useToast } from '@/components/Toast';
-import { authAPI } from '@/lib/api';
+import { authAPI, adminAPI } from '@/lib/api';
+import { Capacitor } from '@capacitor/core';
 
 const APP_VERSION = '1.0.0';
+const ADMIN_EMAIL = 'isahmusa9921@gmail.com';
 
 export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
   const { user, logout, update, updateAvatar } = useAuthStore();
   const { recentlyWatched, clearHistory, removeFromHistory } = useWatchlistStore();
+  const isNative = Capacitor.isNativePlatform();
 
   const [editName, setEditName]   = useState(false);
   const [newName,  setNewName]    = useState(user?.username || '');
   const [savingName, setSavingName] = useState(false);
 
   const [checkingUpdate, setCheckingUpdate] = useState(false);
-  const [updateInfo, setUpdateInfo]         = useState<null | {
+  const [updateInfo, setUpdateInfo] = useState<null | {
     has_update: boolean; latest_version: string;
     download_url: string; release_notes: string;
   }>(null);
 
+  const [adminStats, setAdminStats] = useState<{ total_users: number } | null>(null);
+
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // ── Admin stats ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (user?.email === ADMIN_EMAIL) {
+      adminAPI.getStats().then(({ data }) => setAdminStats(data)).catch(() => {});
+    }
+  }, [user]);
 
   // ── Avatar ────────────────────────────────────────────────────────────────
   const handleAvatarChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,12 +51,15 @@ export default function ProfilePage() {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { toast('Image must be < 2 MB', 'error'); return; }
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const dataUrl = ev.target?.result as string;
       updateAvatar(dataUrl);
-      // Best-effort sync to backend (non-blocking)
-      authAPI.updateAvatar(dataUrl).catch(() => {});
-      toast('Profile picture updated!', 'success');
+      try {
+        await authAPI.updateAvatar(dataUrl);
+        toast('Profile picture updated!', 'success');
+      } catch {
+        toast('Profile picture saved locally', 'info');
+      }
     };
     reader.readAsDataURL(file);
   }, [updateAvatar, toast]);
@@ -59,7 +74,6 @@ export default function ProfilePage() {
       setEditName(false);
       toast('Username updated!', 'success');
     } catch {
-      // Backend might be offline — update locally anyway
       update(newName.trim());
       setEditName(false);
       toast('Username saved locally', 'info');
@@ -76,7 +90,7 @@ export default function ProfilePage() {
       if (data.has_update) {
         toast(`Update ${data.latest_version} available!`, 'success');
       } else {
-        toast('You are on the latest version!', 'info');
+        toast('Already up to date ✓', 'info');
       }
     } catch {
       toast('Could not check for updates', 'error');
@@ -94,6 +108,7 @@ export default function ProfilePage() {
 
   const avatarSrc = user.avatarUrl || null;
   const initials = user.username?.[0]?.toUpperCase() || '?';
+  const isAdmin = user.email === ADMIN_EMAIL;
 
   return (
     <div className="min-h-screen px-4 py-6 max-w-lg mx-auto">
@@ -144,6 +159,9 @@ export default function ProfilePage() {
             ) : (
               <>
                 <h1 className="font-display font-black text-2xl text-s5">{user.username}</h1>
+                {isAdmin && (
+                  <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">Admin</span>
+                )}
                 <button onClick={() => { setNewName(user.username); setEditName(true); }}
                   className="text-s3 hover:text-s5 transition-colors">
                   <Pencil size={15} />
@@ -155,6 +173,32 @@ export default function ProfilePage() {
           <p className="text-s3 text-xs font-mono">{user.email}</p>
         </div>
       </div>
+
+      {/* ── Admin Dashboard ───────────────────────────────────────────────── */}
+      {isAdmin && adminStats && (
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 rounded-2xl border border-rose-500/20 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, rgba(225,29,72,0.06) 0%, rgba(6,20,27,0.95) 100%)' }}
+        >
+          <div className="px-5 py-4 border-b border-rose-500/10">
+            <div className="flex items-center gap-2">
+              <Star size={14} className="text-rose-400" />
+              <span className="text-sm font-bold text-rose-400">Admin Dashboard</span>
+            </div>
+          </div>
+          <div className="p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+              <Users size={22} className="text-rose-400" />
+            </div>
+            <div>
+              <p className="text-2xl font-black text-white">{adminStats.total_users.toLocaleString()}</p>
+              <p className="text-xs text-s3">Registered Members</p>
+            </div>
+          </div>
+        </motion.section>
+      )}
 
       {/* ── Continue Watching ────────────────────────────────────────────── */}
       {recentlyWatched.length > 0 && (
@@ -180,7 +224,6 @@ export default function ProfilePage() {
                       ? <img src={r.cover} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       : <div className="w-full h-full flex items-center justify-center"><Play size={20} className="text-s3" /></div>}
-                    {/* Progress bar */}
                     {r.progress > 0 && (
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-s0/60">
                         <div className="h-full bg-s5 rounded-full" style={{ width: `${Math.min(100, r.progress)}%` }} />
@@ -206,11 +249,16 @@ export default function ProfilePage() {
       <div className="space-y-3 mb-6">
 
         {/* Check for Updates */}
-        <div className="rounded-2xl border border-[var(--border)] overflow-hidden" style={{ background: 'var(--glass)' }}>
+        <div className="rounded-2xl border overflow-hidden transition-all"
+          style={{
+            background: 'var(--glass)',
+            borderColor: updateInfo?.has_update ? 'rgba(239,68,68,0.5)' : 'var(--border)',
+            boxShadow: updateInfo?.has_update ? '0 0 20px rgba(239,68,68,0.2)' : 'none'
+          }}>
           <button onClick={checkForUpdate} disabled={checkingUpdate}
             className="w-full flex items-center gap-4 px-5 py-4 hover:bg-s1/50 transition-colors disabled:opacity-70">
-            <div className="w-10 h-10 rounded-xl bg-s2 flex items-center justify-center">
-              <Smartphone size={18} className="text-s4" />
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${updateInfo?.has_update ? 'bg-red-500/20' : 'bg-s2'}`}>
+              <Smartphone size={18} className={updateInfo?.has_update ? 'text-red-400' : 'text-s4'} />
             </div>
             <div className="flex-1 text-left">
               <p className="text-sm font-semibold text-s5">Check for Updates</p>
@@ -218,7 +266,7 @@ export default function ProfilePage() {
             </div>
             {checkingUpdate
               ? <div className="w-4 h-4 border-2 border-s3 border-t-s5 rounded-full animate-spin" />
-              : <RefreshCw size={16} className="text-s3" />}
+              : <RefreshCw size={16} className={`transition-colors ${updateInfo?.has_update ? 'text-red-400 animate-pulse' : 'text-s3'}`} />}
           </button>
 
           {/* Update result */}
@@ -231,22 +279,29 @@ export default function ProfilePage() {
                   {updateInfo.has_update ? (
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <p className="text-sm font-bold text-emerald-400">Update v{updateInfo.latest_version} available!</p>
+                        <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                        <p className="text-sm font-bold text-red-400">Update v{updateInfo.latest_version} available!</p>
                       </div>
                       <p className="text-xs text-s3 leading-relaxed">{updateInfo.release_notes}</p>
-                      {updateInfo.download_url && (
+                      {!isNative && updateInfo.download_url && (
                         <a href={updateInfo.download_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-s5 text-s0 font-bold text-sm hover:bg-s4 transition-colors">
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors">
                           <ArrowDownToLine size={14} />
                           Download APK
+                        </a>
+                      )}
+                      {isNative && updateInfo.download_url && (
+                        <a href={updateInfo.download_url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors">
+                          <ArrowDownToLine size={14} />
+                          Install Update
                         </a>
                       )}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-s4" />
-                      <p className="text-sm text-s4">You are up to date — v{updateInfo.latest_version}</p>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <p className="text-sm text-emerald-400 font-semibold">Already up to date — v{updateInfo.latest_version} ✓</p>
                     </div>
                   )}
                 </div>
@@ -255,19 +310,21 @@ export default function ProfilePage() {
           </AnimatePresence>
         </div>
 
-        {/* Get App */}
-        <Link href="/apk"
-          className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-[var(--border)] hover:bg-s1/50 transition-colors"
-          style={{ background: 'var(--glass)' }}>
-          <div className="w-10 h-10 rounded-xl bg-s2 flex items-center justify-center">
-            <Download size={18} className="text-s4" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-s5">Get the App</p>
-            <p className="text-xs text-s3">Download AniVerse APK</p>
-          </div>
-          <ChevronRight size={16} className="text-s3" />
-        </Link>
+        {/* Get App — only show on web */}
+        {!isNative && (
+          <Link href="/apk"
+            className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-[var(--border)] hover:bg-s1/50 transition-colors"
+            style={{ background: 'var(--glass)' }}>
+            <div className="w-10 h-10 rounded-xl bg-s2 flex items-center justify-center">
+              <Download size={18} className="text-s4" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-s5">Get the App</p>
+              <p className="text-xs text-s3">Download AniVerse APK</p>
+            </div>
+            <ChevronRight size={16} className="text-s3" />
+          </Link>
+        )}
 
         {/* My Watchlist */}
         <Link href="/watchlist"

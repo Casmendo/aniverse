@@ -133,8 +133,8 @@ export const authAPI = {
     BACKEND.post('/api/auth/update-username', { username }),
   changePassword: (old_password: string, new_password: string) =>
     BACKEND.post('/api/auth/change-password', { old_password, new_password }),
-  updateAvatar: (avatar_url: string) =>
-    BACKEND.post('/api/auth/update-avatar', { avatar_url }),
+  updateAvatar: (avatarUrl: string) =>
+    BACKEND.post('/api/user/avatar', { avatarUrl }),
   checkForUpdate: (version: string) =>
     BACKEND.get('/api/app-update', { params: { version } }),
   forgotPassword: (email: string) =>
@@ -148,6 +148,17 @@ export const commentAPI = {
   get:    (slug: string, page = 1) => BACKEND.get(`/api/comments/${slug}`, { params: { page } }),
   post:   (slug: string, text: string, parent_id?: number) => BACKEND.post(`/api/comments/${slug}`, { text, parent_id }),
   delete: (id: number)               => BACKEND.delete(`/api/comments/delete/${id}`),
+};
+
+// ── Notifications (backend) ────────────────────────────────────────────────
+export const notificationAPI = {
+  getAll:  () => BACKEND.get('/api/notifications'),
+  markRead: (id: number) => BACKEND.post('/api/notifications/read', { id }),
+};
+
+// ── Admin (backend) ────────────────────────────────────────────────────────
+export const adminAPI = {
+  getStats: () => BACKEND.get('/api/admin/stats'),
 };
 
 // ── Downloads (animapi for jobs, backend for library) ───────────────────────
