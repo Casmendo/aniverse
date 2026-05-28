@@ -15,12 +15,15 @@ from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from flask_mail import Mail, Message
 from itsdangerous import URLSafeSerializer
 from email_validator import validate_email, EmailNotValidError
-
-load_dotenv()
 
 app = Flask(__name__)
 app.config.update(
