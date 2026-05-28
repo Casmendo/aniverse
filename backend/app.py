@@ -52,7 +52,7 @@ CORS(app,
      methods=['GET','POST','DELETE','OPTIONS'])
 
 db      = SQLAlchemy(app)
-limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[], storage_uri='memory://')
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=["300 per day", "60 per minute"], storage_uri='memory://')
 cache   = Cache(app, config={'CACHE_TYPE':'SimpleCache','CACHE_DEFAULT_TIMEOUT':300})
 mail    = Mail(app)
 serializer = URLSafeSerializer(app.config['SECRET_KEY'])
