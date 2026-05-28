@@ -63,6 +63,9 @@ BACKEND.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
+  // Attach secret API key for backend verification
+  config.headers['X-Aniverse-Key'] = process.env.NEXT_PUBLIC_ANIVERSE_KEY || 'aniverse_secure_api_key_2026_xyz';
+  
   if (config.method?.toLowerCase() === 'get') {
     const key = 'BACKEND_' + config.url + JSON.stringify(config.params || {});
     const cached = apiCache.get(key);

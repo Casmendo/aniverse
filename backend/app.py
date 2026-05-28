@@ -56,6 +56,17 @@ limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[], stora
 cache   = Cache(app, config={'CACHE_TYPE':'SimpleCache','CACHE_DEFAULT_TIMEOUT':300})
 mail    = Mail(app)
 serializer = URLSafeSerializer(app.config['SECRET_KEY'])
+API_SECRET_KEY = os.environ.get('ANIVERSE_SECRET_KEY', 'aniverse_secure_api_key_2026_xyz')
+
+@app.before_request
+def check_api_key():
+    # Allow CORS preflight requests
+    if request.method == 'OPTIONS':
+        return
+    # Require X-Aniverse-Key header on all endpoints
+    provided_key = request.headers.get('X-Aniverse-Key')
+    if provided_key != API_SECRET_KEY:
+        return jsonify({'error': 'Unauthorized: Invalid or missing API Key'}), 403
 
 # ── Models ────────────────────────────────────────────────────────────────────
 
