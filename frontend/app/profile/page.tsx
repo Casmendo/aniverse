@@ -108,8 +108,6 @@ export default function ProfilePage() {
 
   const avatarSrc = user.avatarUrl || null;
   const initials = user.username?.[0]?.toUpperCase() || '?';
-  const isAdmin = user.email === ADMIN_EMAIL;
-
   return (
     <div className="min-h-screen px-4 py-6 max-w-lg mx-auto">
 

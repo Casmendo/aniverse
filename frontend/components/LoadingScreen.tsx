@@ -79,8 +79,10 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
         <div className="font-mono text-s3 text-[10px] mt-2">
           {Math.round(progress)}%
         </div>
+      </div>
 
-          <div className="absolute bottom-12 flex flex-col items-center gap-2 transition-all duration-700" style={{ opacity: phase === 'bar' ? 1 : 0 }}>
+      {/* Footer / Socials (placed at the bottom of the screen) */}
+      <div className="absolute bottom-12 flex flex-col items-center gap-2 transition-all duration-700" style={{ opacity: phase === 'bar' ? 1 : 0 }}>
           <div className="flex items-center gap-1 text-sm text-s3 flex-wrap justify-center">
             <span style={{ color: 'var(--accent)', fontSize: 16 }}>♥</span>
             <span className="font-mono tracking-wider text-[10px] uppercase">
