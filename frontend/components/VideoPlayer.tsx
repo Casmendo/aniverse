@@ -427,7 +427,6 @@ export default function VideoPlayer({
   return (
     <div
       ref={containerRef}
-      onMouseMove={handleMouseMove}
       className="relative bg-black w-full aspect-video select-none overflow-hidden"
       style={{ cursor: showCtrl ? 'default' : 'none' }}
     >
