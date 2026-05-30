@@ -442,19 +442,19 @@ export default function VideoPlayer({
       />
 
       {/* Mobile tap zones */}
-      <div className="absolute top-0 left-0 bottom-14 w-1/5 z-10" 
+      <div className="absolute top-0 left-0 bottom-14 w-[20%] z-10" 
         onClick={() => handleTap('left')}
         onTouchStart={e => handleTouchStart(e, 'left')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd} />
-      <div className="absolute top-0 right-0 bottom-14 w-1/5 z-10" 
+      <div className="absolute top-0 right-0 bottom-14 w-[20%] z-10" 
         onClick={() => handleTap('right')}
         onTouchStart={e => handleTouchStart(e, 'right')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd} />
 
       {/* Center click area — single tap = play/pause flash, drag = seek */}
-      <div className="absolute top-0 left-1/5 right-1/5 bottom-14 z-10 flex items-center justify-center"
+      <div className="absolute top-0 left-[20%] right-[20%] bottom-14 z-10 flex items-center justify-center"
         onTouchStart={e => handleTouchStart(e, 'center')}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
