@@ -1,19 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Code, Heart } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import Link from 'next/link';
+import { X, Code, Heart } from 'lucide-react';
 
 export default function WelcomeNotification() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Check if seen in the last 24 hours
     const lastSeen = localStorage.getItem('aniverse_welcome_seen');
     const now = Date.now();
     if (!lastSeen || now - parseInt(lastSeen) > 24 * 60 * 60 * 1000) {
-      setTimeout(() => setShow(true), 2000); // show after 2 seconds
+      setTimeout(() => setShow(true), 2000);
     }
   }, []);
 
@@ -24,14 +21,10 @@ export default function WelcomeNotification() {
 
   useEffect(() => {
     if (show) {
-      const timer = setTimeout(() => {
-        close();
-      }, 10000); // Auto close after 10 seconds
+      const timer = setTimeout(() => close(), 10000);
       return () => clearTimeout(timer);
     }
   }, [show]);
-
-  if (Capacitor.isNativePlatform()) return null; // Only show on web
 
   return (
     <AnimatePresence>
@@ -72,12 +65,6 @@ export default function WelcomeNotification() {
                 <Code size={12} className="text-s5" /> 
                 Built with <Heart size={12} fill="currentColor" className="text-red-500 mx-0.5" /> by <span className="text-s5 font-bold">Leo</span>
               </div>
-
-              <Link href="/apk" onClick={close} className="w-full mt-2 group relative overflow-hidden rounded-xl bg-s5 hover:bg-s4 text-white font-bold py-3 transition-all flex items-center justify-center gap-2">
-                <Download size={18} />
-                Download Android APK
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-              </Link>
             </div>
           </div>
         </motion.div>

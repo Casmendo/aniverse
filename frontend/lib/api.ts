@@ -138,8 +138,6 @@ export const authAPI = {
     BACKEND.post('/api/auth/change-password', { old_password, new_password }),
   updateAvatar: (avatarUrl: string) =>
     BACKEND.post('/api/user/avatar', { avatarUrl }),
-  checkForUpdate: (version: string) =>
-    BACKEND.get('/api/app-update', { params: { version } }),
   forgotPassword: (email: string) =>
     BACKEND.post('/api/auth/forgot-password', { email }),
   resetPassword:  (email: string, otp: string, new_password: string) =>

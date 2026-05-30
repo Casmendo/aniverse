@@ -5,8 +5,7 @@ import { Bell, X, MessageSquare, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { notificationAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { Capacitor } from '@capacitor/core';
-import { LocalNotifications } from '@capacitor/local-notifications';
+
 
 interface Notif {
   id: number;
@@ -40,18 +39,6 @@ export default function NotificationBell() {
       if (newOnes.length > 0) {
         const newest = newOnes[0];
         setNewToast(newest);
-        // APK push notification
-        if (Capacitor.isNativePlatform()) {
-          try {
-            await LocalNotifications.requestPermissions();
-            await LocalNotifications.schedule({ notifications: [{
-              id: newest.id,
-              title: `${newest.sender} replied to your comment`,
-              body: newest.text.slice(0, 100),
-              schedule: { at: new Date(Date.now() + 200) },
-            }]});
-          } catch {}
-        }
         setTimeout(() => setNewToast(null), 5000);
       }
       newOnes.forEach(n => prevIds.current.add(n.id));

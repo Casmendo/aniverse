@@ -980,50 +980,7 @@ def reset_password():
     db.session.delete(rec); db.session.commit()
     return jsonify({'success':True, 'message':'Password successfully updated'})
 
-# ── APK Update Check ──────────────────────────────────────────────────────────
 
-APK_LATEST_VERSION = os.environ.get('APK_LATEST_VERSION', '1.0.0')
-APK_DOWNLOAD_URL   = os.environ.get('APK_DOWNLOAD_URL', '')
-APK_RELEASE_NOTES  = os.environ.get('APK_RELEASE_NOTES', 'Performance improvements and bug fixes.')
-GITHUB_REPO        = os.environ.get('GITHUB_REPO', '')  # e.g. "username/aniverse-app"
-
-@app.route('/api/app-update')
-def app_update():
-    """Returns the latest APK version metadata.
-    Checks GitHub Releases if GITHUB_REPO is configured, otherwise uses env vars."""
-    current = request.args.get('version', '0.0.0').strip()
-    
-    # Try GitHub Releases first if repo is configured
-    if GITHUB_REPO:
-        try:
-            gh_url = f'https://api.github.com/repos/{GITHUB_REPO}/releases/latest'
-            gh_resp = requests.get(gh_url, headers={'Accept': 'application/vnd.github.v3+json'}, timeout=8)
-            gh_resp.raise_for_status()
-            release = gh_resp.json()
-            tag = release.get('tag_name', '').lstrip('v')
-            notes = release.get('body', APK_RELEASE_NOTES)
-            apk_asset = next((a for a in release.get('assets', []) if a['name'].endswith('.apk')), None)
-            dl_url = apk_asset['browser_download_url'] if apk_asset else APK_DOWNLOAD_URL
-            has_update = tag and tag != current and tag > current
-            return jsonify({
-                'has_update': has_update,
-                'latest_version': tag or APK_LATEST_VERSION,
-                'download_url': dl_url,
-                'release_notes': notes,
-                'source': 'github'
-            })
-        except Exception as e:
-            app.logger.warning(f'[app-update] GitHub check failed: {e}')
-    
-    # Fallback to env var configuration
-    has_update = APK_LATEST_VERSION != current and APK_LATEST_VERSION > current
-    return jsonify({
-        'has_update': has_update,
-        'latest_version': APK_LATEST_VERSION,
-        'download_url': APK_DOWNLOAD_URL,
-        'release_notes': APK_RELEASE_NOTES,
-        'source': 'config'
-    })
 
 @app.route('/api/user')
 def get_user():

@@ -11,8 +11,7 @@ import { useToast } from '@/components/Toast';
 import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useDownloadStore } from '@/store/downloadStore';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem } from '@capacitor/filesystem';
+
 import { downloadAPI } from '@/lib/api';
 import { processDownload } from '@/lib/downloadService';
 
@@ -673,7 +672,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
               </div>
               
               <div className="flex-1 overflow-y-auto p-2 ep-scroll">
-                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2 mt-4">{!Capacitor.isNativePlatform() ? 'Save to Device' : 'Download to App'}</p>
+                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2 mt-4">Save to Device</p>
                 {episodes.map(ep => {
                   const isSelected = selectedEpisodes.includes(ep.id);
                   return (

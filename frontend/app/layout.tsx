@@ -25,20 +25,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       triggerIntro();
       sessionStorage.setItem('aniverse-intro-played', 'true');
     }
-    
-    // Handle Android Back Button
-    (async () => {
-      if (typeof window !== 'undefined') {
-        const { App } = await import('@capacitor/app');
-        App.addListener('backButton', ({ canGoBack }) => {
-          if (canGoBack) {
-            window.history.back();
-          } else {
-            App.exitApp();
-          }
-        });
-      }
-    })();
   }, []);
 
   const handleLoadDone = () => {

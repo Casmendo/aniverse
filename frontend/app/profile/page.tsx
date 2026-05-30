@@ -12,7 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useToast } from '@/components/Toast';
 import { authAPI, adminAPI } from '@/lib/api';
-import { Capacitor } from '@capacitor/core';
+
 
 const APP_VERSION = '1.0.0';
 const ADMIN_EMAIL = 'isahmusa9921@gmail.com';
@@ -22,7 +22,7 @@ export default function ProfilePage() {
   const toast = useToast();
   const { user, logout, update, updateAvatar } = useAuthStore();
   const { recentlyWatched, clearHistory, removeFromHistory } = useWatchlistStore();
-  const isNative = Capacitor.isNativePlatform();
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   const [editName, setEditName]   = useState(false);
   const [newName,  setNewName]    = useState(user?.username || '');
@@ -283,18 +283,11 @@ export default function ProfilePage() {
                         <p className="text-sm font-bold text-red-400">Update v{updateInfo.latest_version} available!</p>
                       </div>
                       <p className="text-xs text-s3 leading-relaxed">{updateInfo.release_notes}</p>
-                      {!isNative && updateInfo.download_url && (
+                      {updateInfo.download_url && (
                         <a href={updateInfo.download_url} target="_blank" rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors">
                           <ArrowDownToLine size={14} />
-                          Download APK
-                        </a>
-                      )}
-                      {isNative && updateInfo.download_url && (
-                        <a href={updateInfo.download_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-colors">
-                          <ArrowDownToLine size={14} />
-                          Install Update
+                          Download Update
                         </a>
                       )}
                     </div>
@@ -310,21 +303,6 @@ export default function ProfilePage() {
           </AnimatePresence>
         </div>
 
-        {/* Get App — only show on web */}
-        {!isNative && (
-          <Link href="/apk"
-            className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-[var(--border)] hover:bg-s1/50 transition-colors"
-            style={{ background: 'var(--glass)' }}>
-            <div className="w-10 h-10 rounded-xl bg-s2 flex items-center justify-center">
-              <Download size={18} className="text-s4" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-s5">Get the App</p>
-              <p className="text-xs text-s3">Download AniVerse APK</p>
-            </div>
-            <ChevronRight size={16} className="text-s3" />
-          </Link>
-        )}
 
         {/* My Watchlist */}
         <Link href="/watchlist"

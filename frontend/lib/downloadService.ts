@@ -1,6 +1,3 @@
-import { Capacitor, CapacitorHttp } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { LocalNotifications } from '@capacitor/local-notifications';
 import { downloadAPI } from '@/lib/api';
 import { useDownloadQueueStore } from '@/store/downloadQueueStore';
 import { useDownloadStore } from '@/store/downloadStore';
@@ -16,7 +13,6 @@ export const processDownload = async (
   if (!anime || !ep) return;
 
   const downloadName = `${anime.title.replace(/[^a-zA-Z0-9-_\. ]/g, '')}-EP${ep.num}`;
-  const notifId = Math.floor(Math.random() * 1000000);
   const { addOrUpdateItem, removeItem } = useDownloadQueueStore.getState();
   const { add: addDownload } = useDownloadStore.getState();
   const { user } = useAuthStore.getState();
@@ -40,21 +36,6 @@ export const processDownload = async (
       
       addOrUpdateItem(jobId, downloadName, Math.min(99, pct));
 
-      if (Capacitor.isNativePlatform()) {
-        try {
-          await LocalNotifications.requestPermissions();
-          await LocalNotifications.schedule({
-            notifications: [{
-              title: 'AniVerse Downloading',
-              body: `${downloadName}: ${pct}%`,
-              id: notifId,
-              schedule: { at: new Date(Date.now() + 100) },
-              smallIcon: 'ic_stat_name', // optional icon
-            }]
-          });
-        } catch(e) {}
-      }
-
       if (['done', 'finished', 'completed'].includes(status)) {
         fileUrl = await downloadAPI.getJobFile(jobId);
         break;
@@ -67,77 +48,13 @@ export const processDownload = async (
 
     addOrUpdateItem(jobId, downloadName, 100);
 
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const status = await Filesystem.requestPermissions();
-        if (status.publicStorage !== 'granted') throw new Error('Storage permission denied');
-        
-        await LocalNotifications.schedule({
-          notifications: [{
-            title: 'AniVerse',
-            body: `Saving ${downloadName} to device...`,
-            id: notifId,
-          }]
-        });
-
-        const fileName = `${downloadName}.mp4`;
-        const folderPath = `AniVerse/${fileName}`;
-        let localPath = '';
-        try {
-          const { CapacitorDownloader } = await import('@capgo/capacitor-downloader');
-          const dlRes = await CapacitorDownloader.download({
-            url: fileUrl,
-            destination: folderPath,
-          });
-          localPath = dlRes.path || '';
-        } catch (err) {
-          // Fallback if plugin fails or is missing
-          const downloadRes = await CapacitorHttp.downloadFile({
-            url: fileUrl,
-            filePath: `Download/${folderPath}`,
-            fileDirectory: Directory.ExternalStorage,
-          });
-          localPath = downloadRes.path || `Download/${folderPath}`;
-        }
-
-        // Saved to device successfully, now add to local app library for offline custom player
-        await addDownload({
-          anime_slug: anime.slug, anime_title: anime.title, anime_cover: anime.cover,
-          episode_num: ep.num, episode_id: ep.id, episode_title: ep.title,
-          localPath,
-        }, !!user);
-        
-        await LocalNotifications.schedule({
-          notifications: [{
-            title: '✅ Download Complete!',
-            body: `${downloadName} saved! Added to your Download folder.`,
-            id: notifId,
-          }]
-        });
-
-      } catch (e: any) {
-        throw new Error('Native download failed: ' + e.message);
-      }
-    } else {
-      // WEB DOWNLOAD: Browser handles it. No library saving.
-      window.location.assign(fileUrl);
-    }
+    // WEB DOWNLOAD: Browser handles it directly
+    window.location.assign(fileUrl);
     
-    toast(`✅ Successfully downloaded EP ${ep.num}! Added to your Downloads folder.`, 'success');
+    toast(`✅ Successfully downloaded EP ${ep.num}!`, 'success');
     setTimeout(() => removeItem(jobId), 3000);
     
   } catch(e: any) {
     toast(`Error on EP ${ep.num}: ${e.message}`, 'error');
-    if (Capacitor.isNativePlatform()) {
-      try {
-        await LocalNotifications.schedule({
-          notifications: [{
-            title: 'Download Failed',
-            body: `${downloadName}: ${e.message}`,
-            id: notifId,
-          }]
-        });
-      } catch(err) {}
-    }
   }
 };

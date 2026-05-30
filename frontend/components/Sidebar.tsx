@@ -37,7 +37,6 @@ export default function Sidebar() {
     { href:'/',          icon:Home,      label:'Home' },
     { href:'/downloads', icon:Download,  label:'Downloads' },
     { href:'/watchlist', icon:Bookmark,  label:`Watchlist${watchlist.length ? ` (${watchlist.length})` : ''}` },
-    { href:'/apk',       icon:AppWindow, label:'Get App' },
   ];
 
   return (

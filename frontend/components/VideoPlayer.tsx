@@ -4,8 +4,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForwar
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Capacitor } from '@capacitor/core';
-import { ScreenOrientation } from '@capacitor/screen-orientation';
+
 import { Camera, PictureInPicture2 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 
@@ -128,23 +127,18 @@ export default function VideoPlayer({
     v.muted = !v.muted; setMuted(v.muted);
   }, []);
 
-  // ── Fullscreen & Orientation ─────────────────────────────────────────────────────────────
   const toggleFS = useCallback(async () => {
     if (!document.fullscreenElement) {
       try { await containerRef.current?.requestFullscreen(); } catch {}
       try {
-        if (Capacitor.isNativePlatform()) {
-          await ScreenOrientation.lock({ orientation: 'landscape' });
-        } else if (screen.orientation && (screen.orientation as any).lock) {
+        if (screen.orientation && (screen.orientation as any).lock) {
           (screen.orientation as any).lock('landscape').catch(() => {});
         }
       } catch(e) {}
     } else {
       try { await document.exitFullscreen(); } catch {}
       try {
-        if (Capacitor.isNativePlatform()) {
-          await ScreenOrientation.unlock();
-        } else if (screen.orientation && screen.orientation.unlock) {
+        if (screen.orientation && screen.orientation.unlock) {
           screen.orientation.unlock();
         }
       } catch(e) {}
@@ -173,7 +167,6 @@ export default function VideoPlayer({
     } catch (err) { console.error('PiP error', err); }
   }, []);
 
-  // ── Screenshot ──────────────────────────────────────────────────────────────
   const takeScreenshot = useCallback(async () => {
     const v = videoRef.current; if (!v) return;
     const canvas = document.createElement('canvas');
@@ -182,25 +175,13 @@ export default function VideoPlayer({
     if (!ctx) return;
     ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
     try {
-      if (Capacitor.isNativePlatform()) {
-        const base64Data = canvas.toDataURL('image/jpeg').split(',')[1];
-        const fileName = `AniVerse_Screenshot_${Date.now()}.jpg`;
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
-        await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.Documents
-        });
-        toast('Screenshot saved to Documents', 'success');
-      } else {
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/jpeg');
-        link.download = `AniVerse_Screenshot_${Date.now()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast('Screenshot downloaded', 'success');
-      }
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/jpeg');
+      link.download = `AniVerse_Screenshot_${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast('Screenshot downloaded', 'success');
     } catch (e) {
       toast('Failed to save screenshot', 'error');
     }
@@ -336,14 +317,6 @@ export default function VideoPlayer({
         if (startTime > 5) setContinuePrompt({ time: startTime });
         if (autoPlay) v.play().catch(() => {});
       };
-
-      // Native offline playback (MP4)
-      if (localPath && Capacitor.isNativePlatform()) {
-        const fileSrc = Capacitor.convertFileSrc(localPath);
-        v.src = fileSrc;
-        v.addEventListener('loadedmetadata', startPlayback, { once: true });
-        return;
-      }
 
       if (Hls?.isSupported()) {
         // Exact same config as the friend's iframe — this is the key to stability

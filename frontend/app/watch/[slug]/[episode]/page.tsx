@@ -3,8 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Download, Play, SkipForward, Loader2, MessageSquare, Heart, Bookmark, Check, Share2, ChevronLeft, List, X } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { Filesystem, Directory } from '@capacitor/filesystem';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import VideoPlayer from '@/components/VideoPlayer';
 import { animeAPI, downloadAPI } from '@/lib/api';
@@ -516,7 +515,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
                   </div>
                 )}
 
-                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2 mt-4">{!Capacitor.isNativePlatform() ? 'Save to Device' : 'Download to App'}</p>
+                <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2 mt-4">Save to Device</p>
                 {episodes.map(ep => {
                   const isSelected = selectedEpisodes.includes(ep.id);
                   return (

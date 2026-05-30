@@ -1,9 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Download } from 'lucide-react';
 import { useSidebarStore } from '@/store/sidebarStore';
-import { Capacitor } from '@capacitor/core';
 import dynamic from 'next/dynamic';
 
 const NotificationBell = dynamic(() => import('@/components/NotificationBell'), { ssr: false });
@@ -11,7 +9,6 @@ const NotificationBell = dynamic(() => import('@/components/NotificationBell'), 
 export default function Navbar() {
   const { open } = useSidebarStore();
   const [scrolled, setScrolled] = useState(false);
-  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 20);
@@ -32,7 +29,7 @@ export default function Navbar() {
       </button>
 
       {/* Logo */}
-      <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 select-none group">
+      <a href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 select-none group">
         <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
           <defs>
             <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
@@ -48,20 +45,12 @@ export default function Navbar() {
         <span className="font-display font-black text-xl tracking-tight text-white">
           niVerse
         </span>
-      </Link>
+      </a>
 
       {/* Right */}
       <div className="flex items-center gap-1">
         <NotificationBell />
-        {!isNative && (
-          <Link href="/apk"
-            className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-            aria-label="Download app">
-            <Download size={16} />
-          </Link>
-        )}
       </div>
     </nav>
   );
 }
-
