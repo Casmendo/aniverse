@@ -691,6 +691,17 @@ export default function VideoPlayer({
               const v = videoRef.current;
               if (v) v.currentTime = parseFloat(e.currentTarget.value);
             }}
+            onPointerCancel={() => setIsScrubbing(false)}
+            onMouseUp={(e) => {
+              setIsScrubbing(false);
+              const v = videoRef.current;
+              if (v) v.currentTime = parseFloat(e.currentTarget.value);
+            }}
+            onTouchEnd={(e) => {
+              setIsScrubbing(false);
+              const v = videoRef.current;
+              if (v) v.currentTime = parseFloat(e.currentTarget.value);
+            }}
             onInput={(e) => {
               const val = parseFloat(e.currentTarget.value);
               setScrubTime(val);
