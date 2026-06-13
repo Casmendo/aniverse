@@ -6,9 +6,15 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:android": "npx cap sync android",
+    "open:android": "npx cap open android",
+    "build:android": "npm run build && npx cap sync android && npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "5.7.8",
+    "@capacitor/cli": "5.7.8",
+    "@capacitor/core": "5.7.8",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.8",

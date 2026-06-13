@@ -1,0 +1,21 @@
+{
+  "appId": "com.aniverse.app",
+  "appName": "Aniverse",
+  "webDir": "out",
+  "server": {
+    "url": "https://aniverse-xi.vercel.app",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#06141B"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#06141B",
+      "showSpinner": false,
+      "androidSplashResourceName": "splash"
+    }
+  }
+}

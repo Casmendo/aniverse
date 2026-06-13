@@ -677,12 +677,32 @@ export default function VideoPlayer({
 
               <button onClick={() => {
                 setShowDownload(false);
-                if (typeof window !== 'undefined' && (window as any).Android) {
-                  (window as any).Android.startDownload(streamUrl, `${slug}-ep${currentEp?.num || episodeId}`, slug, episodeId, currentEp?.title || `Episode ${currentEp?.num || episodeId}`);
-                  toast('Download started', 'info');
+                const isAPK = typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+                if (isAPK) {
+                  // APK: native download → hidden .nomedia storage → shows in in-app Download Library
+                  import('@/lib/nativeDownload').then(({ default: AniverseDownload }) => {
+                    AniverseDownload.startDownload({
+                      url: streamUrl,
+                      filename: `${slug}-ep${currentEp?.num || episodeId}`,
+                      animeSlug: slug,
+                      epId: episodeId,
+                      title: currentEp?.title || `Episode ${currentEp?.num || episodeId}`,
+                      cover: poster || '',
+                      epNum: currentEp?.num || 0,
+                      epTitle: currentEp?.title || `Episode ${currentEp?.num || episodeId}`,
+                      animeTitle: slug,
+                    });
+                    toast('Download started — check Library tab', 'info');
+                  });
                 } else {
-                  const a = document.createElement('a'); a.href = streamUrl; a.download = `${slug}-ep${currentEp?.num || episodeId}.mp4`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                  toast('Download started in browser', 'success');
+                  // Web: browser download → saves to phone root Downloads folder, open with VLC etc.
+                  const a = document.createElement('a');
+                  a.href = streamUrl;
+                  a.download = `${slug}-ep${currentEp?.num || episodeId}.mp4`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  toast('Downloading to your device Downloads folder', 'success');
                 }
               }} className="w-full py-3.5 bg-[#FFD700] hover:bg-[#F0C800] text-black font-black rounded-xl text-sm transition-colors shadow-[0_4px_14px_rgba(255,215,0,0.4)]">
                 Download
