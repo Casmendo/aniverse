@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List, Sun, Lock, Unlock, RotateCcw, RotateCw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Loader2, Settings, X, List, Sun, Lock, Unlock, RotateCcw, RotateCw, Download } from 'lucide-react';
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,6 +56,9 @@ export default function VideoPlayer({
   const [isLocked,   setIsLocked]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showEpisodes, setShowEpisodes] = useState(false);
+  const [showDownload, setShowDownload] = useState(false);
+  const [dlRes, setDlRes] = useState('720P');
+  const [dlSub, setDlSub] = useState('English');
   const [skipAnim,   setSkipAnim]   = useState<{ dir: 'fwd' | 'bck', targetTime: number } | null>(null);
   const [indicator,  setIndicator]  = useState<{ type: 'volume' | 'brightness', value: number } | null>(null);
   const [errMsg,     setErrMsg]     = useState('');
@@ -636,6 +639,59 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
+      {/* Download Modal */}
+      <AnimatePresence>
+        {showDownload && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+            onClick={(e) => { e.stopPropagation(); setShowDownload(false); }}>
+            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-6 w-[90%] max-w-sm flex flex-col items-center text-center shadow-2xl">
+              <h2 className="text-white font-bold text-xl mb-1">Download Episode {currentEp?.num || '??'}</h2>
+              <p className="text-white/50 text-xs font-semibold mb-6 line-clamp-1">{currentEp?.title || slug}</p>
+              
+              <div className="w-full text-left mb-4">
+                <p className="text-white/70 text-xs font-bold mb-2">Select Resolution</p>
+                <div className="flex gap-2">
+                  {['480P', '720P', '1080P'].map(res => (
+                     <button key={res} onClick={() => setDlRes(res)}
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-[#FFD700]/10 border-[#FFD700] text-[#FFD700]' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       {res}
+                     </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="w-full text-left mb-6">
+                <p className="text-white/70 text-xs font-bold mb-2">Select Subtitle</p>
+                <div className="flex gap-2">
+                  {['None', 'English'].map(sub => (
+                     <button key={sub} onClick={() => setDlSub(sub)}
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlSub === sub ? 'bg-[#FFD700]/10 border-[#FFD700] text-[#FFD700]' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       {sub}
+                     </button>
+                  ))}
+                </div>
+              </div>
+
+              <button onClick={() => {
+                setShowDownload(false);
+                if (typeof window !== 'undefined' && (window as any).Android) {
+                  (window as any).Android.startDownload(streamUrl, `${slug}-ep${currentEp?.num || episodeId}`, slug, episodeId, currentEp?.title || `Episode ${currentEp?.num || episodeId}`);
+                  toast('Download started', 'info');
+                } else {
+                  const a = document.createElement('a'); a.href = streamUrl; a.download = `${slug}-ep${currentEp?.num || episodeId}.mp4`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  toast('Download started in browser', 'success');
+                }
+              }} className="w-full py-3.5 bg-[#FFD700] hover:bg-[#F0C800] text-black font-black rounded-xl text-sm transition-colors shadow-[0_4px_14px_rgba(255,215,0,0.4)]">
+                Download
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Episodes drawer */}
       <AnimatePresence>
         {showEpisodes && episodes && (
@@ -743,14 +799,17 @@ export default function VideoPlayer({
           {/* Right controls */}
           <div className="flex items-center gap-1">
             {episodes && episodes.length > 0 && (
-              <button onClick={() => { setShowEpisodes(v => !v); setShowSettings(false); }}
+              <button onClick={() => { setShowEpisodes(v => !v); setShowSettings(false); setShowDownload(false); }}
                 className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showEpisodes ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}>
                 <List size={15} /> Episodes
               </button>
             )}
-            <button onClick={() => { setShowSettings(v => !v); setShowEpisodes(false); }}
+            <button onClick={() => { setShowSettings(v => !v); setShowEpisodes(false); setShowDownload(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showSettings ? 'bg-s5 text-white' : 'hover:bg-white/10 text-white/90'}`}>
               <Settings size={15} /> <span className="hidden sm:inline">Settings</span>
+            </button>
+            <button onClick={() => { setShowDownload(true); setShowSettings(false); setShowEpisodes(false); }} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Download">
+              <Download size={18} />
             </button>
             <button onClick={() => setIsLocked(true)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
               <Lock size={18} />
