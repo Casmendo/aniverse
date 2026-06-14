@@ -19,9 +19,7 @@ async function mdxFetch<T>(path: string, params: Record<string, any> = {}, retri
   let lastErr: Error | null = null;
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url.toString(), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const res = await fetch(url.toString(), { cache: 'no-store' });
       if (res.status === 429) {
         await new Promise(r => setTimeout(r, 1500 * (i + 1)));
         continue;
@@ -104,7 +102,6 @@ export const mangaDexClient = {
         'translatedLanguage[]': [lang],
         'order[chapter]': 'asc',
         'includes[]': ['scanlation_group'],
-        'contentRating[]': ['safe', 'suggestive', 'erotica'],
       });
 
       const items = data?.data || [];
