@@ -288,6 +288,12 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
     await processDownload(ep, anime, selectedQuality, selectedAudio, toast);
   };
 
+  const toggleEpSelection = (id: string) => {
+    setSelectedEpisodes(prev => 
+      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
+    );
+  };
+
   const stars = (score:number) => Array.from({length:5},(_,i)=>(
     <svg key={i} width="13" height="13" viewBox="0 0 24 24"
       fill={i<Math.round(score/2)?'#CCD0CF':'none'} stroke="#CCD0CF" strokeWidth="1.5">
