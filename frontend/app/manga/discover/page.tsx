@@ -1,11 +1,27 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { TrendingUp, Star, Clock, Flame, Search, ChevronRight, BookOpen } from 'lucide-react';
+import { TrendingUp, Star, Clock, Flame, BookOpen } from 'lucide-react';
 import { mangaService, type AniMangaCard } from '@/lib/manga/mangaService';
-import { useInView } from 'react-intersection-observer';
+
+// Native IntersectionObserver hook — no extra packages needed
+function useInView(onVisible: () => void, enabled: boolean) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) onVisible(); },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [enabled, onVisible]);
+  return ref;
+}
 
 const SORTS = [
   { key: 'trending', label: 'Trending', icon: Flame },
@@ -75,7 +91,13 @@ export default function DiscoverPage() {
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
 
-  const { ref: loaderRef, inView } = useInView({ threshold: 0.1, rootMargin: '200px' });
+  const loaderRef = useInView(() => {
+    if (!loading && hasMore) {
+      const next = page + 1;
+      setPage(next);
+      fetchData(next, false);
+    }
+  }, hasMore && !loading);
 
   const fetchData = useCallback(async (currentPage: number, reset: boolean) => {
     setLoading(true);
@@ -105,13 +127,6 @@ export default function DiscoverPage() {
     setItems([]); setPage(1); setHasMore(true);
     fetchData(1, true);
   }, [sort, genre]);
-
-  // Infinite scroll
-  useEffect(() => {
-    if (inView && !loading && hasMore && page > 1) {
-      fetchData(page, false);
-    }
-  }, [inView]);
 
   const loadNext = () => {
     if (!loading && hasMore) {
