@@ -41,11 +41,11 @@ export default function LibraryPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 text-sm font-bold capitalize transition-colors relative ${activeTab === tab ? 'text-[#FFD700]' : 'text-s3 hover:text-s4'}`}
+              className={`pb-3 text-sm font-bold capitalize transition-colors relative ${activeTab === tab ? 'text-accent' : 'text-s3 hover:text-s4'}`}
             >
               {tab}
               {activeTab === tab && (
-                <motion.div layoutId="libTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FFD700]" />
+                <motion.div layoutId="libTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent" />
               )}
             </button>
           ))}
@@ -115,7 +115,7 @@ export default function LibraryPage() {
                           )}
                           <div className="absolute inset-0 bg-gradient-to-t from-s0/80 to-transparent" />
                           {r.lastEpNum > 0 && (
-                            <div className="absolute bottom-2 left-2 text-[10px] font-mono font-bold text-[#FFD700] bg-s0/80 px-1.5 py-0.5 rounded">EP {r.lastEpNum}</div>
+                            <div className="absolute bottom-2 left-2 text-[10px] font-mono font-bold text-accent bg-s0/80 px-1.5 py-0.5 rounded">EP {r.lastEpNum}</div>
                           )}
                         </div>
                         <div className="px-2.5 py-2">
@@ -157,7 +157,7 @@ export default function LibraryPage() {
                       className="group cursor-pointer" onClick={() => setSelectedGroup(group)}>
                       <div className="relative overflow-hidden rounded-xl bg-s2 mb-2 shadow-lg" style={{aspectRatio:'2/3'}}>
                         <img src={group.anime_cover} alt={group.anime_title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-[#FFD700] text-black text-[10px] font-bold rounded shadow-md">
+                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-accent text-white text-[10px] font-bold rounded shadow-md">
                           {group.episodes.length} Episode{group.episodes.length !== 1 ? 's' : ''}
                         </div>
                       </div>
@@ -188,7 +188,7 @@ export default function LibraryPage() {
                   <img src={selectedGroup.anime_cover} alt="" className="w-14 h-14 rounded-lg object-cover bg-s2" />
                   <div>
                     <h3 className="font-bold text-white text-base line-clamp-1">{selectedGroup.anime_title}</h3>
-                    <p className="text-xs font-bold text-[#FFD700]">{selectedGroup.episodes.length} Episode{selectedGroup.episodes.length !== 1 ? 's' : ''}</p>
+                    <p className="text-xs font-bold text-accent">{selectedGroup.episodes.length} Episode{selectedGroup.episodes.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4 text-white/70">
@@ -208,7 +208,7 @@ export default function LibraryPage() {
                     <div className="flex-1 z-20 pointer-events-none">
                       <p className="font-bold text-white text-sm line-clamp-1">{ep.episode_title || `Episode ${ep.episode_num}`}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-bold text-[#FFD700]">480P</span>
+                        <span className="text-[10px] font-bold text-accent">480P</span>
                         <span className="text-[10px] text-white/40 font-mono">62 MB</span>
                       </div>
                     </div>

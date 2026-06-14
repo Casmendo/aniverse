@@ -46,8 +46,8 @@ export default function GlobalDownloadProgress() {
             className="w-full max-w-sm bg-[#1A1A1A] border border-white/10 rounded-2xl p-4 shadow-2xl pointer-events-auto flex flex-col gap-2 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#FFD700]/10 flex items-center justify-center">
-                  <Download size={16} className="text-[#FFD700]" />
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Download size={16} className="text-accent" />
                 </div>
                 <div>
                   <p className="text-xs text-white/50 font-bold mb-0.5">Download ({totalItems})</p>
@@ -55,14 +55,14 @@ export default function GlobalDownloadProgress() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[#FFD700] font-bold text-sm">{Math.round(item.progress)}%</span>
+                <span className="text-accent font-bold text-sm">{Math.round(item.progress)}%</span>
                 <button onClick={() => setCollapsed(true)} className="p-1 hover:bg-white/10 rounded-lg text-white/50 transition-colors">
                   <ChevronDown size={20} />
                 </button>
               </div>
             </div>
             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden mt-1">
-              <div className="h-full bg-[#FFD700] transition-all duration-300" style={{ width: `${item.progress}%` }} />
+              <div className="h-full bg-accent transition-all duration-300" style={{ width: `${item.progress}%` }} />
             </div>
           </motion.div>
         ) : (
@@ -72,10 +72,10 @@ export default function GlobalDownloadProgress() {
             <div className="relative w-14 h-14 bg-[#1A1A1A] rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.8)] border border-white/10 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90 absolute inset-0">
                 <circle cx="28" cy="28" r="26" stroke="rgba(255,255,255,0.1)" strokeWidth="3" fill="none" />
-                <circle cx="28" cy="28" r="26" stroke="#FFD700" strokeWidth="3" fill="none" strokeDasharray="163.36" strokeDashoffset={163.36 - (163.36 * item.progress) / 100} className="transition-all duration-300" />
+                <circle cx="28" cy="28" r="26" stroke="#e11d48" strokeWidth="3" fill="none" strokeDasharray="163.36" strokeDashoffset={163.36 - (163.36 * item.progress) / 100} className="transition-all duration-300" />
               </svg>
               {item.progress < 100 ? (
-                <Download size={20} className="text-[#FFD700] animate-pulse" />
+                <Download size={20} className="text-accent animate-pulse" />
               ) : (
                 <Check size={20} className="text-green-400" />
               )}

@@ -656,7 +656,7 @@ export default function VideoPlayer({
                 <div className="flex gap-2">
                   {['480P', '720P', '1080P'].map(res => (
                      <button key={res} onClick={() => setDlRes(res)}
-                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-[#FFD700]/10 border-[#FFD700] text-[#FFD700]' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-accent/10 border-accent text-accent' : 'border-white/10 text-white hover:bg-white/5'}`}>
                        {res}
                      </button>
                   ))}
@@ -668,7 +668,7 @@ export default function VideoPlayer({
                 <div className="flex gap-2">
                   {['None', 'English'].map(sub => (
                      <button key={sub} onClick={() => setDlSub(sub)}
-                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlSub === sub ? 'bg-[#FFD700]/10 border-[#FFD700] text-[#FFD700]' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlSub === sub ? 'bg-accent/10 border-accent text-accent' : 'border-white/10 text-white hover:bg-white/5'}`}>
                        {sub}
                      </button>
                   ))}
@@ -704,7 +704,7 @@ export default function VideoPlayer({
                   document.body.removeChild(a);
                   toast('Downloading to your device Downloads folder', 'success');
                 }
-              }} className="w-full py-3.5 bg-[#FFD700] hover:bg-[#F0C800] text-black font-black rounded-xl text-sm transition-colors shadow-[0_4px_14px_rgba(255,215,0,0.4)]">
+              }} className="w-full py-3.5 bg-accent hover:opacity-90 text-white font-black rounded-xl text-sm transition-opacity shadow-[0_4px_14px_rgba(225,29,72,0.4)]">
                 Download
               </button>
             </motion.div>
