@@ -4,6 +4,7 @@ import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForwar
 import { formatTime } from '@/lib/utils';
 import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Capacitor } from '@capacitor/core';
 
 import { Camera, PictureInPicture2 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
@@ -397,13 +398,20 @@ export default function VideoPlayer({
   // ── Load stream when URL changes ───────────────────────────────────────────
   useEffect(() => {
     if (localPath) {
-      const t = setTimeout(() => attachHls(''), 200); // URL ignored for localPath
-      return () => clearTimeout(t);
+      const v = videoRef.current;
+      if (v) {
+        setErrMsg(''); setBuffering(false); setPlaying(false);
+        if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+        v.src = Capacitor.convertFileSrc(localPath);
+        v.load();
+        if (autoPlay) v.play().catch(()=>{});
+      }
+      return;
     }
     if (!streamUrl || isFetchingStream) return;
     const t = setTimeout(() => attachHls(streamUrl), 200);
     return () => clearTimeout(t);
-  }, [streamUrl, isFetchingStream, attachHls, localPath]);
+  }, [streamUrl, isFetchingStream, attachHls, localPath, autoPlay]);
 
   // ── Auto-scroll active episode ─────────────────────────────────────────────
   useEffect(() => {

@@ -11,6 +11,7 @@ import { useIntroStore } from '@/store/introStore';
 import GlobalDownloadProgress from '@/components/GlobalDownloadProgress';
 import AuthGuard from '@/components/AuthGuard';
 import WelcomeNotification from '@/components/WelcomeNotification';
+import OfflineBanner from '@/components/OfflineBanner';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-s0 text-s5 font-body">
         <ToastProvider>
+          <OfflineBanner />
           {playIntro && <LoadingScreen onDone={handleLoadDone} />}
           <div className={`transition-opacity duration-500 ${playIntro ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <AuthGuard>

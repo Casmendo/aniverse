@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { useDownloadStore  } from '@/store/downloadStore';
 import { useAuthStore } from '@/store/authStore';
+import { useCacheStore } from '@/store/cacheStore';
 
 const GENRES = [
   'Action','Adventure','Comedy','Drama','Fantasy',
@@ -23,18 +24,27 @@ export default function HomePage() {
   const { toggleWatchlist, isInWatchlist, watchlist, recentlyWatched, removeFromHistory } = useWatchlistStore();
   const { add: addDownload } = useDownloadStore();
 
-  const [airing,     setAiring]     = useState<Record<string,unknown>[]>([]);
-  const [popular,    setPopular]    = useState<Record<string,unknown>[]>([]);
+  const { 
+    airing: cachedAiring, popular: cachedPopular, 
+    latestReleases: cachedLatest, mostWatched: cachedMostWatched,
+    setAiring: cacheAiring, setPopular: cachePopular, 
+    setLatestReleases: cacheLatest, setMostWatched: cacheMostWatched 
+  } = useCacheStore();
+
+  const [airing,     setAiring]     = useState<Record<string,unknown>[]>(cachedAiring);
+  const [popular,    setPopular]    = useState<Record<string,unknown>[]>(cachedPopular);
   const [genres,     setGenres]     = useState<string[]>(GENRES);
   const [activeGenre,setActiveGenre]= useState('');
   const [genreItems, setGenreItems] = useState<Record<string,unknown>[]>([]);
-  const [loadingA,   setLoadingA]   = useState(true);
-  const [loadingP,   setLoadingP]   = useState(true);
-  const [loadingLR,  setLoadingLR]  = useState(true);
-  const [loadingMW,  setLoadingMW]  = useState(true);
+  
+  const [loadingA,   setLoadingA]   = useState(cachedAiring.length === 0);
+  const [loadingP,   setLoadingP]   = useState(cachedPopular.length === 0);
+  const [loadingLR,  setLoadingLR]  = useState(cachedLatest.length === 0);
+  const [loadingMW,  setLoadingMW]  = useState(cachedMostWatched.length === 0);
   const [loadingG,   setLoadingG]   = useState(false);
-  const [latestReleases, setLatestReleases] = useState<Record<string,unknown>[]>([]);
-  const [mostWatched, setMostWatched] = useState<Record<string,unknown>[]>([]);
+  
+  const [latestReleases, setLatestReleases] = useState<Record<string,unknown>[]>(cachedLatest);
+  const [mostWatched, setMostWatched] = useState<Record<string,unknown>[]>(cachedMostWatched);
 
   useEffect(() => {
     const hardcodedAiring = ['witch hat atelier', 'dr stone', 're zero', 'classroom of the elite', 'wistoria season 2'];
@@ -70,17 +80,22 @@ export default function HomePage() {
         }));
 
         setAiring(enriched);
-      }).catch(() => setAiring(manualAiring)).finally(() => setLoadingA(false));
+        cacheAiring(enriched);
+      }).catch(() => {
+        if (cachedAiring.length === 0) setAiring(manualAiring);
+      }).finally(() => setLoadingA(false));
     });
 
     animeAPI.getRecommended().then(({data}) => {
       const arr = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
       setLatestReleases(arr);
+      cacheLatest(arr);
     }).finally(() => setLoadingLR(false));
 
     animeAPI.getTrending().then(({data}) => {
       const arr = Array.isArray(data) ? data : data.results || data.data || data.anime || [];
       setMostWatched(arr);
+      cacheMostWatched(arr);
     }).finally(() => setLoadingMW(false));
 
     const hardcodedPopular = [
@@ -101,6 +116,7 @@ export default function HomePage() {
         return true;
       });
       setPopular(unique);
+      cachePopular(unique);
     }).finally(() => setLoadingP(false));
 
     animeAPI.getGenres().then(({data}) => {

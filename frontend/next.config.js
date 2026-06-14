@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
+const isAndroid = process.env.BUILD_TARGET === 'android';
+
 const nextConfig = {
+  ...(isAndroid ? { output: 'export' } : {}),
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -15,9 +18,10 @@ const nextConfig = {
     unoptimized: true,
   },
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://aniverse-xi.vercel.app',
   },
-  async headers() {
+  ...(isAndroid ? {} : {
+    async headers() {
     return [
       {
         source: '/(.*)',
@@ -30,7 +34,7 @@ const nextConfig = {
         ],
       },
     ];
-  },
+  }}),
 };
 
 module.exports = nextConfig;

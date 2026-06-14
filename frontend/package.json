@@ -9,12 +9,14 @@
     "lint": "next lint",
     "sync:android": "npx cap sync android",
     "open:android": "npx cap open android",
-    "build:android": "npm run build && npx cap sync android && npx cap open android"
+    "build:android": "cross-env BUILD_TARGET=android npm run build && npx cap sync android && npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "5.7.8",
     "@capacitor/cli": "5.7.8",
     "@capacitor/core": "5.7.8",
+    "@capacitor/filesystem": "^5.2.2",
+    "@capacitor/network": "^5.0.8",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.8",
@@ -33,6 +35,7 @@
     "@types/react-dom": "^18",
     "@types/video.js": "^7.3.58",
     "autoprefixer": "^10.0.1",
+    "cross-env": "^10.1.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",
