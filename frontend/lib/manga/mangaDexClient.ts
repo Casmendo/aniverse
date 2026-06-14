@@ -2,7 +2,7 @@
 // Handles all direct MangaDex API communication.
 // Isolated from AniList — purely for chapters and pages.
 
-const BASE = 'https://api.mangadex.org';
+const BASE = '/api/mdx';
 const COVER_CDN = 'https://uploads.mangadex.org/covers';
 
 // ── Raw fetch helper with retry ─────────────────────────────────────────────
