@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Download, Search, Bookmark, User } from 'lucide-react';
+import { Home, Download, Search, Bookmark, User, BookOpen } from 'lucide-react';
 import SearchPage from './SearchPage';
 import { animeAPI } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
@@ -12,6 +12,7 @@ const NAV_LEFT = [
   { href:'/library',   icon:Download, label:'Library' },
 ];
 const NAV_RIGHT = [
+  { href:'/manga',     icon:BookOpen, label:'Manga'   },
   { href:'/catalog',   icon:Bookmark, label:'Catalog' }, 
   { href:'/profile',   icon:User,     label:'Profile' },
 ];
@@ -32,7 +33,8 @@ export default function BottomNav() {
     })();
   }, []);
 
-  if (path.startsWith('/watch/')) return null;
+  // Hide on watch pages AND all manga pages (manga has its own nav)
+  if (path.startsWith('/watch/') || path.startsWith('/manga')) return null;
 
   return (
     <>
