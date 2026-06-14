@@ -4,7 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TrendingUp, Star, Clock, Flame, BookOpen } from 'lucide-react';
-import { mangaService, type AniMangaCard } from '@/lib/manga/mangaService';
+import { unifiedMangaService, type MangaCard } from '@/lib/manga/unifiedService';
+import { STATUS_LABELS } from '@/lib/manga/unifiedTypes';
 
 // Native IntersectionObserver hook — no extra packages needed
 function useInView(onVisible: () => void, enabled: boolean) {
@@ -32,11 +33,11 @@ const SORTS = [
 
 const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Horror','Mystery','Psychological','Romance','Sci-Fi','Slice of Life','Sports','Supernatural','Thriller'];
 
-function MangaCard({ manga, index = 0 }: { manga: AniMangaCard; index?: number }) {
-  const statusLabel: Record<string, string> = { RELEASING: 'Ongoing', FINISHED: 'Complete', NOT_YET_RELEASED: 'Upcoming' };
+function MangaCardComp({ manga, index = 0 }: { manga: MangaCard; index?: number }) {
+  const statusLabel = (STATUS_LABELS as any)[manga.status] || manga.status;
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.03, 0.4) }}>
-      <Link href={`/manga/${manga.id}`} className="block group">
+      <Link href={`/manga/${manga.anilistId}`} className="block group">
         <div className="relative overflow-hidden rounded-xl bg-[#0d0505] border border-red-950/20 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_40px_rgba(225,29,72,0.15)] group-hover:border-red-800/30">
           <div className="relative overflow-hidden" style={{ aspectRatio: '2/3' }}>
             {manga.coverImage ? (
@@ -46,9 +47,9 @@ function MangaCard({ manga, index = 0 }: { manga: AniMangaCard; index?: number }
                 <BookOpen size={28} className="text-red-800" />
               </div>
             )}
-            {manga.score > 0 && (
+            {manga.rating > 0 && (
               <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/70 text-yellow-400 text-[10px] font-bold">
-                <Star size={9} fill="currentColor" /> {(manga.score/10).toFixed(1)}
+                <Star size={9} fill="currentColor" /> {(manga.rating/10).toFixed(1)}
               </div>
             )}
           </div>
@@ -56,8 +57,8 @@ function MangaCard({ manga, index = 0 }: { manga: AniMangaCard; index?: number }
             <p className="text-[9px] font-bold text-red-500/60 uppercase tracking-wider mb-0.5 truncate">{manga.genres[0] || manga.format}</p>
             <h3 className="text-xs font-bold text-slate-300 line-clamp-2 leading-snug group-hover:text-white transition-colors">{manga.title}</h3>
             <div className="flex items-center justify-between mt-1">
-              <span className="text-[9px] text-slate-600">{statusLabel[manga.status] || manga.status}</span>
-              {manga.chapters && <span className="text-[9px] font-mono text-slate-600">{manga.chapters}ch</span>}
+              <span className="text-[9px] text-slate-600">{statusLabel}</span>
+              {manga.totalChapters && <span className="text-[9px] font-mono text-slate-600">{manga.totalChapters}ch</span>}
             </div>
           </div>
         </div>
@@ -86,7 +87,7 @@ export default function DiscoverPage() {
 
   const [sort, setSort] = useState(initialSort);
   const [genre, setGenre] = useState(initialGenre);
-  const [items, setItems] = useState<AniMangaCard[]>([]);
+  const [items, setItems] = useState<MangaCard[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -102,19 +103,19 @@ export default function DiscoverPage() {
   const fetchData = useCallback(async (currentPage: number, reset: boolean) => {
     setLoading(true);
     try {
-      let results: AniMangaCard[];
+      let results: MangaCard[];
       if (genre) {
-        results = await mangaService.getByGenre(genre, currentPage, 24);
+        results = await unifiedMangaService.getByGenre(genre, currentPage, 24);
       } else {
         switch (sort) {
-          case 'popular':  results = await mangaService.getPopular(currentPage, 24); break;
-          case 'score':    results = await mangaService.getTopRated(currentPage, 24); break;
-          case 'new':      results = await mangaService.getNewReleases(currentPage, 24); break;
-          default:         results = await mangaService.getTrending(currentPage, 24); break;
+          case 'popular':  results = await unifiedMangaService.getPopular(currentPage, 24); break;
+          case 'score':    results = await unifiedMangaService.getTopRated(currentPage, 24); break;
+          case 'new':      results = await unifiedMangaService.getNewReleases(currentPage, 24); break;
+          default:         results = await unifiedMangaService.getTrending(currentPage, 24); break;
         }
       }
       if (results.length < 24) setHasMore(false);
-      setItems(prev => reset ? results : [...prev, ...results.filter(r => !prev.some(p => p.id === r.id))]);
+      setItems(prev => reset ? results : [...prev, ...results.filter(r => !prev.some(p => p.anilistId === r.anilistId))]);
     } catch (err) {
       console.error('Failed to fetch:', err);
     } finally {
@@ -187,7 +188,7 @@ export default function DiscoverPage() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {items.map((m, i) => <MangaCard key={m.id} manga={m} index={i % 24} />)}
+          {items.map((m, i) => <MangaCardComp key={m.anilistId} manga={m} index={i % 24} />)}
           {loading && Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={`sk-${i}`} />)}
         </div>
 

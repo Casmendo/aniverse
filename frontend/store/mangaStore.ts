@@ -1,91 +1,92 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { ReadingProgress, MangaBookmark, MangaStatus } from '../lib/manga/types';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface ReadingProgress {
+  mangaId: string;
+  mangaTitle: string;
+  coverArt?: string;
+  chapterId: string;
+  chapterNum: string;
+  page: number;
+  totalPages: number;
+  lastRead: string;
+}
+
+export interface MangaBookmark {
+  mangaId: string;
+  title: string;
+  coverArt?: string;
+  status: string;
+  addedAt: string;
+}
+
+export interface ReaderSettings {
+  mode: 'vertical' | 'horizontal' | 'webtoon';
+  dataSaver: boolean;
+  zoom?: number;
+}
+
+// ── Store Interface ───────────────────────────────────────────────────────────
 
 interface MangaState {
   // Reading Progress
-  progress: Record<string, ReadingProgress>; // Key: mangaId
-  updateProgress: (mangaId: string, progressData: Partial<ReadingProgress>) => void;
+  progress: Record<string, ReadingProgress>;
+  saveProgress: (p: ReadingProgress) => void;
   getProgress: (mangaId: string) => ReadingProgress | null;
   getAllProgress: () => ReadingProgress[];
   removeProgress: (mangaId: string) => void;
 
-  // Bookmarks / Library
-  bookmarks: Record<string, MangaBookmark>; // Key: mangaId
-  toggleBookmark: (manga: { id: string; title: string; coverArt?: string; status: MangaStatus }) => void;
+  // Bookmarks
+  bookmarks: Record<string, MangaBookmark>;
+  toggleBookmark: (m: { id: string; title: string; coverArt?: string; status: string }) => void;
   isBookmarked: (mangaId: string) => boolean;
   getAllBookmarks: () => MangaBookmark[];
 
-  // Reader Settings
-  settings: {
-    mode: 'vertical' | 'horizontal' | 'webtoon';
-    direction: 'ltr' | 'rtl';
-    fit: 'width' | 'height' | 'contain';
-    background: 'dark' | 'light' | 'oled';
-    dataSaver: boolean;
-  };
-  updateSettings: (newSettings: Partial<MangaState['settings']>) => void;
+  // Reader Settings (persisted)
+  readerSettings: ReaderSettings;
+  saveReaderSettings: (s: Partial<ReaderSettings>) => void;
 }
+
+// ── Store ─────────────────────────────────────────────────────────────────────
 
 export const useMangaStore = create<MangaState>()(
   persist(
     (set, get) => ({
       progress: {},
       bookmarks: {},
-      settings: {
-        mode: 'webtoon',
-        direction: 'ltr',
-        fit: 'width',
-        background: 'dark',
-        dataSaver: false,
-      },
+      readerSettings: { mode: 'webtoon', dataSaver: false, zoom: 1 },
 
-      updateProgress: (mangaId, data) => set((state) => {
-        const existing = state.progress[mangaId] || {
-          mangaId,
-          mangaTitle: '',
-          chapterId: '',
-          chapterNum: '0',
-          page: 1,
-          totalPages: 1,
-          lastRead: new Date().toISOString(),
-        };
-        return {
-          progress: {
-            ...state.progress,
-            [mangaId]: {
-              ...existing,
-              ...data,
-              lastRead: new Date().toISOString(),
-            },
-          },
-        };
-      }),
+      // ── Progress ────────────────────────────────────────────────────────────
+      saveProgress: (p) => set(state => ({
+        progress: { ...state.progress, [p.mangaId]: { ...p, lastRead: new Date().toISOString() } },
+      })),
 
       getProgress: (mangaId) => get().progress[mangaId] || null,
 
-      getAllProgress: () => {
-        return Object.values(get().progress).sort((a, b) => 
+      getAllProgress: () =>
+        Object.values(get().progress).sort((a, b) =>
           new Date(b.lastRead).getTime() - new Date(a.lastRead).getTime()
-        );
-      },
+        ),
 
-      removeProgress: (mangaId) => set((state) => {
+      removeProgress: (mangaId) => set(state => {
         const next = { ...state.progress };
         delete next[mangaId];
         return { progress: next };
       }),
 
-      toggleBookmark: (manga) => set((state) => {
+      // ── Bookmarks ───────────────────────────────────────────────────────────
+      toggleBookmark: (m) => set(state => {
         const next = { ...state.bookmarks };
-        if (next[manga.id]) {
-          delete next[manga.id];
+        if (next[m.id]) {
+          delete next[m.id];
         } else {
-          next[manga.id] = {
-            mangaId: manga.id,
-            title: manga.title,
-            coverArt: manga.coverArt,
-            status: manga.status,
+          next[m.id] = {
+            mangaId: m.id,
+            title: m.title,
+            coverArt: m.coverArt,
+            status: m.status,
             addedAt: new Date().toISOString(),
           };
         }
@@ -94,18 +95,18 @@ export const useMangaStore = create<MangaState>()(
 
       isBookmarked: (mangaId) => !!get().bookmarks[mangaId],
 
-      getAllBookmarks: () => {
-        return Object.values(get().bookmarks).sort((a, b) => 
+      getAllBookmarks: () =>
+        Object.values(get().bookmarks).sort((a, b) =>
           new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
-        );
-      },
+        ),
 
-      updateSettings: (newSettings) => set((state) => ({
-        settings: { ...state.settings, ...newSettings },
+      // ── Reader Settings ─────────────────────────────────────────────────────
+      saveReaderSettings: (s) => set(state => ({
+        readerSettings: { ...state.readerSettings, ...s },
       })),
     }),
     {
-      name: 'mangaverse-storage',
+      name: 'mangaverse-v2-storage',
       storage: createJSONStorage(() => localStorage),
     }
   )

@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Star, BookOpen } from 'lucide-react';
-import { mangaService, type AniMangaCard } from '@/lib/manga/mangaService';
+import { unifiedMangaService, type MangaCard } from '@/lib/manga/unifiedService';
+import { STATUS_LABELS } from '@/lib/manga/unifiedTypes';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -14,10 +15,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-function MangaCard({ manga, index = 0 }: { manga: AniMangaCard; index?: number }) {
+function MangaCardComp({ manga, index = 0 }: { manga: MangaCard; index?: number }) {
+  const statusLabel = (STATUS_LABELS as any)[manga.status] || manga.status;
   return (
     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }}>
-      <Link href={`/manga/${manga.id}`} className="flex items-center gap-3 p-3 rounded-xl bg-red-950/10 border border-red-900/10 hover:border-red-800/30 hover:bg-red-950/20 transition-all group">
+      <Link href={`/manga/${manga.anilistId}`} className="flex items-center gap-3 p-3 rounded-xl bg-red-950/10 border border-red-900/10 hover:border-red-800/30 hover:bg-red-950/20 transition-all group">
         <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 bg-red-950/20">
           {manga.coverImage
             ? <img src={manga.coverImage} alt={manga.title} className="w-full h-full object-cover" />
@@ -28,13 +30,13 @@ function MangaCard({ manga, index = 0 }: { manga: AniMangaCard; index?: number }
           <h3 className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-1">{manga.title}</h3>
           <p className="text-[11px] text-red-500/60 font-bold uppercase tracking-wide mt-0.5">{manga.genres[0] || manga.format}</p>
           <div className="flex items-center gap-3 mt-1">
-            {manga.score > 0 && (
+            {manga.rating > 0 && (
               <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
-                <Star size={9} fill="currentColor" /> {(manga.score / 10).toFixed(1)}
+                <Star size={9} fill="currentColor" /> {(manga.rating / 10).toFixed(1)}
               </span>
             )}
-            <span className="text-[10px] text-slate-600">{manga.status === 'RELEASING' ? 'Ongoing' : manga.status === 'FINISHED' ? 'Complete' : manga.status}</span>
-            {manga.chapters && <span className="text-[10px] font-mono text-slate-600">{manga.chapters} ch</span>}
+            <span className="text-[10px] text-slate-600">{statusLabel}</span>
+            {manga.totalChapters && <span className="text-[10px] font-mono text-slate-600">{manga.totalChapters} ch</span>}
           </div>
         </div>
       </Link>
@@ -60,14 +62,14 @@ export default function MangaSearchPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [sortBy, setSortBy] = useState('TRENDING_DESC');
-  const [results, setResults] = useState<AniMangaCard[]>([]);
+  const [results, setResults] = useState<MangaCard[]>([]);
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(query, 350);
 
   const doSearch = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await mangaService.search(debouncedQuery, {
+      const data = await unifiedMangaService.search(debouncedQuery, {
         status: status || undefined,
         sort: sortBy,
         perPage: 30,
@@ -141,7 +143,7 @@ export default function MangaSearchPage() {
         )}
 
         <AnimatePresence>
-          {!loading && results.map((m, i) => <MangaCard key={m.id} manga={m} index={i} />)}
+          {!loading && results.map((m, i) => <MangaCardComp key={m.anilistId} manga={m} index={i} />)}
         </AnimatePresence>
       </div>
     </div>
