@@ -7,19 +7,22 @@ const COVER_CDN = 'https://uploads.mangadex.org/covers';
 
 // ── Raw fetch helper with retry ─────────────────────────────────────────────
 async function mdxFetch<T>(path: string, params: Record<string, any> = {}, retries = 2): Promise<T> {
-  const url = new URL(`${BASE}${path}`);
+  const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([k, v]) => {
     if (Array.isArray(v)) {
-      v.forEach(item => url.searchParams.append(k, String(item)));
+      v.forEach(item => searchParams.append(k, String(item)));
     } else if (v !== undefined && v !== null) {
-      url.searchParams.set(k, String(v));
+      searchParams.set(k, String(v));
     }
   });
+  
+  const queryString = searchParams.toString();
+  const urlString = queryString ? `${BASE}${path}?${queryString}` : `${BASE}${path}`;
 
   let lastErr: Error | null = null;
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url.toString(), { cache: 'no-store' });
+      const res = await fetch(urlString, { cache: 'no-store' });
       if (res.status === 429) {
         await new Promise(r => setTimeout(r, 1500 * (i + 1)));
         continue;
