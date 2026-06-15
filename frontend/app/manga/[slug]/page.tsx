@@ -62,8 +62,8 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           setLoadingChapters(true);
           try {
             const chaps = await unifiedMangaService.getChapters(data);
-            // Only keep chapters that have real pages (not external redirects)
-            const readable = chaps.filter(c => !c.externalUrl && (c.pages ?? 0) > 0);
+            // Only exclude chapters hosted externally (e.g. MangaPlus, Viz)
+            const readable = chaps.filter(c => !c.externalUrl);
             setChapters(readable);
           } catch (e) {
             console.error('Chapter fetch failed:', e);

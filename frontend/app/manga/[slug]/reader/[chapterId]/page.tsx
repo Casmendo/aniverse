@@ -234,7 +234,7 @@ export default function ReaderPage() {
         if (manga.mangaDexId) {
           const chaps = await unifiedMangaService.getChapters(manga);
           // Only readable (non-external) chapters in the reader navigation
-          const readable = chaps.filter(c => !c.externalUrl && (c.pages ?? 0) > 0);
+          const readable = chaps.filter(c => !c.externalUrl);
           setAllChapters(readable.map(c => ({ id: c.id, chapter: c.chapter, title: c.title, externalUrl: c.externalUrl })));
           const thisChap = readable.find(c => c.id === chapterId);
           if (thisChap) setCurrentChapterNum(thisChap.chapter || 'Oneshot');
