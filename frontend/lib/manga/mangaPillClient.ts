@@ -1,8 +1,8 @@
 // ── MangaPill Client (via Consumet) ──────────────────────────────────────────
-// Fetches chapters & pages from MangaPill through Consumet API.
-// Used as a fallback when MangaDex only has partial chapters (e.g. Shueisha titles).
+// Fetches chapters & pages from MangaPill through our internal /api/consumet proxy.
+// This means the browser NEVER calls Consumet directly — no CORS issues.
 
-const CONSUMET = 'https://consumet-api.onrender.com';
+const PROXY_BASE = '/api/consumet';   // Our Next.js proxy → consumet-api.onrender.com
 const PROVIDER = 'mangapill';
 
 export interface PillChapter {
@@ -19,10 +19,8 @@ export interface PillPage {
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
 async function pillFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${CONSUMET}/manga/${PROVIDER}${path}`, {
-    next: { revalidate: 300 },
-  });
-  if (!res.ok) throw new Error(`MangaPill ${res.status}: ${path}`);
+  const res = await fetch(`${PROXY_BASE}/manga/${PROVIDER}${path}`);
+  if (!res.ok) throw new Error(`MangaPill proxy ${res.status}: ${path}`);
   return res.json() as Promise<T>;
 }
 
@@ -58,7 +56,9 @@ export const mangaPillClient = {
     }
   },
 
-  /** Get page image URLs for a MangaPill chapter ID */
+  /** Get page image URLs for a MangaPill chapter ID.
+   *  Images are routed through /api/pill-image proxy to bypass CDN hotlink protection.
+   */
   async getPages(chapterId: string): Promise<string[]> {
     const data = await pillFetch<PillPage[]>(`/read?chapterId=${encodeURIComponent(chapterId)}`);
     return (Array.isArray(data) ? data : [])
