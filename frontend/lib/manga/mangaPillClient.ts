@@ -63,6 +63,6 @@ export const mangaPillClient = {
     const data = await pillFetch<PillPage[]>(`/read?chapterId=${encodeURIComponent(chapterId)}`);
     return (Array.isArray(data) ? data : [])
       .sort((a, b) => a.page - b.page)
-      .map(p => p.img);
+      .map(p => `/api/pill-image?url=${encodeURIComponent(p.img)}`);
   },
 };
