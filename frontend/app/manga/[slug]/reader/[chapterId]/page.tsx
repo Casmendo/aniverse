@@ -233,10 +233,8 @@ export default function ReaderPage() {
 
         if (manga.mangaDexId) {
           const chaps = await unifiedMangaService.getChapters(manga);
-          // Only readable (non-external) chapters in the reader navigation
-          const readable = chaps.filter(c => !c.externalUrl);
-          setAllChapters(readable.map(c => ({ id: c.id, chapter: c.chapter, title: c.title, externalUrl: c.externalUrl })));
-          const thisChap = readable.find(c => c.id === chapterId);
+          setAllChapters(chaps.map(c => ({ id: c.id, chapter: c.chapter, title: c.title, externalUrl: c.externalUrl })));
+          const thisChap = chaps.find(c => c.id === chapterId);
           if (thisChap) setCurrentChapterNum(thisChap.chapter || 'Oneshot');
         }
 
@@ -294,8 +292,12 @@ export default function ReaderPage() {
   const prevChapter = allChapters[chapterIndex - 1];
   const nextChapter = allChapters[chapterIndex + 1];
 
-  const goToChapter = (chap: { id: string }) => {
-    router.push(`/manga/${anilistId}/reader/${chap.id}`);
+  const goToChapter = (chap: { id: string; externalUrl?: string | null }) => {
+    if (chap.externalUrl) {
+      window.open(chap.externalUrl, '_blank');
+    } else {
+      router.push(`/manga/${anilistId}/reader/${chap.id}`);
+    }
   };
 
   const toggleFullscreen = () => {
