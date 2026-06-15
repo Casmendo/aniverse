@@ -88,7 +88,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
   const idStr = String(manga.anilistId);
 
   const TABS: { key: Tab; label: string; count?: number }[] = [
-    { key: 'chapters',   label: 'Chapters',   count: chapters.length || undefined },
+    { key: 'chapters',   label: 'Chapters',   count: chapters.length > 0 ? Math.max(chapters.length, manga.totalChapters || 0) : manga.totalChapters || undefined },
     { key: 'info',       label: 'Info'       },
     { key: 'characters', label: 'Characters', count: manga.characters.length || undefined },
     { key: 'related',    label: 'Related'    },
@@ -151,9 +151,9 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
             <BarChart2 size={13} /> {manga.popularity.toLocaleString()} followers
           </div>
         )}
-        {manga.totalChapters && (
+        {(chapters.length > 0 || manga.totalChapters) && (
           <div className="flex items-center gap-1.5 text-slate-400">
-            <BookOpen size={13} /> {manga.totalChapters} chapters
+            <BookOpen size={13} /> {chapters.length > 0 ? Math.max(chapters.length, manga.totalChapters || 0) : manga.totalChapters} chapters
           </div>
         )}
         {manga.releaseYear && (
@@ -252,7 +252,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                     { label: 'Format',   value: manga.format },
                     { label: 'Year',     value: manga.releaseYear || '—' },
                     { label: 'Volumes',  value: manga.volumes || '—' },
-                    { label: 'Chapters', value: manga.totalChapters || chapters.length || '—' },
+                    { label: 'Chapters', value: chapters.length > 0 ? Math.max(chapters.length, manga.totalChapters || 0) : manga.totalChapters || '—' },
                     { label: 'Origin',   value: manga.countryOfOrigin },
                     { label: 'Source',   value: manga.source || '—' },
                     { label: 'Score',    value: manga.rating ? `${(manga.rating / 10).toFixed(2)} / 10` : '—' },
