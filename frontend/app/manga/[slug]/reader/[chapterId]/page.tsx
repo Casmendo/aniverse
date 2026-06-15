@@ -41,7 +41,6 @@ function PageImage({ url, index, mode, zoom }: { url: string; index: number; mod
           src={url}
           alt={`Page ${index + 1}`}
           loading={index < 3 ? 'eager' : 'lazy'}
-          referrerPolicy="no-referrer"
           className="max-w-full"
           style={{
             transform: `scale(${zoom})`,

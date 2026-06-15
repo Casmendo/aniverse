@@ -309,12 +309,16 @@ export const unifiedMangaService = {
     return mangaCache.wrap(key, () => mangaDexClient.getChapters(manga.mangaDexId!, lang), 5 * 60 * 1000);
   },
 
-  /** Get readable page URLs for a chapter */
+  /** Get readable page URLs for a chapter, routed through internal image proxy */
   async getPages(chapterId: string, dataSaver = false) {
-    const key = `unified:pages:${chapterId}`;
+    const key = `unified:pages:${chapterId}:${dataSaver}`;
     const pagesData = await mangaCache.wrap(key, () => mangaDexClient.getPages(chapterId), 30 * 60 * 1000);
     const fileList = dataSaver ? pagesData.dataSaver : pagesData.data;
-    return fileList.map(f => mangaDexClient.buildPageUrl(pagesData.baseUrl, pagesData.hash, f, dataSaver));
+    return fileList.map(f => {
+      const directUrl = mangaDexClient.buildPageUrl(pagesData.baseUrl, pagesData.hash, f, dataSaver);
+      // Proxy through backend to avoid browser CORS + referer blocks
+      return `/api/mdx-image?url=${encodeURIComponent(directUrl)}`;
+    });
   },
 };
 
