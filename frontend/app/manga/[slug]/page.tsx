@@ -62,7 +62,9 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           setLoadingChapters(true);
           try {
             const chaps = await unifiedMangaService.getChapters(data);
-            setChapters(chaps);
+            // Only keep chapters that have real pages (not external redirects)
+            const readable = chaps.filter(c => !c.externalUrl && (c.pages ?? 0) > 0);
+            setChapters(readable);
           } catch (e) {
             console.error('Chapter fetch failed:', e);
           } finally {
@@ -176,16 +178,14 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
       {/* Action Buttons */}
       <div className="px-4 mt-5 flex flex-wrap items-center gap-3">
         {firstChapter && (
-          <Link href={firstChapter.externalUrl || `/manga/${manga.anilistId}/reader/${firstChapter.id}`}
-            target={firstChapter.externalUrl ? '_blank' : '_self'}
+          <Link href={`/manga/${manga.anilistId}/reader/${firstChapter.id}`}
             className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-red-600 text-white hover:bg-red-500 transition-colors shadow-[0_0_24px_rgba(225,29,72,0.4)]">
             <BookOpen size={16} />
             {progress ? `Resume Ch ${progress.chapterNum}` : 'Start Reading'}
           </Link>
         )}
         {progress && firstChapter && (
-          <Link href={firstChapter.externalUrl || `/manga/${manga.anilistId}/reader/${firstChapter.id}`}
-            target={firstChapter.externalUrl ? '_blank' : '_self'}
+          <Link href={`/manga/${manga.anilistId}/reader/${firstChapter.id}`}
             className="flex items-center gap-2 px-4 py-3 rounded-full font-bold text-sm bg-red-950/30 text-red-300 border border-red-900/30 hover:bg-red-900/30 transition-colors">
             Ch 1
           </Link>
@@ -204,7 +204,10 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           {isBookmarked ? 'Saved' : 'Save'}
         </button>
         {!manga.mangaDexId && (
-          <span className="text-[10px] text-slate-600 font-bold px-3 py-1.5 rounded-full bg-slate-900/50 border border-slate-800">No chapters on MangaDex</span>
+          <span className="text-[10px] text-slate-600 font-bold px-3 py-1.5 rounded-full bg-slate-900/50 border border-slate-800">Not on MangaDex</span>
+        )}
+        {manga.mangaDexId && chapters.length === 0 && !loadingChapters && (
+          <span className="text-[10px] text-slate-600 font-bold px-3 py-1.5 rounded-full bg-slate-900/50 border border-slate-800">Chapters not readable here</span>
         )}
       </div>
 
