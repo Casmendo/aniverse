@@ -199,7 +199,7 @@ export default function ReaderPage() {
   const chapterId = params.chapterId;
 
   const [pages, setPages] = useState<string[]>([]);
-  const [allChapters, setAllChapters] = useState<{ id: string; chapter: string | null; title: string | null }[]>([]);
+  const [allChapters, setAllChapters] = useState<{ id: string; chapter: string | null; title: string | null; externalUrl?: string | null }[]>([]);
   const [mangaTitle, setMangaTitle] = useState('');
   const [currentChapterNum, setCurrentChapterNum] = useState('');
   const [loadingPages, setLoadingPages] = useState(true);
@@ -234,7 +234,7 @@ export default function ReaderPage() {
 
         if (manga.mangaDexId) {
           const chaps = await unifiedMangaService.getChapters(manga);
-          setAllChapters(chaps.map(c => ({ id: c.id, chapter: c.chapter, title: c.title })));
+          setAllChapters(chaps.map(c => ({ id: c.id, chapter: c.chapter, title: c.title, externalUrl: c.externalUrl })));
           const thisChap = chaps.find(c => c.id === chapterId);
           if (thisChap) setCurrentChapterNum(thisChap.chapter || 'Oneshot');
         }
@@ -293,7 +293,13 @@ export default function ReaderPage() {
   const prevChapter = allChapters[chapterIndex - 1];
   const nextChapter = allChapters[chapterIndex + 1];
 
-  const goToChapter = (id: string) => router.push(`/manga/${anilistId}/reader/${id}`);
+  const goToChapter = (chap: { id: string; externalUrl?: string | null }) => {
+    if (chap.externalUrl) {
+      window.open(chap.externalUrl, '_blank');
+    } else {
+      router.push(`/manga/${anilistId}/reader/${chap.id}`);
+    }
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -339,6 +345,26 @@ export default function ReaderPage() {
       className="fixed inset-0 bg-black z-[9999] overflow-hidden"
       onClick={showAndResetTimer}
     >
+      {pages.length === 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-40 bg-[#06141B]">
+          <BookOpen size={48} className="text-red-800 mb-4 opacity-50" />
+          <h2 className="text-xl font-black text-white mb-2">No Pages Found</h2>
+          <p className="text-slate-400 text-sm mb-6 max-w-sm">
+            This chapter might be hosted externally (like MangaPlus) or has no pages available on MangaDex.
+          </p>
+          <div className="flex gap-4">
+            <button onClick={() => router.push(`/manga/${anilistId}`)} className="px-6 py-2.5 rounded-full bg-red-950/30 border border-red-900/30 text-sm font-bold text-red-300">
+              Go Back
+            </button>
+            {allChapters.find(c => c.id === chapterId)?.externalUrl && (
+              <a href={allChapters.find(c => c.id === chapterId)!.externalUrl!} target="_blank" rel="noreferrer" className="px-6 py-2.5 rounded-full bg-red-600 text-white text-sm font-bold shadow-[0_0_24px_rgba(225,29,72,0.4)]">
+                Read Externally
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       <ReaderToolbar
         visible={showUI}
         title={mangaTitle}
@@ -414,7 +440,7 @@ export default function ReaderPage() {
             className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2"
           >
             <button
-              onClick={() => prevChapter && goToChapter(prevChapter.id)}
+              onClick={() => prevChapter && goToChapter(prevChapter)}
               disabled={!prevChapter}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/80 border border-red-900/30 text-xs font-bold text-red-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-950/50 transition-colors backdrop-blur-sm"
             >
@@ -424,7 +450,7 @@ export default function ReaderPage() {
               {currentPage + 1} / {pages.length}
             </div>
             <button
-              onClick={() => nextChapter && goToChapter(nextChapter.id)}
+              onClick={() => nextChapter && goToChapter(nextChapter)}
               disabled={!nextChapter}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/80 border border-red-900/30 text-xs font-bold text-red-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-950/50 transition-colors backdrop-blur-sm"
             >
