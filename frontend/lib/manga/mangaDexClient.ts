@@ -95,7 +95,7 @@ export const mangaDexClient = {
   async getChapters(mangaDexId: string, lang = 'en'): Promise<MDXChapter[]> {
     const all: MDXChapter[] = [];
     let offset = 0;
-    const limit = 500;
+    const limit = 100;
 
     while (true) {
       const data = await mdxFetch<any>('/chapter', {
