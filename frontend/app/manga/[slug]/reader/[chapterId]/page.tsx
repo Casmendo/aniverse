@@ -161,28 +161,39 @@ function ReaderToolbar(props: ToolbarProps) {
         )}
       </AnimatePresence>
 
-      {/* Bottom Progress Bar */}
+      {/* Bottom Control Bar — unified, centered */}
       <AnimatePresence>
-        {props.visible && props.totalPages > 1 && (
+        {props.visible && (
           <motion.div
-            initial={{ y: 60, opacity: 0 }}
+            initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 60, opacity: 0 }}
+            exit={{ y: 80, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-3 bg-gradient-to-t from-black/90 to-transparent"
+            className="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pb-6 pt-2 px-4"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 70%, transparent)' }}
           >
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs font-mono text-slate-400">{props.page + 1}</span>
-              <input
-                type="range"
-                min={0}
-                max={props.totalPages - 1}
-                value={props.page}
-                onChange={e => props.onPageChange(Number(e.target.value))}
-                className="flex-1 h-1 accent-red-500"
-              />
-              <span className="text-xs font-mono text-slate-400">{props.totalPages}</span>
-            </div>
+            {/* Progress scrubber */}
+            {props.totalPages > 1 && (
+              <div className="w-full max-w-md flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-mono text-red-400/70 tabular-nums w-5 text-right">{props.page + 1}</span>
+                <div className="relative flex-1 h-1.5 group">
+                  <div className="absolute inset-0 rounded-full bg-white/10" />
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-red-700 to-red-500 shadow-[0_0_8px_rgba(220,38,38,0.6)]"
+                    style={{ width: `${((props.page) / Math.max(props.totalPages - 1, 1)) * 100}%` }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={props.totalPages - 1}
+                    value={props.page}
+                    onChange={e => props.onPageChange(Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+                <span className="text-[10px] font-mono text-slate-500 tabular-nums w-5">{props.totalPages}</span>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -430,32 +441,80 @@ export default function ReaderPage() {
         </div>
       )}
 
-      {/* Chapter Navigation Bottom Pills */}
+      {/* Chapter Navigation — premium centered bar */}
       <AnimatePresence>
         {showUI && (
           <motion.div
-            initial={{ y: 80, opacity: 0 }}
+            initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2"
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+            className="fixed bottom-8 left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none"
           >
-            <button
-              onClick={() => prevChapter && goToChapter(prevChapter)}
-              disabled={!prevChapter}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/80 border border-red-900/30 text-xs font-bold text-red-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-950/50 transition-colors backdrop-blur-sm"
+            <div
+              className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-2xl border border-white/10"
+              style={{
+                background: 'linear-gradient(135deg, rgba(10,2,2,0.96) 0%, rgba(30,6,6,0.96) 100%)',
+                boxShadow: '0 0 0 1px rgba(220,38,38,0.15), 0 8px 32px rgba(0,0,0,0.7), 0 0 40px rgba(220,38,38,0.08)',
+                backdropFilter: 'blur(20px)',
+              }}
             >
-              <ChevronLeft size={14} /> Prev Ch
-            </button>
-            <div className="px-4 py-2 rounded-full bg-black/80 border border-red-900/30 text-xs font-mono text-slate-400 backdrop-blur-sm">
-              {currentPage + 1} / {pages.length}
+              {/* Prev Chapter */}
+              <button
+                onClick={() => prevChapter && goToChapter(prevChapter)}
+                disabled={!prevChapter}
+                title="Previous Chapter"
+                className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed overflow-hidden"
+                style={{
+                  background: prevChapter ? 'rgba(220,38,38,0.12)' : 'transparent',
+                  border: '1px solid rgba(220,38,38,0.2)',
+                  color: prevChapter ? '#fca5a5' : '#4b5563',
+                }}
+              >
+                <span
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25), rgba(220,38,38,0.08))' }}
+                />
+                <ChevronLeft size={15} className="relative z-10 shrink-0" />
+                <span className="relative z-10 hidden sm:inline">Prev Ch</span>
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-8 bg-white/5 mx-1" />
+
+              {/* Page indicator */}
+              <div
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl select-none"
+                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.12)' }}
+              >
+                <span className="text-red-400 font-black text-sm tabular-nums">{currentPage + 1}</span>
+                <span className="text-white/20 text-xs font-bold">/</span>
+                <span className="text-slate-500 text-xs font-bold tabular-nums">{pages.length}</span>
+              </div>
+
+              {/* Divider */}
+              <div className="w-px h-8 bg-white/5 mx-1" />
+
+              {/* Next Chapter */}
+              <button
+                onClick={() => nextChapter && goToChapter(nextChapter)}
+                disabled={!nextChapter}
+                title="Next Chapter"
+                className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed overflow-hidden"
+                style={{
+                  background: nextChapter ? 'rgba(220,38,38,0.12)' : 'transparent',
+                  border: '1px solid rgba(220,38,38,0.2)',
+                  color: nextChapter ? '#fca5a5' : '#4b5563',
+                }}
+              >
+                <span
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.08), rgba(220,38,38,0.25))' }}
+                />
+                <span className="relative z-10 hidden sm:inline">Next Ch</span>
+                <ChevronRight size={15} className="relative z-10 shrink-0" />
+              </button>
             </div>
-            <button
-              onClick={() => nextChapter && goToChapter(nextChapter)}
-              disabled={!nextChapter}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-black/80 border border-red-900/30 text-xs font-bold text-red-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-red-950/50 transition-colors backdrop-blur-sm"
-            >
-              Next Ch <ChevronRight size={14} />
-            </button>
           </motion.div>
         )}
       </AnimatePresence>
