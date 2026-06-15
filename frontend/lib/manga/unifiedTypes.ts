@@ -42,6 +42,7 @@ export interface UnifiedManga {
   // ── Identity ─────────────────────────────────────────
   anilistId: number;
   mangaDexId: string | null;   // Set after cross-reference
+  mangaPillId: string | null;  // MangaPill fallback (Consumet)
   title: string;
   titleNative: string;
   titleRomaji: string;

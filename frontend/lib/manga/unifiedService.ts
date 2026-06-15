@@ -4,6 +4,7 @@
 
 import anilistFetch from './anilistClient';
 import { mangaDexClient } from './mangaDexClient';
+import { mangaPillClient } from './mangaPillClient';
 import { mangaCache } from './mangaCache';
 import type { UnifiedManga, MangaCard, MangaCharacter, MangaRecommendation, MangaRelation, MangaStatusType } from './unifiedTypes';
 
@@ -162,6 +163,7 @@ function normaliseDetail(m: any): Omit<UnifiedManga, 'mangaDexId' | 'availableCh
 
   return {
     anilistId: m.id,
+    mangaPillId: null,   // resolved later in getDetail
     title: toTitle(m.title),
     titleNative: m.title?.native || '',
     titleRomaji: m.title?.romaji || '',
@@ -208,6 +210,17 @@ async function resolveMangaDexId(anilistId: number, title: string, externalLinks
   // 2. Search by title
   const found = await mangaDexClient.searchId(title);
   mdxIdCache.set(anilistId, found);
+  return found;
+}
+
+// ── Cross-reference Cache (AniList ID → MangaPill ID) ─────────────────────
+
+const pillIdCache = new Map<number, string | null>();
+
+async function resolveMangaPillId(anilistId: number, title: string): Promise<string | null> {
+  if (pillIdCache.has(anilistId)) return pillIdCache.get(anilistId)!;
+  const found = await mangaPillClient.searchId(title);
+  pillIdCache.set(anilistId, found);
   return found;
 }
 
@@ -283,7 +296,7 @@ export const unifiedMangaService = {
     }, 2 * 60 * 1000);
   },
 
-  /** Full detail — AniList metadata merged with MangaDex ID resolution */
+  /** Full detail — AniList metadata merged with MangaDex + MangaPill ID resolution */
   async getDetail(anilistId: number): Promise<UnifiedManga> {
     return mangaCache.wrap(`unified:detail:${anilistId}`, async () => {
       const data = await anilistFetch<any>(DETAIL_QUERY, { id: anilistId });
@@ -291,26 +304,73 @@ export const unifiedMangaService = {
       if (!raw) throw new Error(`AniList: manga ${anilistId} not found`);
 
       const base = normaliseDetail(raw);
-      const mangaDexId = await resolveMangaDexId(anilistId, base.title, raw.externalLinks || []);
+
+      // Resolve both sources in parallel
+      const [mangaDexId, mangaPillId] = await Promise.all([
+        resolveMangaDexId(anilistId, base.title, raw.externalLinks || []),
+        resolveMangaPillId(anilistId, base.title),
+      ]);
 
       return {
         ...base,
         mangaDexId,
-        availableChapters: [],       // populated on demand
+        mangaPillId,
+        availableChapters: [],
         lastFetchedChapters: null,
       };
     }, 10 * 60 * 1000);
   },
 
-  /** Fetch chapters from MangaDex for a resolved manga */
+  /**
+   * Fetch chapters — MangaDex first, then MangaPill as fallback.
+   * Pill chapters are marked with source:'pill' so getPages knows which API to use.
+   */
   async getChapters(manga: UnifiedManga, lang = 'en') {
-    if (!manga.mangaDexId) return [];
-    const key = `unified:chapters:${manga.mangaDexId}:${lang}`;
-    return mangaCache.wrap(key, () => mangaDexClient.getChapters(manga.mangaDexId!, lang), 5 * 60 * 1000);
+    const key = `unified:chapters:${manga.anilistId}:${lang}`;
+    return mangaCache.wrap(key, async () => {
+      // 1. Try MangaDex
+      let mdxChapters: import('./mangaDexClient').MDXChapter[] = [];
+      if (manga.mangaDexId) {
+        try {
+          mdxChapters = await mangaDexClient.getChapters(manga.mangaDexId, lang);
+        } catch { /* ignore, fall through to Pill */ }
+      }
+
+      // 2. MangaPill fallback if MangaDex has no/few readable chapters
+      const readableMdx = mdxChapters.filter(c => !c.externalUrl);
+      if (readableMdx.length < 10 && manga.mangaPillId) {
+        try {
+          const pillChapters = await mangaPillClient.getChapters(manga.mangaPillId);
+          // Normalise PillChapters into the MDXChapter shape
+          return pillChapters.map(pc => ({
+            id: `pill::${pc.id}`,   // prefix distinguishes them in getPages
+            chapter: pc.chapter,
+            title: pc.title,
+            volume: null,
+            pages: 1,               // non-zero so UI shows them as readable
+            translatedLanguage: 'en',
+            publishAt: '',
+            readableAt: '',
+            scanlationGroup: 'MangaPill',
+            externalUrl: null,
+          } satisfies import('./mangaDexClient').MDXChapter));
+        } catch { /* if Pill also fails, return whatever MangaDex gave us */ }
+      }
+
+      return mdxChapters;
+    }, 5 * 60 * 1000);
   },
 
   /** Get readable page URLs for a chapter */
   async getPages(chapterId: string, dataSaver = false) {
+    // Pill chapters have a 'pill::' prefix
+    if (chapterId.startsWith('pill::')) {
+      const realId = chapterId.slice(6);
+      const key = `unified:pages:pill:${realId}`;
+      return mangaCache.wrap(key, () => mangaPillClient.getPages(realId), 30 * 60 * 1000);
+    }
+
+    // MangaDex chapters
     const key = `unified:pages:${chapterId}:${dataSaver}`;
     const pagesData = await mangaCache.wrap(key, () => mangaDexClient.getPages(chapterId), 30 * 60 * 1000);
     const fileList = dataSaver ? pagesData.dataSaver : pagesData.data;
