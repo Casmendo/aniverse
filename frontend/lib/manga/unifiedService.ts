@@ -342,8 +342,9 @@ export const unifiedMangaService = {
         try {
           const pillChapters = await mangaPillClient.getChapters(manga.mangaPillId);
           // Normalise PillChapters into the MDXChapter shape
+          // IMPORTANT: Pill IDs contain '/' which breaks Next.js routing — encode as '__'
           return pillChapters.map(pc => ({
-            id: `pill::${pc.id}`,   // prefix distinguishes them in getPages
+            id: `PILL-${pc.id.replace(/\//g, '__')}`,   // encoded so URL stays one segment
             chapter: pc.chapter,
             title: pc.title,
             volume: null,
@@ -363,9 +364,9 @@ export const unifiedMangaService = {
 
   /** Get readable page URLs for a chapter */
   async getPages(chapterId: string, dataSaver = false) {
-    // Pill chapters have a 'pill::' prefix
-    if (chapterId.startsWith('pill::')) {
-      const realId = chapterId.slice(6);
+    // Pill chapters are prefixed with 'PILL-'; decode __ back to / for the real Pill ID
+    if (chapterId.startsWith('PILL-')) {
+      const realId = chapterId.slice(5).replace(/__/g, '/');
       const key = `unified:pages:pill:${realId}`;
       return mangaCache.wrap(key, () => mangaPillClient.getPages(realId), 30 * 60 * 1000);
     }
