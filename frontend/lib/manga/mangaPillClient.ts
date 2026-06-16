@@ -36,11 +36,20 @@ export const mangaPillClient = {
       if (!data?.results?.length) return null;
 
       const cleaned = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-      const exact = data.results.find(r => {
+      
+      // Find all results that contain the cleaned title
+      const matches = data.results.filter(r => {
         const t = r.title.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-        return t === cleaned;
+        return t === cleaned || t.includes(cleaned) || cleaned.includes(t);
       });
-      return (exact ?? data.results[0])?.id ?? null;
+
+      if (matches.length > 0) {
+        // Sort by length to prefer the main series over spin-offs/artbooks (which usually have longer titles)
+        matches.sort((a, b) => a.title.length - b.title.length);
+        return matches[0].id;
+      }
+
+      return data.results[0]?.id ?? null;
     } catch {
       return null;
     }

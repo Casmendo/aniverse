@@ -352,7 +352,7 @@ export const unifiedMangaService = {
             translatedLanguage: 'en',
             publishAt: '',
             readableAt: '',
-            scanlationGroup: 'MangaPill',
+            scanlationGroup: 'MangaPlus',
             externalUrl: null,
           } satisfies import('./mangaDexClient').MDXChapter));
         } catch { /* if Pill also fails, return whatever MangaDex gave us */ }
