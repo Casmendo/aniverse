@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Camera, Pencil, Check, X, LogOut, Smartphone, RefreshCw,
   Download, ChevronRight, Play, History, Trash2, User, Shield,
-  ArrowDownToLine, Users, Star
+  ArrowDownToLine, Users, Star, BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
@@ -245,6 +245,20 @@ export default function ProfilePage() {
 
       {/* ── Actions ─────────────────────────────────────────────────────── */}
       <div className="space-y-3 mb-6">
+
+        {/* MangaVerse */}
+        <Link href="/manga"
+          className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-[var(--border)] hover:bg-s1/50 transition-all group"
+          style={{ background: 'var(--glass)' }}>
+          <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+            <BookOpen size={18} className="text-blue-400" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-semibold text-s5">MangaVerse</p>
+            <p className="text-xs text-s3">Read manga &amp; comics</p>
+          </div>
+          <ChevronRight size={16} className="text-s3 group-hover:text-blue-400 transition-colors" />
+        </Link>
 
         {/* Check for Updates */}
         <div className="rounded-2xl border overflow-hidden transition-all"
