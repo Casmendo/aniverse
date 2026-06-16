@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Flame, TrendingUp, Star, Clock, Sparkles, ChevronRight, BookOpen, BarChart2, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Flame, TrendingUp, Star, Clock, Sparkles, ChevronRight, BookOpen, BarChart2, X, LogOut } from 'lucide-react';
+import MangaExitSplash from '@/components/manga/MangaExitSplash';
 import { unifiedMangaService, type MangaCard } from '@/lib/manga/unifiedService';
 import { useMangaStore } from '@/store/mangaStore';
 import { STATUS_LABELS } from '@/lib/manga/unifiedTypes';
@@ -218,6 +220,8 @@ export default function MangaHome() {
   const [topRated,    setTopRated]    = useState<MangaCard[]>([]);
   const [newRelease,  setNewRelease]  = useState<MangaCard[]>([]);
   const [loading,     setLoading]     = useState(true);
+  const [exiting,     setExiting]     = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     Promise.allSettled([
@@ -245,10 +249,21 @@ export default function MangaHome() {
             MANGA<span className="text-blue-500">VERSE</span>
           </span>
         </div>
-        <Link href="/manga/search" className="w-8 h-8 rounded-full flex items-center justify-center text-slate-600 hover:text-blue-600 transition-colors">
-          <Sparkles size={18} />
-        </Link>
+        <button
+          onClick={() => setExiting(true)}
+          className="group relative w-10 h-10 rounded-xl flex items-center justify-center bg-red-500/10 border-2 border-red-500 hover:bg-red-500/20 transition-colors"
+          title="Exit to AniVerse"
+        >
+          <LogOut size={18} className="text-red-500 group-hover:scale-110 transition-transform" />
+          <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-red-500 border-2 border-black animate-pulse" />
+        </button>
       </div>
+
+      <AnimatePresence>
+        {exiting && (
+          <MangaExitSplash onDone={() => router.push('/')} />
+        )}
+      </AnimatePresence>
 
       <div className="px-4 md:px-6 pt-5">
         {/* Hero */}

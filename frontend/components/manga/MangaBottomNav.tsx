@@ -98,22 +98,10 @@ function ExitSplash({ onDone }: { onDone: () => void }) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function MangaBottomNav() {
-  const path   = usePathname();
-  const router = useRouter();
-  const [exiting, setExiting] = useState(false);
-  const [sparkHover, setSparkHover] = useState(false);
+  const path = usePathname();
 
   // Hide on reader pages
   if (path.includes('/reader/')) return null;
-
-  const handleExit = useCallback(() => {
-    if (exiting) return;
-    setExiting(true);
-  }, [exiting]);
-
-  const handleExitDone = useCallback(() => {
-    router.push('/');
-  }, [router]);
 
   // Active check — /manga exact match is Home
   const isActive = (href: string) => {
@@ -122,73 +110,64 @@ export default function MangaBottomNav() {
   };
 
   return (
-    <>
-      {/* Exit splash overlay */}
-      <AnimatePresence>
-        {exiting && <ExitSplash onDone={handleExitDone} />}
-      </AnimatePresence>
-
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)]">
-        <nav
-          className="flex items-center gap-1 px-2 py-2 rounded-full"
-          style={{
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(24px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.06)',
-          }}
-        >
-          {/* ── Exit button (left highlight circle like reference) ── */}
-          <motion.button
-            onClick={handleExit}
-            onHoverStart={() => setSparkHover(true)}
-            onHoverEnd={() => setSparkHover(false)}
-            whileTap={{ scale: 0.9 }}
-            className="relative flex items-center justify-center w-11 h-11 rounded-full shrink-0"
-            style={{
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              boxShadow: '0 0 16px rgba(37,99,235,0.6)',
-            }}
-            title="Exit to AniVerse"
-          >
-            <SparkStar animate={sparkHover || true} />
-          </motion.button>
-
-          {/* ── Divider ── */}
-          <div className="w-px h-6 bg-white/10 mx-1 shrink-0" />
-
-          {/* ── Nav items ── */}
-          {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
-            const active = isActive(href);
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pb-[env(safe-area-inset-bottom)]">
+      <nav
+        className="flex items-center gap-1 px-2 py-2 rounded-full"
+        style={{
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* ── Nav items ── */}
+        {NAV_ITEMS.map(({ href, icon: Icon, label }, idx) => {
+          const active = isActive(href);
+          
+          // The first item (Home) gets the special left circle treatment if active,
+          // matching the reference design for the active pill
+          if (idx === 0) {
             return (
               <Link key={href} href={href}
-                className="relative flex flex-col items-center justify-center w-12 h-11 gap-0.5 group rounded-full transition-all"
+                className="relative flex items-center justify-center w-11 h-11 rounded-full shrink-0 transition-all mr-1"
+                style={active ? {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 0 16px rgba(37,99,235,0.6)',
+                } : {}}
               >
-                {active && (
-                  <motion.div
-                    layoutId="manga-pill-active"
-                    className="absolute inset-0 rounded-full"
-                    style={{ background: 'rgba(37,99,235,0.18)', border: '1px solid rgba(37,99,235,0.3)' }}
-                    transition={{ type: 'spring', stiffness: 320, damping: 30 }}
-                  />
-                )}
-                <Icon
-                  size={20}
-                  strokeWidth={active ? 2.5 : 1.8}
-                  className={`relative transition-all duration-200 ${
-                    active ? 'text-blue-400 scale-110' : 'text-white/50 group-hover:text-white/80'
-                  }`}
-                />
-                <span className={`relative text-[9px] font-bold tracking-wide transition-colors ${
-                  active ? 'text-blue-400' : 'text-white/40 group-hover:text-white/60'
-                }`}>
-                  {label}
-                </span>
+                <Icon size={20} className={active ? 'text-white' : 'text-white/50 hover:text-white/80'} />
               </Link>
             );
-          })}
-        </nav>
-      </div>
-    </>
+          }
+
+          return (
+            <Link key={href} href={href}
+              className="relative flex flex-col items-center justify-center w-12 h-11 gap-0.5 group rounded-full transition-all"
+            >
+              {active && (
+                <motion.div
+                  layoutId="manga-pill-active"
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: 'rgba(37,99,235,0.18)', border: '1px solid rgba(37,99,235,0.3)' }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                />
+              )}
+              <Icon
+                size={20}
+                strokeWidth={active ? 2.5 : 1.8}
+                className={`relative transition-all duration-200 ${
+                  active ? 'text-blue-400 scale-110' : 'text-white/50 group-hover:text-white/80'
+                }`}
+              />
+              <span className={`relative text-[9px] font-bold tracking-wide transition-colors ${
+                active ? 'text-blue-400' : 'text-white/40 group-hover:text-white/60'
+              }`}>
+                {label}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
