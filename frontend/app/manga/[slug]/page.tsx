@@ -88,7 +88,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
   const idStr = String(manga.anilistId);
 
   const TABS: { key: Tab; label: string; count?: number }[] = [
-    { key: 'chapters',   label: 'Chapters',   count: chapters.length > 0 ? Math.max(chapters.length, manga.totalChapters || 0) : manga.totalChapters || undefined },
+    { key: 'chapters',   label: 'Chapters',   count: chapters.length > 0 ? chapters.length : manga.totalChapters || undefined },
     { key: 'info',       label: 'Info'       },
     { key: 'characters', label: 'Characters', count: manga.characters.length || undefined },
     { key: 'related',    label: 'Related'    },
@@ -153,7 +153,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
         )}
         {(chapters.length > 0 || manga.totalChapters) && (
           <div className="flex items-center gap-1.5 text-slate-400">
-            <BookOpen size={13} /> {chapters.length > 0 ? Math.max(chapters.length, manga.totalChapters || 0) : manga.totalChapters} chapters
+            <BookOpen size={13} /> {chapters.length > 0 ? chapters.length : manga.totalChapters} chapters
           </div>
         )}
         {manga.releaseYear && (
