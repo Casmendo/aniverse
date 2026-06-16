@@ -363,7 +363,7 @@ export const unifiedMangaService = {
                 publishAt: new Date().toISOString(),
                 readableAt: '',
                 translatedLanguage: 'en',
-                scanlationGroup: 'MangaPlus',
+                scanlationGroup: 'MangaVerse',
                 externalUrl: null,
              } satisfies import('./mangaDexClient').MDXChapter & { source?: 'pill' }));
              // Add source:'pill' after satisfying the base type, or cast
