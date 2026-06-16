@@ -347,26 +347,29 @@ export const unifiedMangaService = {
         } catch { /* ignore, fall through to Pill */ }
       }
 
-      // 2. MangaPill fallback if MangaDex has no/few readable chapters
-      const readableMdx = mdxChapters.filter(c => !c.externalUrl);
-      if (readableMdx.length < 10 && mangaPillId) {
+      // 2. MangaPill Fallback/Merge
+      // Prioritize MangaPill if it's available because MangaDex often lacks official chapters.
+      if (mangaPillId) {
         try {
           const pillChapters = await mangaPillClient.getChapters(mangaPillId);
-          // Normalise PillChapters into the MDXChapter shape
-          // IMPORTANT: Pill IDs contain '/' which breaks Next.js routing — encode as '__'
-          return pillChapters.map(pc => ({
-            id: `PILL-${pc.id.replace(/\//g, '__')}`,   // encoded so URL stays one segment
-            chapter: pc.chapter,
-            title: pc.title,
-            volume: null,
-            pages: 1,               // non-zero so UI shows them as readable
-            translatedLanguage: 'en',
-            publishAt: '',
-            readableAt: '',
-            scanlationGroup: 'MangaPlus',
-            externalUrl: null,
-          } satisfies import('./mangaDexClient').MDXChapter));
-        } catch { /* if Pill also fails, return whatever MangaDex gave us */ }
+          // If MangaPill has more chapters, or if we just want to ensure we have all chapters
+          if (pillChapters.length > 0 && pillChapters.length >= mdxChapters.length * 0.5) {
+             const pillMapped = pillChapters.map(pc => ({
+                id: `PILL-${pc.id.replace(/\//g, '__')}`,
+                title: pc.title || `Chapter ${pc.chapter}`,
+                chapter: pc.chapter,
+                volume: null,
+                pages: 1, // needed for UI
+                publishAt: new Date().toISOString(),
+                readableAt: '',
+                translatedLanguage: 'en',
+                scanlationGroup: 'MangaPlus',
+                externalUrl: null,
+             } satisfies import('./mangaDexClient').MDXChapter & { source?: 'pill' }));
+             // Add source:'pill' after satisfying the base type, or cast
+             return pillMapped.map(c => ({ ...c, source: 'pill' as const })).sort((a, b) => parseFloat(b.chapter) - parseFloat(a.chapter));
+          }
+        } catch { /* ignore and use MDX */ }
       }
 
       return mdxChapters;
