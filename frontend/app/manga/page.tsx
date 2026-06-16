@@ -119,9 +119,9 @@ function Section({ title, icon: Icon, items, loading, href }: {
 
 // ── Hero Banner ───────────────────────────────────────────────────────────────
 function HeroBanner({ manga }: { manga: MangaCard | null }) {
-  if (!manga) return <div className="skeleton rounded-2xl h-[42vh] min-h-[260px] mb-8" />;
+  if (!manga) return <div className="skeleton rounded-2xl h-[55vh] min-h-[350px] mb-8" />;
   return (
-    <Link href={`/manga/${manga.anilistId}`} className="block relative w-full h-[42vh] min-h-[260px] mb-8 overflow-hidden rounded-2xl group cursor-pointer">
+    <Link href={`/manga/${manga.anilistId}`} className="block relative w-full h-[55vh] min-h-[350px] mb-8 overflow-hidden rounded-2xl group cursor-pointer shadow-xl">
       <div className="absolute inset-0 bg-cover bg-center scale-105 group-hover:scale-110 transition-transform duration-700"
         style={{ backgroundImage: `url(${manga.coverImage})`, filter: 'blur(14px) brightness(0.2) saturate(1.6)' }} />
       <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-transparent" />
