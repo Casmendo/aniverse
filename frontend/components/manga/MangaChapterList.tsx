@@ -56,7 +56,7 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
   return (
     <div className="flex flex-col gap-3">
       {/* Controls */}
-      <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-red-950/10 border border-red-900/15">
+      <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-blue-50 border border-blue-200">
         <div className="relative flex-1 min-w-[180px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
           <input
@@ -64,12 +64,12 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search chapters..."
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-black/30 border border-red-900/10 focus:border-red-800/40 text-sm text-slate-300 placeholder-slate-600 outline-none transition-colors"
+            className="w-full pl-8 pr-3 py-2 rounded-lg bg-slate-100 border border-blue-200 focus:border-blue-400 text-sm text-slate-700 placeholder-slate-600 outline-none transition-colors"
           />
         </div>
         <button
           onClick={() => setSortDesc(!sortDesc)}
-          className="p-2 rounded-lg bg-black/30 border border-red-900/15 text-slate-400 hover:text-red-400 hover:border-red-800/30 transition-all"
+          className="p-2 rounded-lg bg-slate-100 border border-blue-200 text-slate-600 hover:text-blue-600 hover:border-blue-400 transition-all"
         >
           {sortDesc ? <SortDesc size={16} /> : <SortAsc size={16} />}
         </button>
@@ -78,7 +78,7 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
       {/* Count */}
       <div className="flex items-center justify-between px-1 text-xs font-bold text-slate-600 uppercase tracking-widest">
         <span>{filtered.length} Chapters</span>
-        {progress && <span className="text-red-500/60">Last read: Ch {progress.chapterNum}</span>}
+        {progress && <span className="text-blue-500/60">Last read: Ch {progress.chapterNum}</span>}
       </div>
 
       {/* List */}
@@ -94,13 +94,13 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
               target={isExternal ? '_blank' : '_self'}
               className={`flex items-center justify-between p-3.5 rounded-xl border transition-all group ${
                 isRead
-                  ? 'bg-red-950/10 border-red-900/10 opacity-60 hover:opacity-90'
-                  : 'bg-black/20 border-red-950/10 hover:border-red-700/30 hover:bg-red-950/15'
+                  ? 'bg-blue-50 border-blue-200 opacity-60 hover:opacity-90'
+                  : 'bg-slate-50 border-red-950/10 hover:border-blue-400 hover:bg-blue-50'
               }`}
             >
               <div className="flex-1 min-w-0 pr-3">
                 <div className="flex items-center gap-2">
-                  <span className={`font-bold text-sm ${isRead ? 'text-slate-500' : 'text-slate-200 group-hover:text-white'} transition-colors`}>
+                  <span className={`font-bold text-sm ${isRead ? 'text-slate-500' : 'text-slate-800 group-hover:text-slate-900'} transition-colors`}>
                     {ch.chapter ? `Chapter ${ch.chapter}` : 'Oneshot'}
                   </span>
                   {ch.title && (
@@ -121,7 +121,7 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
                 </div>
               </div>
               <div className="shrink-0">
-                {isRead && <Eye size={16} className="text-red-500" />}
+                {isRead && <Eye size={16} className="text-blue-500" />}
               </div>
             </Link>
           );
@@ -136,7 +136,7 @@ export default function MangaChapterList({ mangaId, mangaTitle, chapters, loadin
         {displayCount < filtered.length && (
           <button
             onClick={() => setDisplayCount(c => c + 100)}
-            className="w-full py-3 mt-1 rounded-xl border border-dashed border-red-900/20 text-slate-500 hover:text-slate-300 hover:border-red-800/30 transition-all text-sm font-bold flex items-center justify-center gap-2"
+            className="w-full py-3 mt-1 rounded-xl border border-dashed border-blue-200 text-slate-500 hover:text-slate-700 hover:border-blue-400 transition-all text-sm font-bold flex items-center justify-center gap-2"
           >
             <ChevronDown size={16} /> Load More ({filtered.length - displayCount} remaining)
           </button>

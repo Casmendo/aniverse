@@ -46,7 +46,7 @@ export default function MangaGenrePage({ params, searchParams }: { params: { gen
     <div className="min-h-screen bg-s0 pb-24">
       {/* Header Back Button */}
       <div className="sticky top-0 left-0 right-0 h-16 z-30 px-[clamp(16px,5vw,56px)] flex items-center bg-s0/90 backdrop-blur-md border-b border-[var(--border)] gap-4">
-        <button onClick={() => router.back()} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-s2 text-s5 hover:text-white transition-colors">
+        <button onClick={() => router.back()} className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-s2 text-s5 hover:text-slate-900 transition-colors">
           <ChevronLeft size={20} />
         </button>
         <h1 className="font-display font-black text-xl text-s5 uppercase tracking-wider flex items-center gap-2">

@@ -15,7 +15,7 @@ import MangaChapterList from '@/components/manga/MangaChapterList';
 // ── Skeletons ────────────────────────────────────────────────────────────────
 function Skeleton() {
   return (
-    <div className="min-h-screen" style={{ background: 'radial-gradient(ellipse at top, #0f0204 0%, #06141B 40%)' }}>
+    <div className="min-h-screen" style={{ background: 'radial-gradient(ellipse at top, #f8fafc 0%, #ffffff 40%)' }}>
       <div className="skeleton h-[45vw] max-h-[340px] min-h-[220px]" />
       <div className="px-4 pt-4 flex gap-4">
         <div className="skeleton w-28 rounded-xl shrink-0" style={{ aspectRatio: '2/3' }} />
@@ -76,10 +76,10 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
 
   if (loadingManga) return <Skeleton />;
   if (error || !manga) return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: '#06141B' }}>
-      <BookOpen size={48} className="text-red-800" />
-      <p className="text-slate-400 font-bold">{error || 'Manga not found'}</p>
-      <button onClick={() => router.back()} className="px-5 py-2 rounded-xl bg-red-950/30 border border-red-900/30 text-sm font-bold text-red-300">Go Back</button>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center" style={{ background: '#ffffff' }}>
+      <BookOpen size={48} className="text-blue-800" />
+      <p className="text-slate-600 font-bold">{error || 'Manga not found'}</p>
+      <button onClick={() => router.back()} className="px-5 py-2 rounded-xl bg-blue-100 border border-blue-300 text-sm font-bold text-blue-700">Go Back</button>
     </div>
   );
 
@@ -95,11 +95,11 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
   ];
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #0f0204 0%, #06141B 40%)' }}>
+    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #f8fafc 0%, #ffffff 40%)' }}>
       {/* Back Button */}
       <div className="fixed top-0 left-0 right-0 z-50 h-14 px-4 flex items-center bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
         <button onClick={() => router.back()}
-          className="pointer-events-auto w-9 h-9 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/90 transition-colors">
+          className="pointer-events-auto w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm border border-white/10 flex items-center justify-center text-slate-900 hover:bg-black/90 transition-colors">
           <ChevronLeft size={20} />
         </button>
       </div>
@@ -111,16 +111,16 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
             className="w-full h-full object-cover object-top"
             style={{ filter: 'brightness(0.35) saturate(1.3)' }} />
         ) : (
-          <div className="w-full h-full" style={{ background: manga.color ? `linear-gradient(135deg, ${manga.color}33, #06141B)` : 'linear-gradient(135deg, #1a0205, #06141B)' }} />
+          <div className="w-full h-full" style={{ background: manga.color ? `linear-gradient(135deg, ${manga.color}33, #ffffff)` : 'linear-gradient(135deg, #f1f5f9, #ffffff)' }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06141B] via-[#06141B]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#ffffff] via-[#ffffff]/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
       </div>
 
       {/* Cover + Title Row */}
       <div className="relative px-4 -mt-24 z-10 flex gap-4 items-end">
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-          className="w-28 md:w-36 shrink-0 rounded-xl overflow-hidden border-2 border-red-900/40 shadow-2xl"
+          className="w-28 md:w-36 shrink-0 rounded-xl overflow-hidden border-2 border-blue-300 shadow-2xl"
           style={{ aspectRatio: '2/3' }}>
           <img src={manga.coverImage} alt={manga.title} className="w-full h-full object-cover" />
         </motion.div>
@@ -131,10 +131,10 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
               {STATUS_LABELS[manga.status]}
             </span>
             {manga.format !== 'MANGA' && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">{manga.format}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-600 border border-slate-500/20">{manga.format}</span>
             )}
           </div>
-          <h1 className="font-black text-white text-xl md:text-3xl leading-tight line-clamp-3 drop-shadow-lg">{manga.title}</h1>
+          <h1 className="font-black text-slate-900 text-xl md:text-3xl leading-tight line-clamp-3 drop-shadow-lg">{manga.title}</h1>
           {manga.titleNative && <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{manga.titleNative}</p>}
         </motion.div>
       </div>
@@ -147,17 +147,17 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           </div>
         )}
         {manga.popularity > 0 && (
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-600">
             <BarChart2 size={13} /> {manga.popularity.toLocaleString()} followers
           </div>
         )}
         {(chapters.length > 0 || manga.totalChapters) && (
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-600">
             <BookOpen size={13} /> {chapters.length > 0 ? chapters.length : manga.totalChapters} chapters
           </div>
         )}
         {manga.releaseYear && (
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-600">
             <Clock size={13} /> {manga.releaseYear}
           </div>
         )}
@@ -167,7 +167,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
       <div className="px-4 mt-3 flex flex-wrap gap-1.5">
         {manga.genres.slice(0, 6).map(g => (
           <Link key={g} href={`/manga/discover?genre=${encodeURIComponent(g)}`}
-            className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
+            className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 border border-red-500/20 hover:bg-blue-500/20 transition-colors">
             {g}
           </Link>
         ))}
@@ -178,7 +178,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
         {firstChapter && (
           <Link href={firstChapter.externalUrl || `/manga/${manga.anilistId}/reader/${firstChapter.id}`}
             target={firstChapter.externalUrl ? '_blank' : '_self'}
-            className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-red-600 text-white hover:bg-red-500 transition-colors shadow-[0_0_24px_rgba(225,29,72,0.4)]">
+            className="flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-blue-600 text-white hover:bg-blue-500 transition-colors shadow-[0_0_24px_rgba(37,99,235,0.4)]">
             <BookOpen size={16} />
             {progress ? `Resume Ch ${progress.chapterNum}` : 'Start Reading'}
           </Link>
@@ -186,7 +186,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
         {progress && firstChapter && (
           <Link href={firstChapter.externalUrl || `/manga/${manga.anilistId}/reader/${firstChapter.id}`}
             target={firstChapter.externalUrl ? '_blank' : '_self'}
-            className="flex items-center gap-2 px-4 py-3 rounded-full font-bold text-sm bg-red-950/30 text-red-300 border border-red-900/30 hover:bg-red-900/30 transition-colors">
+            className="flex items-center gap-2 px-4 py-3 rounded-full font-bold text-sm bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-100 transition-colors">
             Ch 1
           </Link>
         )}
@@ -196,8 +196,8 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           })}
           className={`flex items-center gap-2 px-5 py-3 rounded-full font-bold text-sm border transition-all ${
             isBookmarked
-              ? 'bg-red-600 border-red-600 text-white'
-              : 'bg-red-950/20 border-red-900/30 text-red-300 hover:bg-red-900/30'
+              ? 'bg-blue-600 border-blue-600 text-slate-900'
+              : 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
           }`}
         >
           <Heart size={16} fill={isBookmarked ? 'currentColor' : 'none'} />
@@ -209,13 +209,13 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
       </div>
 
       {/* Tabs */}
-      <div className="px-4 mt-7 flex gap-0.5 border-b border-red-950/30">
+      <div className="px-4 mt-7 flex gap-0.5 border-b border-blue-200">
         {TABS.map(({ key, label, count }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
               activeTab === key
-                ? 'text-red-400 border-b-2 border-red-500 -mb-px'
-                : 'text-slate-600 hover:text-slate-400'
+                ? 'text-blue-600 border-b-2 border-red-500 -mb-px'
+                : 'text-slate-600 hover:text-slate-600'
             }`}>
             {label}{count ? ` (${count})` : ''}
           </button>
@@ -242,7 +242,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                 {manga.description && (
                   <div>
                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Synopsis</h3>
-                    <p className="text-sm text-slate-400 leading-relaxed">{manga.description}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{manga.description}</p>
                   </div>
                 )}
 
@@ -257,9 +257,9 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                     { label: 'Source',   value: manga.source || '—' },
                     { label: 'Score',    value: manga.rating ? `${(manga.rating / 10).toFixed(2)} / 10` : '—' },
                   ].map(({ label, value }) => (
-                    <div key={label} className="p-3 rounded-xl bg-red-950/10 border border-red-900/10">
+                    <div key={label} className="p-3 rounded-xl bg-blue-50 border border-blue-200">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-0.5">{label}</p>
-                      <p className="text-sm font-bold text-slate-200">{value}</p>
+                      <p className="text-sm font-bold text-slate-800">{value}</p>
                     </div>
                   ))}
                 </div>
@@ -269,7 +269,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Tags</h3>
                     <div className="flex flex-wrap gap-1.5">
                       {manga.tags.slice(0, 24).map(t => (
-                        <span key={t.name} className="px-2.5 py-1 rounded-lg bg-red-950/20 border border-red-900/15 text-[11px] font-bold text-slate-500">
+                        <span key={t.name} className="px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-bold text-slate-500">
                           {t.name}
                         </span>
                       ))}
@@ -295,18 +295,18 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {manga.relations.map((r, i) => (
                         <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                          <Link href={`/manga/${r.id}`} className="block rounded-xl overflow-hidden border border-red-900/15 hover:border-red-700/30 transition-all group">
+                          <Link href={`/manga/${r.id}`} className="block rounded-xl overflow-hidden border border-blue-200 hover:border-blue-400 transition-all group">
                             <div className="relative overflow-hidden" style={{ aspectRatio: '2/3' }}>
                               {r.coverImage
                                 ? <img src={r.coverImage} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                : <div className="w-full h-full bg-red-950/20 flex items-center justify-center"><BookOpen className="text-red-800" /></div>
+                                : <div className="w-full h-full bg-blue-50 flex items-center justify-center"><BookOpen className="text-blue-800" /></div>
                               }
-                              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-black/70 text-red-400 border border-red-900/30">
+                              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-white/90 text-blue-600 border border-blue-300">
                                 {r.type.replace(/_/g, ' ')}
                               </div>
                             </div>
-                            <div className="p-2 bg-[#0d0204]">
-                              <p className="text-xs font-bold text-slate-300 group-hover:text-white line-clamp-2">{r.title}</p>
+                            <div className="p-2 bg-white">
+                              <p className="text-xs font-bold text-slate-700 group-hover:text-slate-900 line-clamp-2">{r.title}</p>
                             </div>
                           </Link>
                         </motion.div>
@@ -321,20 +321,20 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {manga.recommendations.map((r, i) => (
                         <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                          <Link href={`/manga/${r.id}`} className="block rounded-xl overflow-hidden border border-red-900/15 hover:border-red-700/30 transition-all group">
+                          <Link href={`/manga/${r.id}`} className="block rounded-xl overflow-hidden border border-blue-200 hover:border-blue-400 transition-all group">
                             <div className="relative overflow-hidden" style={{ aspectRatio: '2/3' }}>
                               {r.coverImage
                                 ? <img src={r.coverImage} alt={r.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                : <div className="w-full h-full bg-red-950/20" />
+                                : <div className="w-full h-full bg-blue-50" />
                               }
                               {r.score > 0 && (
-                                <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/70 text-yellow-400 text-[10px] font-bold">
+                                <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/90 text-yellow-400 text-[10px] font-bold">
                                   <Star size={9} fill="currentColor" /> {(r.score / 10).toFixed(1)}
                                 </div>
                               )}
                             </div>
-                            <div className="p-2 bg-[#0d0204]">
-                              <p className="text-xs font-bold text-slate-300 group-hover:text-white line-clamp-2">{r.title}</p>
+                            <div className="p-2 bg-white">
+                              <p className="text-xs font-bold text-slate-700 group-hover:text-slate-900 line-clamp-2">{r.title}</p>
                             </div>
                           </Link>
                         </motion.div>

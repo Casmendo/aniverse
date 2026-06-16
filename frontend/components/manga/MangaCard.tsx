@@ -45,7 +45,7 @@ export default function MangaCard({ manga, index = 0, priority = false }: MangaC
           {/* Badges / Overlays */}
           <div className="absolute top-2 left-2 flex flex-col gap-1.5">
             {manga.contentRating !== 'safe' && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-600 text-white uppercase shadow-sm">
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-600 text-white uppercase shadow-sm">
                 {manga.contentRating}
               </span>
             )}
@@ -97,7 +97,7 @@ export default function MangaCard({ manga, index = 0, priority = false }: MangaC
         }}
         className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-md z-10
           ${isBookmarked 
-            ? 'bg-accent text-white opacity-100' 
+            ? 'bg-accent text-slate-900 opacity-100' 
             : 'bg-s0/80 text-s4 opacity-0 group-hover:opacity-100 hover:bg-s2 hover:text-s5'
           }
         `}

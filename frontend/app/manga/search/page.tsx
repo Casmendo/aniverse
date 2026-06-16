@@ -19,16 +19,16 @@ function MangaCardComp({ manga, index = 0 }: { manga: MangaCard; index?: number 
   const statusLabel = (STATUS_LABELS as any)[manga.status] || manga.status;
   return (
     <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.04 }}>
-      <Link href={`/manga/${manga.anilistId}`} className="flex items-center gap-3 p-3 rounded-xl bg-red-950/10 border border-red-900/10 hover:border-red-800/30 hover:bg-red-950/20 transition-all group">
-        <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 bg-red-950/20">
+      <Link href={`/manga/${manga.anilistId}`} className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
+        <div className="w-12 h-16 rounded-lg overflow-hidden shrink-0 bg-blue-50">
           {manga.coverImage
             ? <img src={manga.coverImage} alt={manga.title} className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center"><BookOpen size={16} className="text-red-800" /></div>
+            : <div className="w-full h-full flex items-center justify-center"><BookOpen size={16} className="text-blue-800" /></div>
           }
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors line-clamp-1">{manga.title}</h3>
-          <p className="text-[11px] text-red-500/60 font-bold uppercase tracking-wide mt-0.5">{manga.genres[0] || manga.format}</p>
+          <h3 className="text-sm font-bold text-slate-800 group-hover:text-slate-900 transition-colors line-clamp-1">{manga.title}</h3>
+          <p className="text-[11px] text-blue-500/60 font-bold uppercase tracking-wide mt-0.5">{manga.genres[0] || manga.format}</p>
           <div className="flex items-center gap-3 mt-1">
             {manga.rating > 0 && (
               <span className="flex items-center gap-1 text-[10px] font-bold text-yellow-500">
@@ -85,9 +85,9 @@ export default function MangaSearchPage() {
   useEffect(() => { doSearch(); }, [doSearch]);
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #0f0204 0%, #06141B 40%)' }}>
+    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #f8fafc 0%, #ffffff 40%)' }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 px-5 pt-4 pb-3 bg-black/80 backdrop-blur-xl border-b border-red-950/20">
+      <div className="sticky top-0 z-40 px-5 pt-4 pb-3 bg-white/95 backdrop-blur-xl border-b border-blue-200">
         <div className="relative mb-3">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
@@ -96,10 +96,10 @@ export default function MangaSearchPage() {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search manga titles..."
             autoFocus
-            className="w-full pl-10 pr-10 py-3 rounded-xl bg-red-950/20 border border-red-900/20 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-red-600/50 transition-colors"
+            className="w-full pl-10 pr-10 py-3 rounded-xl bg-blue-50 border border-blue-200 text-sm text-slate-800 placeholder-slate-600 outline-none focus:border-blue-600/50 transition-colors"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+            <button onClick={() => setQuery('')} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700">
               <X size={16} />
             </button>
           )}
@@ -108,11 +108,11 @@ export default function MangaSearchPage() {
         {/* Filters */}
         <div className="flex gap-2">
           <select value={status} onChange={e => setStatus(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-red-950/20 border border-red-900/20 text-xs font-bold text-slate-400 outline-none">
+            className="flex-1 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-bold text-slate-600 outline-none">
             {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-lg bg-red-950/20 border border-red-900/20 text-xs font-bold text-slate-400 outline-none">
+            className="flex-1 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-bold text-slate-600 outline-none">
             {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </div>

@@ -38,24 +38,24 @@ function MangaCardComp({ manga, index = 0 }: { manga: MangaCard; index?: number 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index * 0.03, 0.4) }}>
       <Link href={`/manga/${manga.anilistId}`} className="block group">
-        <div className="relative overflow-hidden rounded-xl bg-[#0d0505] border border-red-950/20 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_40px_rgba(225,29,72,0.15)] group-hover:border-red-800/30">
+        <div className="relative overflow-hidden rounded-xl bg-white border border-blue-200 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_12px_40px_rgba(37,99,235,0.15)] group-hover:border-blue-400">
           <div className="relative overflow-hidden" style={{ aspectRatio: '2/3' }}>
             {manga.coverImage ? (
               <img src={manga.coverImage} alt={manga.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-red-950/20">
-                <BookOpen size={28} className="text-red-800" />
+              <div className="w-full h-full flex items-center justify-center bg-blue-50">
+                <BookOpen size={28} className="text-blue-800" />
               </div>
             )}
             {manga.rating > 0 && (
-              <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-black/70 text-yellow-400 text-[10px] font-bold">
+              <div className="absolute top-2 right-2 flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/90 text-yellow-400 text-[10px] font-bold">
                 <Star size={9} fill="currentColor" /> {(manga.rating/10).toFixed(1)}
               </div>
             )}
           </div>
           <div className="p-2.5">
-            <p className="text-[9px] font-bold text-red-500/60 uppercase tracking-wider mb-0.5 truncate">{manga.genres[0] || manga.format}</p>
-            <h3 className="text-xs font-bold text-slate-300 line-clamp-2 leading-snug group-hover:text-white transition-colors">{manga.title}</h3>
+            <p className="text-[9px] font-bold text-blue-500/60 uppercase tracking-wider mb-0.5 truncate">{manga.genres[0] || manga.format}</p>
+            <h3 className="text-xs font-bold text-slate-700 line-clamp-2 leading-snug group-hover:text-slate-900 transition-colors">{manga.title}</h3>
             <div className="flex items-center justify-between mt-1">
               <span className="text-[9px] text-slate-600">{statusLabel}</span>
               {manga.totalChapters && <span className="text-[9px] font-mono text-slate-600">{manga.totalChapters}ch</span>}
@@ -138,14 +138,14 @@ export default function DiscoverPage() {
   };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #0f0204 0%, #06141B 40%)' }}>
+    <div className="min-h-screen pb-28" style={{ background: 'radial-gradient(ellipse at top, #f8fafc 0%, #ffffff 40%)' }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 px-5 h-14 flex items-center gap-3 bg-black/80 backdrop-blur-xl border-b border-red-950/20">
+      <div className="sticky top-0 z-40 px-5 h-14 flex items-center gap-3 bg-white/95 backdrop-blur-xl border-b border-blue-200">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center">
-            <BookOpen size={14} className="text-white" />
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center">
+            <BookOpen size={14} className="text-slate-900" />
           </div>
-          <span className="font-black text-white text-sm tracking-wider" style={{ fontFamily: "'Orbitron', monospace" }}>
+          <span className="font-black text-slate-900 text-sm tracking-wider" style={{ fontFamily: "'Orbitron', monospace" }}>
             DISCOVER
           </span>
         </div>
@@ -158,8 +158,8 @@ export default function DiscoverPage() {
             <button key={key} onClick={() => { setSort(key); setGenre(''); }}
               className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all ${
                 sort === key && !genre
-                  ? 'bg-red-600 text-white shadow-[0_0_14px_rgba(225,29,72,0.4)]'
-                  : 'bg-red-950/30 text-slate-400 border border-red-900/20 hover:bg-red-900/30'
+                  ? 'bg-blue-600 text-white shadow-[0_0_14px_rgba(37,99,235,0.4)]'
+                  : 'bg-blue-100 text-slate-600 border border-blue-200 hover:bg-blue-100'
               }`}>
               <Icon size={14} /> {label}
             </button>
@@ -170,7 +170,7 @@ export default function DiscoverPage() {
         <div className="flex gap-2 overflow-x-auto pb-3 mb-6" style={{ scrollbarWidth: 'none' }}>
           <button onClick={() => setGenre('')}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-              !genre ? 'bg-white/10 text-white border border-white/20' : 'text-slate-500 hover:text-slate-300'
+              !genre ? 'bg-white/10 text-slate-900 border border-white/20' : 'text-slate-500 hover:text-slate-700'
             }`}>
             All
           </button>
@@ -178,8 +178,8 @@ export default function DiscoverPage() {
             <button key={g} onClick={() => setGenre(g)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                 genre === g
-                  ? 'bg-red-600 text-white'
-                  : 'text-slate-500 border border-red-950/30 hover:text-red-400 hover:border-red-800/40'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-500 border border-blue-200 hover:text-blue-600 hover:border-blue-400'
               }`}>
               {g}
             </button>
@@ -195,7 +195,7 @@ export default function DiscoverPage() {
         {/* Infinite scroll trigger */}
         {hasMore && !loading && (
           <div ref={loaderRef} className="h-20 flex items-center justify-center mt-4">
-            <button onClick={loadNext} className="px-6 py-2 rounded-full text-xs font-bold text-red-400 border border-red-900/30 hover:bg-red-900/20 transition-colors">
+            <button onClick={loadNext} className="px-6 py-2 rounded-full text-xs font-bold text-blue-600 border border-blue-300 hover:bg-blue-100 transition-colors">
               Load More
             </button>
           </div>

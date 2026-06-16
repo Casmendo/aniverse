@@ -20,7 +20,7 @@ function PageImage({ url, index, mode, zoom }: { url: string; index: number; mod
 
   return (
     <div
-      className="relative flex-shrink-0 flex items-center justify-center bg-black/20"
+      className="relative flex-shrink-0 flex items-center justify-center bg-slate-50"
       style={{
         width: mode === 'horizontal' ? '100%' : undefined,
         height: mode === 'webtoon' ? 'auto' : mode === 'horizontal' ? '100%' : undefined,
@@ -28,7 +28,7 @@ function PageImage({ url, index, mode, zoom }: { url: string; index: number; mod
     >
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 size={28} className="text-red-500 animate-spin" />
+          <Loader2 size={28} className="text-blue-500 animate-spin" />
         </div>
       )}
       {error ? (
@@ -93,16 +93,16 @@ function ReaderToolbar(props: ToolbarProps) {
             transition={{ duration: 0.2 }}
             className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center justify-between px-4 bg-gradient-to-b from-black/90 to-transparent backdrop-blur-sm"
           >
-            <button onClick={props.onBack} className="w-9 h-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white hover:bg-black/80">
+            <button onClick={props.onBack} className="w-9 h-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-slate-900 hover:bg-white/95">
               <X size={18} />
             </button>
             <div className="text-center">
-              <p className="text-white font-bold text-sm line-clamp-1">{props.title}</p>
-              <p className="text-slate-400 text-xs">Chapter {props.chapterNum}</p>
+              <p className="text-slate-900 font-bold text-sm line-clamp-1">{props.title}</p>
+              <p className="text-slate-600 text-xs">Chapter {props.chapterNum}</p>
             </div>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="w-9 h-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-white hover:bg-black/80"
+              className="w-9 h-9 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-slate-900 hover:bg-white/95"
             >
               <Settings size={18} />
             </button>
@@ -117,7 +117,7 @@ function ReaderToolbar(props: ToolbarProps) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed top-16 right-4 z-50 w-64 bg-[#0d0204]/95 backdrop-blur-xl border border-red-900/30 rounded-2xl shadow-2xl p-4 space-y-4"
+            className="fixed top-16 right-4 z-50 w-64 bg-white/95 backdrop-blur-xl border border-blue-300 rounded-2xl shadow-2xl p-4 space-y-4"
           >
             {/* Reading Mode */}
             <div>
@@ -126,7 +126,7 @@ function ReaderToolbar(props: ToolbarProps) {
                 {([['vertical', Monitor, 'Vertical'], ['webtoon', Rows, 'Webtoon'], ['horizontal', AlignJustify, 'Horizontal']] as const).map(([m, Icon, label]) => (
                   <button key={m} onClick={() => props.onModeChange(m as ReadingMode)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg text-[10px] font-bold border transition-all ${
-                      props.mode === m ? 'bg-red-600 border-red-600 text-white' : 'border-red-900/20 text-slate-500 hover:border-red-800/30 hover:text-slate-300'
+                      props.mode === m ? 'bg-blue-600 border-blue-600 text-slate-900' : 'border-blue-200 text-slate-500 hover:border-blue-400 hover:text-slate-700'
                     }`}>
                     <Icon size={16} /> {label}
                   </button>
@@ -137,23 +137,23 @@ function ReaderToolbar(props: ToolbarProps) {
             <div>
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Zoom ({Math.round(props.zoom * 100)}%)</p>
               <div className="flex items-center gap-2">
-                <button onClick={props.onZoomOut} className="p-2 rounded-lg border border-red-900/20 text-slate-400 hover:text-red-400 transition-colors"><ZoomOut size={16} /></button>
+                <button onClick={props.onZoomOut} className="p-2 rounded-lg border border-blue-200 text-slate-600 hover:text-blue-600 transition-colors"><ZoomOut size={16} /></button>
                 <div className="flex-1 h-1 bg-red-950/40 rounded-full relative">
-                  <div className="h-full bg-red-600 rounded-full" style={{ width: `${((props.zoom - 0.5) / 1.5) * 100}%` }} />
+                  <div className="h-full bg-blue-600 rounded-full" style={{ width: `${((props.zoom - 0.5) / 1.5) * 100}%` }} />
                 </div>
-                <button onClick={props.onZoomIn} className="p-2 rounded-lg border border-red-900/20 text-slate-400 hover:text-red-400 transition-colors"><ZoomIn size={16} /></button>
+                <button onClick={props.onZoomIn} className="p-2 rounded-lg border border-blue-200 text-slate-600 hover:text-blue-600 transition-colors"><ZoomIn size={16} /></button>
               </div>
             </div>
             {/* Data Saver */}
             <button onClick={props.onDataSaver}
               className={`w-full py-2 rounded-lg text-xs font-bold border transition-all ${
-                props.dataSaver ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'border-red-900/20 text-slate-500'
+                props.dataSaver ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'border-blue-200 text-slate-500'
               }`}>
               {props.dataSaver ? '✓ Data Saver ON' : 'Data Saver OFF'}
             </button>
             {/* Fullscreen */}
             <button onClick={props.onFullscreen}
-              className="w-full py-2 rounded-lg text-xs font-bold border border-red-900/20 text-slate-500 flex items-center justify-center gap-2">
+              className="w-full py-2 rounded-lg text-xs font-bold border border-blue-200 text-slate-500 flex items-center justify-center gap-2">
               {props.isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
               {props.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             </button>
@@ -175,7 +175,7 @@ function ReaderToolbar(props: ToolbarProps) {
             {/* Progress scrubber */}
             {props.totalPages > 1 && (
               <div className="w-full max-w-md flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-mono text-red-400/70 tabular-nums w-5 text-right">{props.page + 1}</span>
+                <span className="text-[10px] font-mono text-blue-600/70 tabular-nums w-5 text-right">{props.page + 1}</span>
                 <div className="relative flex-1 h-1.5 group">
                   <div className="absolute inset-0 rounded-full bg-white/10" />
                   <div
@@ -343,10 +343,10 @@ export default function ReaderPage() {
   if (loadingPages) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center gap-4 z-[9999]">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-900 flex items-center justify-center shadow-[0_0_40px_rgba(225,29,72,0.4)]">
-          <BookOpen size={32} className="text-white animate-pulse" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.4)]">
+          <BookOpen size={32} className="text-slate-900 animate-pulse" />
         </div>
-        <p className="text-slate-400 text-sm font-bold animate-pulse">Loading chapter…</p>
+        <p className="text-slate-600 text-sm font-bold animate-pulse">Loading chapter…</p>
       </div>
     );
   }
@@ -357,18 +357,18 @@ export default function ReaderPage() {
       onClick={showAndResetTimer}
     >
       {pages.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-40 bg-[#06141B]">
-          <BookOpen size={48} className="text-red-800 mb-4 opacity-50" />
-          <h2 className="text-xl font-black text-white mb-2">No Pages Found</h2>
-          <p className="text-slate-400 text-sm mb-6 max-w-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-40 bg-white">
+          <BookOpen size={48} className="text-blue-800 mb-4 opacity-50" />
+          <h2 className="text-xl font-black text-slate-900 mb-2">No Pages Found</h2>
+          <p className="text-slate-600 text-sm mb-6 max-w-sm">
             This chapter might be hosted externally (like MangaPlus) or has no pages available on MangaDex.
           </p>
           <div className="flex gap-4">
-            <button onClick={() => router.push(`/manga/${anilistId}`)} className="px-6 py-2.5 rounded-full bg-red-950/30 border border-red-900/30 text-sm font-bold text-red-300">
+            <button onClick={() => router.push(`/manga/${anilistId}`)} className="px-6 py-2.5 rounded-full bg-blue-100 border border-blue-300 text-sm font-bold text-blue-700">
               Go Back
             </button>
             {allChapters.find(c => c.id === chapterId)?.externalUrl && (
-              <a href={allChapters.find(c => c.id === chapterId)!.externalUrl!} target="_blank" rel="noreferrer" className="px-6 py-2.5 rounded-full bg-red-600 text-white text-sm font-bold shadow-[0_0_24px_rgba(225,29,72,0.4)]">
+              <a href={allChapters.find(c => c.id === chapterId)!.externalUrl!} target="_blank" rel="noreferrer" className="px-6 py-2.5 rounded-full bg-blue-600 text-white text-sm font-bold shadow-[0_0_24px_rgba(37,99,235,0.4)]">
                 Read Externally
               </a>
             )}
@@ -418,10 +418,10 @@ export default function ReaderPage() {
           {showUI && (
             <>
               <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-start pl-4 pointer-events-none">
-                {currentPage > 0 && <ChevronLeft size={40} className="text-white/20" />}
+                {currentPage > 0 && <ChevronLeft size={40} className="text-slate-900/20" />}
               </div>
               <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-end pr-4 pointer-events-none">
-                {currentPage < pages.length - 1 && <ChevronRight size={40} className="text-white/20" />}
+                {currentPage < pages.length - 1 && <ChevronRight size={40} className="text-slate-900/20" />}
               </div>
             </>
           )}
@@ -487,8 +487,8 @@ export default function ReaderPage() {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl select-none"
                 style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.12)' }}
               >
-                <span className="text-red-400 font-black text-sm tabular-nums">{currentPage + 1}</span>
-                <span className="text-white/20 text-xs font-bold">/</span>
+                <span className="text-blue-600 font-black text-sm tabular-nums">{currentPage + 1}</span>
+                <span className="text-slate-900/20 text-xs font-bold">/</span>
                 <span className="text-slate-500 text-xs font-bold tabular-nums">{pages.length}</span>
               </div>
 

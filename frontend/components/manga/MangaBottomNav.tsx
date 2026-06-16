@@ -21,21 +21,21 @@ export default function MangaBottomNav() {
 
   return (
     <div className="fixed bottom-[6px] left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-[480px] pb-[env(safe-area-inset-bottom)]">
-      <nav className="relative flex items-center justify-between bg-[#0d0505]/95 backdrop-blur-2xl border border-red-900/20 rounded-[28px] px-2 py-3 shadow-[0_24px_48px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(225,29,72,0.05)]">
+      <nav className="relative flex items-center justify-between bg-white/95 backdrop-blur-2xl border border-blue-200 rounded-[28px] px-2 py-3 shadow-[0_24px_48px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(37,99,235,0.05)]">
         {/* Exit button at far left */}
         <button
           onClick={() => router.push('/')}
           className="relative flex flex-col items-center gap-1.5 w-12 group"
           title="Back to AniVerse"
         >
-          <div className="w-8 h-8 rounded-xl bg-red-950/60 border border-red-900/40 flex items-center justify-center group-hover:bg-red-900/60 transition-colors">
-            <ArrowLeft size={16} className="text-red-400 group-hover:text-red-300 transition-colors" />
+          <div className="w-8 h-8 rounded-xl bg-blue-100 border border-blue-300 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+            <ArrowLeft size={16} className="text-blue-600 group-hover:text-blue-700 transition-colors" />
           </div>
-          <span className="text-[9px] font-bold text-red-400/70 uppercase tracking-wider">Exit</span>
+          <span className="text-[9px] font-bold text-blue-600/70 uppercase tracking-wider">Exit</span>
         </button>
 
         {/* Divider */}
-        <div className="w-px h-8 bg-red-900/20 mx-1 shrink-0" />
+        <div className="w-px h-8 bg-blue-100 mx-1 shrink-0" />
 
         {/* Nav items */}
         <div className="flex flex-1 items-center justify-around">
@@ -47,7 +47,7 @@ export default function MangaBottomNav() {
                   {isActive && (
                     <motion.div
                       layoutId="manga-nav-indicator"
-                      className="absolute -inset-2 rounded-xl bg-red-500/15"
+                      className="absolute -inset-2 rounded-xl bg-blue-500/15"
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
@@ -56,16 +56,16 @@ export default function MangaBottomNav() {
                     strokeWidth={isActive ? 2.5 : 1.8}
                     className={`relative transition-all duration-300 ${
                       isActive
-                        ? 'text-red-400 scale-110'
-                        : 'text-slate-500 group-hover:text-red-400/70'
+                        ? 'text-blue-600 scale-110'
+                        : 'text-slate-500 group-hover:text-blue-600/70'
                     }`}
                   />
                 </div>
                 <span className={`text-[10px] font-bold transition-all ${
-                  isActive ? 'text-red-400' : 'text-slate-600 group-hover:text-slate-400'
+                  isActive ? 'text-blue-600' : 'text-slate-600 group-hover:text-slate-600'
                 }`}>{label}</span>
                 {isActive && (
-                  <div className="absolute -bottom-3 w-5 h-0.5 bg-red-500 rounded-t-full shadow-[0_-2px_8px_rgba(225,29,72,0.6)]" />
+                  <div className="absolute -bottom-3 w-5 h-0.5 bg-blue-500 rounded-t-full shadow-[0_-2px_8px_rgba(37,99,235,0.6)]" />
                 )}
               </Link>
             );

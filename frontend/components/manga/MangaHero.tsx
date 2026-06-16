@@ -53,7 +53,7 @@ export default function MangaHero({ manga }: { manga: MangaResult }) {
                 )}
               </div>
 
-              <h1 className="font-display font-black text-3xl md:text-5xl xl:text-6xl text-white mb-4 line-clamp-2 leading-tight drop-shadow-lg">
+              <h1 className="font-display font-black text-3xl md:text-5xl xl:text-6xl text-slate-900 mb-4 line-clamp-2 leading-tight drop-shadow-lg">
                 {manga.title}
               </h1>
 
@@ -63,7 +63,7 @@ export default function MangaHero({ manga }: { manga: MangaResult }) {
 
               <div className="flex flex-wrap items-center gap-4">
                 <Link href={`/manga/${manga.id}`}
-                  className="group flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-accent text-white font-bold hover:bg-white hover:text-accent transition-colors shadow-[0_0_20px_rgba(225,29,72,0.4)]"
+                  className="group flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-accent text-slate-900 font-bold hover:bg-white hover:text-accent transition-colors shadow-[0_0_20px_rgba(37,99,235,0.4)]"
                 >
                   <Play size={18} className="fill-current" />
                   Read Now
@@ -72,13 +72,13 @@ export default function MangaHero({ manga }: { manga: MangaResult }) {
                 <button 
                   onClick={() => useMangaStore.getState().toggleBookmark(manga)}
                   className={`flex items-center justify-center w-14 h-14 rounded-full border transition-all glass-hi
-                    ${isBookmarked ? 'border-accent text-accent' : 'border-white/20 text-white hover:border-white'}
+                    ${isBookmarked ? 'border-accent text-accent' : 'border-white/20 text-slate-900 hover:border-white'}
                   `}
                 >
                   <Bookmark size={20} fill={isBookmarked ? 'currentColor' : 'none'} />
                 </button>
                 
-                <Link href={`/manga/${manga.id}`} className="hidden md:flex items-center gap-2 text-sm font-bold text-s4 hover:text-white transition-colors ml-4">
+                <Link href={`/manga/${manga.id}`} className="hidden md:flex items-center gap-2 text-sm font-bold text-s4 hover:text-slate-900 transition-colors ml-4">
                   Details <ChevronRight size={16} />
                 </Link>
               </div>
