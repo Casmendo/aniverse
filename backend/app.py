@@ -44,12 +44,19 @@ app.config.update(
 )
 
 API_BASE     = os.environ.get('API_BASE', 'https://apis.ayohost.site')
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3001')
 
 CORS(app,
-     origins=[FRONTEND_URL, FRONTEND_URL.replace('https://', 'https://www.'), 'http://localhost:3000','http://127.0.0.1:3000',
-              'http://localhost:3001','http://127.0.0.1:3001',
-              'http://localhost', 'capacitor://localhost'],
+     origins=[
+         FRONTEND_URL,
+         FRONTEND_URL.replace('https://', 'https://www.'),
+         'https://projcts.ayohost.site',
+         'https://aniiverse.name.ng',
+         'https://www.aniiverse.name.ng',
+         'http://localhost:3000','http://127.0.0.1:3000',
+         'http://localhost:3001','http://127.0.0.1:3001',
+         'http://localhost', 'capacitor://localhost',
+     ],
      supports_credentials=True,
      allow_headers=['Content-Type','Authorization','X-Aniverse-Key'],
      methods=['GET','POST','DELETE','OPTIONS'])
@@ -1338,5 +1345,5 @@ with app.app_context():
     app.logger.info('AniVerse DB ready')
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', os.environ.get('SERVER_PORT', 5000)))
-    app.run(debug=True, port=port, host='0.0.0.0')
+    port = int(os.environ.get('PORT', os.environ.get('SERVER_PORT', 3001)))
+    app.run(debug=False, port=port, host='0.0.0.0')
