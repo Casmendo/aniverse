@@ -181,11 +181,23 @@ export const watchlistAPI = {
   toggle: (data: Record<string,unknown>) => BACKEND.post('/api/watchlist', data),
 };
 
-// ── History (backend) ──────────────────────────────────────────────────────
 export const historyAPI = {
   getAll: () => BACKEND.get('/api/history'),
   update: (data: Record<string,unknown>) => BACKEND.post('/api/history', data),
   remove: (slug: string) => BACKEND.delete(`/api/history/${slug}`),
+};
+
+// ── Manga Watchlist (backend) ────────────────────────────────────────────────
+export const mangaWatchlistAPI = {
+  getAll: () => BACKEND.get('/api/manga/bookmarks'),
+  toggle: (data: Record<string,unknown>) => BACKEND.post('/api/manga/bookmarks', data),
+};
+
+// ── Manga History (backend) ──────────────────────────────────────────────────
+export const mangaHistoryAPI = {
+  getAll: () => BACKEND.get('/api/manga/history'),
+  update: (data: Record<string,unknown>) => BACKEND.post('/api/manga/history', data),
+  remove: (mangaId: string) => BACKEND.delete(`/api/manga/history/${mangaId}`),
 };
 
 export default BACKEND;

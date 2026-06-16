@@ -210,7 +210,39 @@ class History(db.Model):
                 'lastEpId':self.last_ep_id,'lastEpTitle':self.last_ep_title,
                 'progress':self.progress,'updated_at':self.updated_at.isoformat()}
 
+class MangaBookmark(db.Model):
+    __tablename__ = 'manga_bookmarks'
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    manga_id    = db.Column(db.String(256), nullable=False)
+    title       = db.Column(db.String(512))
+    cover_art   = db.Column(db.String(1024))
+    status      = db.Column(db.String(64))
+    added_at    = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('user_id','manga_id',name='uq_user_manga_bookmark'),)
+    def to_dict(self):
+        return {'id':self.id,'mangaId':self.manga_id,'title':self.title,
+                'coverArt':self.cover_art,'status':self.status,
+                'addedAt':self.added_at.isoformat()}
 
+class MangaHistory(db.Model):
+    __tablename__ = 'manga_history'
+    id          = db.Column(db.Integer, primary_key=True)
+    user_id     = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    manga_id    = db.Column(db.String(256), nullable=False)
+    manga_title = db.Column(db.String(512))
+    cover_art   = db.Column(db.String(1024))
+    chapter_id  = db.Column(db.String(256))
+    chapter_num = db.Column(db.String(64))
+    page        = db.Column(db.Integer, default=1)
+    total_pages = db.Column(db.Integer, default=1)
+    last_read   = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    __table_args__ = (db.UniqueConstraint('user_id','manga_id',name='uq_user_manga_history'),)
+    def to_dict(self):
+        return {'id':self.id,'mangaId':self.manga_id,'mangaTitle':self.manga_title,
+                'coverArt':self.cover_art,'chapterId':self.chapter_id,
+                'chapterNum':self.chapter_num,'page':self.page,
+                'totalPages':self.total_pages,'lastRead':self.last_read.isoformat()}
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -1195,6 +1227,68 @@ def clear_history():
 def delete_history(slug):
     u=_me(); History.query.filter_by(user_id=u.id,anime_slug=slug).delete(); db.session.commit()
     return jsonify({'success':True})
+
+# ── Manga Bookmarks ────────────────────────────────────────────────────────────
+
+@app.route('/api/manga/bookmarks')
+@auth_required
+def get_manga_bookmarks():
+    u=_me(); items=MangaBookmark.query.filter_by(user_id=u.id).order_by(MangaBookmark.added_at.desc()).all()
+    return jsonify({'bookmarks':[w.to_dict() for w in items]})
+
+@app.route('/api/manga/bookmarks',methods=['POST'])
+@auth_required
+@limiter.limit('200 per hour')
+def toggle_manga_bookmark():
+    d=request.get_json(silent=True) or {}; manga_id=str(d.get('mangaId','')).strip()
+    if not manga_id: return jsonify({'error':'Invalid manga_id'}),400
+    u=_me(); existing=MangaBookmark.query.filter_by(user_id=u.id,manga_id=manga_id).first()
+    if existing:
+        db.session.delete(existing); db.session.commit()
+        return jsonify({'success':True,'is_bookmarked':False})
+    item=MangaBookmark(user_id=u.id,manga_id=manga_id,title=str(d.get('title',''))[:512],
+                       cover_art=str(d.get('coverArt',''))[:1024],status=str(d.get('status',''))[:64])
+    db.session.add(item); db.session.commit()
+    return jsonify({'success':True,'is_bookmarked':True}),201
+
+# ── Manga History ──────────────────────────────────────────────────────────────
+
+@app.route('/api/manga/history')
+@auth_required
+def get_manga_history():
+    u=_me(); items=MangaHistory.query.filter_by(user_id=u.id).order_by(MangaHistory.last_read.desc()).all()
+    return jsonify({'history':[h.to_dict() for h in items]})
+
+@app.route('/api/manga/history',methods=['POST'])
+@auth_required
+def update_manga_history():
+    d=request.get_json(silent=True) or {}; manga_id=str(d.get('mangaId','')).strip()
+    if not manga_id: return jsonify({'error':'Invalid mangaId'}),400
+    u=_me(); h=MangaHistory.query.filter_by(user_id=u.id,manga_id=manga_id).first()
+    if not h:
+        h=MangaHistory(user_id=u.id,manga_id=manga_id)
+        db.session.add(h)
+    h.manga_title=str(d.get('mangaTitle', h.manga_title or ''))[:512]
+    h.cover_art=str(d.get('coverArt', h.cover_art or ''))[:1024]
+    if 'chapterId' in d: h.chapter_id=str(d['chapterId'])[:256]
+    if 'chapterNum' in d: h.chapter_num=str(d['chapterNum'])[:64]
+    if 'page' in d: h.page=int(d['page'])
+    if 'totalPages' in d: h.total_pages=int(d['totalPages'])
+    db.session.commit()
+    return jsonify({'success':True,'history':h.to_dict()})
+
+@app.route('/api/manga/history/clear',methods=['DELETE'])
+@auth_required
+def clear_manga_history():
+    u=_me(); MangaHistory.query.filter_by(user_id=u.id).delete(); db.session.commit()
+    return jsonify({'success':True})
+
+@app.route('/api/manga/history/<manga_id>',methods=['DELETE'])
+@auth_required
+def delete_manga_history(manga_id):
+    u=_me(); MangaHistory.query.filter_by(user_id=u.id,manga_id=manga_id).delete(); db.session.commit()
+    return jsonify({'success':True})
+
 
 # ── Error handlers ─────────────────────────────────────────────────────────────
 

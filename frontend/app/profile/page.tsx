@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/authStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
+import { useMangaStore } from '@/store/mangaStore';
 import { useToast } from '@/components/Toast';
 import { authAPI, adminAPI } from '@/lib/api';
 
@@ -22,6 +23,8 @@ export default function ProfilePage() {
   const toast = useToast();
   const { user, logout, update, updateAvatar } = useAuthStore();
   const { recentlyWatched, clearHistory, removeFromHistory } = useWatchlistStore();
+  const { getAllProgress, removeProgress } = useMangaStore();
+  const mangaProgress = getAllProgress();
   const isAdmin = user?.email === ADMIN_EMAIL;
 
   const [editName, setEditName]   = useState(false);
@@ -234,6 +237,45 @@ export default function ProfilePage() {
                   <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{r.title}</p>
                 </Link>
                 <button onClick={() => removeFromHistory(r.slug)}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-s0/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80">
+                  <X size={10} className="text-white" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Continue Reading (Manga) ──────────────────────────────────────── */}
+      {mangaProgress.length > 0 && (
+        <section className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-bold text-base text-s5 flex items-center gap-2">
+              <BookOpen size={16} className="text-s5" />
+              Continue Reading
+            </h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+            {mangaProgress.slice(0, 10).map(r => (
+              <div key={r.mangaId} className="shrink-0 w-28 group relative">
+                <Link href={`/manga/read/${r.mangaId}/${r.chapterId}`}>
+                  <div className="w-28 h-40 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2">
+                    {r.coverArt
+                      ? <img src={r.coverArt} alt={r.mangaTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                      : <div className="w-full h-full flex items-center justify-center"><BookOpen size={20} className="text-s3" /></div>}
+                    {r.totalPages > 1 && (
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-s0/60">
+                        <div className="h-full bg-s5 rounded-full" style={{ width: `${Math.min(100, (r.page / r.totalPages) * 100)}%` }} />
+                      </div>
+                    )}
+                    {r.chapterNum && (
+                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-s0">CH {r.chapterNum}</span>
+                    )}
+                  </div>
+                  <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{r.mangaTitle}</p>
+                </Link>
+                <button onClick={() => removeProgress(r.mangaId)}
                   className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-s0/70 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/80">
                   <X size={10} className="text-white" />
                 </button>
