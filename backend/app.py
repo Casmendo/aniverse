@@ -1345,5 +1345,5 @@ with app.app_context():
     app.logger.info('AniVerse DB ready')
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', os.environ.get('SERVER_PORT', 3001)))
+    port = int(os.environ.get('PORT', os.environ.get('SERVER_PORT', 3008)))
     app.run(debug=False, port=port, host='0.0.0.0')
