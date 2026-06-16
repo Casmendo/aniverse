@@ -14,7 +14,7 @@ import { useDownloadStore } from '@/store/downloadStore';
 import { useWatchlistStore } from '@/store/watchlistStore';
 import { processDownload } from '@/lib/downloadService';
 
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://projcts.ayohost.site';
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.aniiverse.name.ng';
 
 export default function WatchPage({ params, searchParams }: { params: { slug: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
   const { slug, episode } = params;
