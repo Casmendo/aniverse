@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Flame, TrendingUp, Star, Clock, Sparkles, ChevronRight, BookOpen, BarChart2, X, LogOut } from 'lucide-react';
-import MangaExitSplash from '@/components/manga/MangaExitSplash';
+import LoadingScreen from '@/components/LoadingScreen';
 import { unifiedMangaService, type MangaCard } from '@/lib/manga/unifiedService';
 import { useMangaStore } from '@/store/mangaStore';
 import { STATUS_LABELS } from '@/lib/manga/unifiedTypes';
@@ -259,11 +259,9 @@ export default function MangaHome() {
         </button>
       </div>
 
-      <AnimatePresence>
-        {exiting && (
-          <MangaExitSplash onDone={() => router.push('/')} />
-        )}
-      </AnimatePresence>
+      {exiting && (
+        <LoadingScreen onDone={() => router.push('/')} />
+      )}
 
       <div className="px-4 md:px-6 pt-5">
         {/* Hero */}
