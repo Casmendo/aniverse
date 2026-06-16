@@ -48,8 +48,8 @@ function PageImage({ url, index, mode, zoom }: { url: string; index: number; mod
             transformOrigin: 'top center',
             opacity: loaded ? 1 : 0,
             transition: 'opacity 0.3s',
-            maxHeight: mode === 'horizontal' ? '100vh' : undefined,
-            objectFit: 'contain',
+            width: mode === 'horizontal' ? '100%' : undefined,
+            height: 'auto',
           }}
           onLoad={() => setLoaded(true)}
           onError={() => { setError(true); setLoaded(true); }}
@@ -215,7 +215,7 @@ export default function ReaderPage() {
   const [currentChapterNum, setCurrentChapterNum] = useState('');
   const [loadingPages, setLoadingPages] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
-  const [mode, setMode] = useState<ReadingMode>('vertical');
+  const [mode, setMode] = useState<ReadingMode>('horizontal');
   const [zoom, setZoom] = useState(1);
   const [dataSaver, setDataSaver] = useState(false);
   const [showUI, setShowUI] = useState(true);
@@ -398,18 +398,18 @@ export default function ReaderPage() {
       {/* Main Content */}
       {mode === 'horizontal' ? (
         // ── Horizontal Mode ──
-        <div className="relative w-full h-full flex items-center justify-center"
+        <div className="relative w-full h-full overflow-y-auto overflow-x-hidden flex flex-col items-center"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            if (x < rect.width * 0.33) setCurrentPage(p => Math.max(p - 1, 0));
-            else if (x > rect.width * 0.67) setCurrentPage(p => Math.min(p + 1, pages.length - 1));
+            if (x < rect.width * 0.25) setCurrentPage(p => Math.max(p - 1, 0));
+            else if (x > rect.width * 0.75) setCurrentPage(p => Math.min(p + 1, pages.length - 1));
             else showAndResetTimer();
           }}
         >
           <AnimatePresence mode="wait">
             {pages[currentPage] && (
-              <motion.div key={currentPage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex items-center justify-center">
+              <motion.div key={currentPage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full min-h-full flex items-start justify-center">
                 <PageImage url={pages[currentPage]} index={currentPage} mode={mode} zoom={zoom} />
               </motion.div>
             )}
