@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Flame, TrendingUp, Star, Clock, Sparkles, ChevronRight, BookOpen, BarChart2 } from 'lucide-react';
+import { Flame, TrendingUp, Star, Clock, Sparkles, ChevronRight, BookOpen, BarChart2, X } from 'lucide-react';
 import { unifiedMangaService, type MangaCard } from '@/lib/manga/unifiedService';
 import { useMangaStore } from '@/store/mangaStore';
 import { STATUS_LABELS } from '@/lib/manga/unifiedTypes';
@@ -164,6 +164,7 @@ function HeroBanner({ manga }: { manga: MangaCard | null }) {
 // ── Continue Reading Strip ────────────────────────────────────────────────────
 function ContinueReading() {
   const allProgress = useMangaStore(s => s.getAllProgress());
+  const removeProgress = useMangaStore(s => s.removeProgress);
   if (!allProgress.length) return null;
 
   return (
@@ -176,23 +177,32 @@ function ContinueReading() {
       </div>
       <div className="flex flex-col gap-2">
         {allProgress.slice(0, 5).map(p => (
-          <Link key={p.mangaId} href={`/manga/${p.mangaId}/reader/${p.chapterId}`}
-            className="flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all group">
-            <div className="w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-blue-50 border border-blue-200">
-              {p.coverArt && <img src={p.coverArt} alt={p.mangaTitle} className="w-full h-full object-cover" />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-slate-800 group-hover:text-slate-900 line-clamp-1 transition-colors">{p.mangaTitle}</p>
-              <p className="text-xs text-blue-500/60 font-bold">Ch {p.chapterNum}</p>
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="flex-1 h-0.5 rounded-full bg-red-950/50">
-                  <div className="h-full rounded-full bg-blue-600" style={{ width: `${(p.page / p.totalPages) * 100}%` }} />
-                </div>
-                <span className="text-[10px] font-mono text-slate-600 shrink-0">{p.page}/{p.totalPages}</span>
+          <div key={p.mangaId} className="relative flex items-center gap-3 p-3 rounded-xl bg-blue-50 border border-blue-200 hover:border-blue-400 transition-all group">
+            <Link href={`/manga/${p.mangaId}/reader/${p.chapterId}`} className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="w-10 h-14 rounded-lg overflow-hidden shrink-0 bg-blue-50 border border-blue-200">
+                {p.coverArt && <img src={p.coverArt} alt={p.mangaTitle} className="w-full h-full object-cover" />}
               </div>
-            </div>
-            <ChevronRight size={16} className="text-slate-600 group-hover:text-blue-600 transition-colors" />
-          </Link>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-800 group-hover:text-slate-900 line-clamp-1 transition-colors pr-8">{p.mangaTitle}</p>
+                <p className="text-xs text-blue-500/60 font-bold">Ch {p.chapterNum}</p>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="flex-1 h-0.5 rounded-full bg-blue-200">
+                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${(p.page / p.totalPages) * 100}%` }} />
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-600 shrink-0">{p.page}/{p.totalPages}</span>
+                </div>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors shrink-0" />
+            </Link>
+            {/* Delete button */}
+            <button
+              onClick={e => { e.preventDefault(); removeProgress(p.mangaId); }}
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-400 transition-all opacity-0 group-hover:opacity-100"
+              title="Remove"
+            >
+              <X size={12} />
+            </button>
+          </div>
         ))}
       </div>
     </section>
