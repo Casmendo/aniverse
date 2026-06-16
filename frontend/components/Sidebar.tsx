@@ -35,6 +35,7 @@ export default function Sidebar() {
 
   const nav = [
     { href:'/',          icon:Home,      label:'Anime' },
+    { href:'/manga',     icon:BookOpen,  label:'MangaVerse' },
     { href:'/downloads', icon:Download,  label:'Downloads' },
     { href:'/watchlist', icon:Bookmark,  label:`Watchlist${watchlist.length ? ` (${watchlist.length})` : ''}` },
   ];
