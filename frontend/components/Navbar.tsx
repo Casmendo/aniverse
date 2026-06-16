@@ -29,10 +29,10 @@ export default function Navbar() {
       </button>
 
       {/* Center */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 md:gap-2">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 select-none group">
-          <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
+        <a href="/" className="flex items-center gap-1.5 md:gap-2 select-none group">
+          <svg viewBox="0 0 34 38" fill="none" className="w-6 h-7 md:w-8 md:h-9 transition-transform duration-300 group-hover:scale-110">
             <defs>
               <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor="#ffffff"/>
@@ -44,18 +44,19 @@ export default function Navbar() {
             <path d="M17 10L22 26H12Z" fill="var(--s0)"/>
             <circle cx="17" cy="2" r="2.5" fill="#e11d48"/>
           </svg>
-          <span className="font-display font-black text-xl tracking-tight text-white">
+          <span className="font-display font-black text-lg md:text-xl tracking-tight text-white">
             niVerse
           </span>
         </a>
         
         {/* Divider */}
-        <div className="w-[1px] h-5 bg-white/10 hidden sm:block" />
+        <span className="text-white/20 font-black text-lg md:text-xl">/</span>
         
-        {/* MangaVerse Button */}
-        <a href="/manga" className="hidden sm:flex px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-full items-center gap-1.5 transition-colors group">
-          <img src="/mangaverse-logo.png" alt="MangaVerse" className="w-4 h-4 object-contain rounded-[2px]" />
-          <span className="text-[10px] font-bold text-blue-400 group-hover:text-blue-300 uppercase tracking-wider">Manga</span>
+        {/* MangaVerse Link */}
+        <a href="/manga" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+          <span className="font-display font-black text-lg md:text-xl tracking-tight text-blue-400">
+            Manga
+          </span>
         </a>
       </div>
 

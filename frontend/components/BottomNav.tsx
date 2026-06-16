@@ -12,7 +12,6 @@ const NAV_LEFT = [
   { href:'/library',   icon:Download, label:'Library' },
 ];
 const NAV_RIGHT = [
-  { href:'/manga',     icon:BookOpen, label:'Manga'   },
   { href:'/catalog',   icon:Bookmark, label:'Catalog' }, 
   { href:'/profile',   icon:User,     label:'Profile' },
 ];
