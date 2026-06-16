@@ -197,7 +197,7 @@ function ContinueReading() {
             {/* Delete button */}
             <button
               onClick={e => { e.preventDefault(); removeProgress(p.mangaId); }}
-              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-400 transition-all opacity-0 group-hover:opacity-100"
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-200 hover:bg-red-100 hover:text-red-500 flex items-center justify-center text-slate-400 transition-all"
               title="Remove"
             >
               <X size={12} />
