@@ -53,8 +53,8 @@ export default function Navbar() {
         <div className="w-[1px] h-5 bg-white/10" />
         
         {/* MangaVerse Button */}
-        <a href="/manga" className="flex px-2.5 py-1 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-full items-center gap-1.5 transition-colors group">
-          <img src="/mangaverse-logo.png" alt="MangaVerse" className="w-4 h-4 object-contain rounded-[2px]" />
+        <a href="/manga" className="flex shrink-0 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-full items-center gap-1.5 transition-colors group whitespace-nowrap">
+          <img src="/mangaverse-logo.png" alt="MangaVerse" className="w-4 h-4 object-contain rounded-[2px] shrink-0" />
           <span className="text-[10px] font-bold text-blue-400 group-hover:text-blue-300 uppercase tracking-wider">Manga</span>
         </a>
       </div>
