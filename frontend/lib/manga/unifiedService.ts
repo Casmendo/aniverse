@@ -179,7 +179,8 @@ function normaliseDetail(m: any): Omit<UnifiedManga, 'mangaDexId' | 'availableCh
     volumes: m.volumes || null,
     totalChapters: m.chapters || null,
     countryOfOrigin: m.countryOfOrigin || 'JP',
-    source: m.source || '',
+    source: m.source || 'ORIGINAL',
+    externalLinks: m.externalLinks || [],
     rating: m.averageScore || 0,
     meanScore: m.meanScore || 0,
     popularity: m.popularity || 0,
@@ -305,16 +306,10 @@ export const unifiedMangaService = {
 
       const base = normaliseDetail(raw);
 
-      // Resolve both sources in parallel
-      const [mangaDexId, mangaPillId] = await Promise.all([
-        resolveMangaDexId(anilistId, base.title, raw.externalLinks || []),
-        resolveMangaPillId(anilistId, base.title),
-      ]);
-
       return {
         ...base,
-        mangaDexId,
-        mangaPillId,
+        mangaDexId: null,
+        mangaPillId: null,
         availableChapters: [],
         lastFetchedChapters: null,
       };
@@ -328,19 +323,35 @@ export const unifiedMangaService = {
   async getChapters(manga: UnifiedManga, lang = 'en') {
     const key = `unified:chapters:${manga.anilistId}:${lang}`;
     return mangaCache.wrap(key, async () => {
+      // 0. Resolve IDs dynamically if they are missing
+      let { mangaDexId, mangaPillId } = manga;
+      if (!mangaDexId && !mangaPillId) {
+        try {
+          const [dexId, pillId] = await Promise.all([
+            resolveMangaDexId(manga.anilistId, manga.title, manga.externalLinks || []),
+            resolveMangaPillId(manga.anilistId, manga.title),
+          ]);
+          mangaDexId = dexId;
+          mangaPillId = pillId;
+          // Store these back onto the object so calling code can use them if needed
+          manga.mangaDexId = dexId;
+          manga.mangaPillId = pillId;
+        } catch { /* ignore */ }
+      }
+
       // 1. Try MangaDex
       let mdxChapters: import('./mangaDexClient').MDXChapter[] = [];
-      if (manga.mangaDexId) {
+      if (mangaDexId) {
         try {
-          mdxChapters = await mangaDexClient.getChapters(manga.mangaDexId, lang);
+          mdxChapters = await mangaDexClient.getChapters(mangaDexId, lang);
         } catch { /* ignore, fall through to Pill */ }
       }
 
       // 2. MangaPill fallback if MangaDex has no/few readable chapters
       const readableMdx = mdxChapters.filter(c => !c.externalUrl);
-      if (readableMdx.length < 10 && manga.mangaPillId) {
+      if (readableMdx.length < 10 && mangaPillId) {
         try {
-          const pillChapters = await mangaPillClient.getChapters(manga.mangaPillId);
+          const pillChapters = await mangaPillClient.getChapters(mangaPillId);
           // Normalise PillChapters into the MDXChapter shape
           // IMPORTANT: Pill IDs contain '/' which breaks Next.js routing — encode as '__'
           return pillChapters.map(pc => ({

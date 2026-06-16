@@ -57,17 +57,15 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
         setManga(data);
         document.title = `${data.title} — MangaVerse`;
 
-        // Fetch chapters in background after manga loads
-        if (data.mangaDexId) {
-          setLoadingChapters(true);
-          try {
-            const chaps = await unifiedMangaService.getChapters(data);
-            setChapters(chaps);
-          } catch (e) {
-            console.error('Chapter fetch failed:', e);
-          } finally {
-            setLoadingChapters(false);
-          }
+        // Fetch chapters in background after manga loads (ID resolution is deferred to getChapters)
+        setLoadingChapters(true);
+        try {
+          const chaps = await unifiedMangaService.getChapters(data);
+          setChapters(chaps);
+        } catch (e) {
+          console.error('Chapter fetch failed:', e);
+        } finally {
+          setLoadingChapters(false);
         }
       })
       .catch(() => setError('Failed to load manga. Please try again.'))

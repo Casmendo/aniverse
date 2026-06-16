@@ -63,6 +63,7 @@ export interface UnifiedManga {
   totalChapters: number | null;
   countryOfOrigin: string;
   source: string;
+  externalLinks?: { site: string; url: string }[];
 
   // ── Ratings ───────────────────────────────────────────
   rating: number;        // 0–100
