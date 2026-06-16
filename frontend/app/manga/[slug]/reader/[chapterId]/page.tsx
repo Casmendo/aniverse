@@ -451,12 +451,12 @@ export default function ReaderPage() {
             transition={{ type: 'spring', stiffness: 260, damping: 28 }}
             className="fixed bottom-8 left-0 right-0 z-[60] flex justify-center px-4 pointer-events-none"
           >
-            <div
-              className="pointer-events-auto flex items-center gap-1 p-1.5 rounded-2xl border border-white/10"
+            <div className="pointer-events-auto flex items-center gap-4 px-6 py-4 rounded-2xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(10,2,2,0.96) 0%, rgba(30,6,6,0.96) 100%)',
-                boxShadow: '0 0 0 1px rgba(220,38,38,0.15), 0 8px 32px rgba(0,0,0,0.7), 0 0 40px rgba(220,38,38,0.08)',
+                background: 'rgba(255,255,255,0.12)',
                 backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
               }}
             >
               {/* Prev Chapter */}
@@ -464,55 +464,32 @@ export default function ReaderPage() {
                 onClick={() => prevChapter && goToChapter(prevChapter)}
                 disabled={!prevChapter}
                 title="Previous Chapter"
-                className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed overflow-hidden"
-                style={{
-                  background: prevChapter ? 'rgba(220,38,38,0.12)' : 'transparent',
-                  border: '1px solid rgba(220,38,38,0.2)',
-                  color: prevChapter ? '#fca5a5' : '#4b5563',
-                }}
+                className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-xl disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100"
               >
-                <span
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
-                  style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.25), rgba(220,38,38,0.08))' }}
-                />
-                <ChevronLeft size={15} className="relative z-10 shrink-0" />
-                <span className="relative z-10 hidden sm:inline">Prev Ch</span>
+                <ChevronLeft size={22} className="text-slate-800" />
               </button>
 
-              {/* Divider */}
-              <div className="w-px h-8 bg-white/5 mx-1" />
-
-              {/* Page indicator */}
-              <div
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl select-none"
-                style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.12)' }}
-              >
-                <span className="text-blue-600 font-black text-sm tabular-nums">{currentPage + 1}</span>
-                <span className="text-slate-900/20 text-xs font-bold">/</span>
-                <span className="text-slate-500 text-xs font-bold tabular-nums">{pages.length}</span>
+              {/* Progress line */}
+              <div className="flex flex-col items-center gap-1.5 min-w-[120px] sm:min-w-[180px]">
+                <div className="w-full h-1.5 rounded-full bg-white/20 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-white transition-all duration-300"
+                    style={{ width: pages.length > 0 ? `${((currentPage + 1) / pages.length) * 100}%` : '0%' }}
+                  />
+                </div>
+                <span className="text-white/70 font-bold text-[11px] tabular-nums">
+                  {currentPage + 1} / {pages.length}
+                </span>
               </div>
-
-              {/* Divider */}
-              <div className="w-px h-8 bg-white/5 mx-1" />
 
               {/* Next Chapter */}
               <button
                 onClick={() => nextChapter && goToChapter(nextChapter)}
                 disabled={!nextChapter}
                 title="Next Chapter"
-                className="group relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 disabled:opacity-25 disabled:cursor-not-allowed overflow-hidden"
-                style={{
-                  background: nextChapter ? 'rgba(220,38,38,0.12)' : 'transparent',
-                  border: '1px solid rgba(220,38,38,0.2)',
-                  color: nextChapter ? '#fca5a5' : '#4b5563',
-                }}
+                className="w-12 h-12 rounded-full bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-xl disabled:opacity-30 disabled:cursor-not-allowed disabled:scale-100"
               >
-                <span
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-xl"
-                  style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.08), rgba(220,38,38,0.25))' }}
-                />
-                <span className="relative z-10 hidden sm:inline">Next Ch</span>
-                <ChevronRight size={15} className="relative z-10 shrink-0" />
+                <ChevronRight size={22} className="text-slate-800" />
               </button>
             </div>
           </motion.div>

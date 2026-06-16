@@ -126,32 +126,33 @@ function HeroBanner({ manga }: { manga: MangaCard | null }) {
         style={{ backgroundImage: `url(${manga.coverImage})`, filter: 'blur(14px) brightness(0.2) saturate(1.6)' }} />
       <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/60 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-      <div className="absolute inset-0 flex items-end p-5 md:p-8">
-        <div className="flex items-end gap-4">
-          <div className="hidden sm:block w-32 md:w-44 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-2xl group-hover:shadow-[0_20px_60px_rgba(37,99,235,0.3)] transition-shadow"
+      <div className="absolute inset-0 flex items-end p-4 md:p-8">
+        <div className="flex items-end gap-3 md:gap-4 w-full">
+          {/* Cover always visible */}
+          <div className="w-24 sm:w-32 md:w-44 shrink-0 rounded-xl overflow-hidden border border-white/20 shadow-2xl group-hover:shadow-[0_20px_60px_rgba(37,99,235,0.3)] transition-shadow"
             style={{ aspectRatio: '2/3' }}>
             <img src={manga.coverImage} alt={manga.title} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {manga.genres.slice(0, 3).map(g => (
-                <span key={g} className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-600 border border-red-500/30 uppercase">
+                <span key={g} className="px-2 py-0.5 rounded text-[9px] font-bold bg-blue-500/30 text-blue-300 border border-blue-400/40 uppercase">
                   {g}
                 </span>
               ))}
             </div>
-            <h1 className="font-black text-slate-900 text-2xl md:text-4xl leading-tight mb-2 drop-shadow-xl line-clamp-2"
+            <h1 className="font-black text-white text-lg sm:text-2xl md:text-4xl leading-tight mb-1.5 drop-shadow-xl line-clamp-2"
               style={{ fontFamily: "'Orbitron', monospace" }}>
               {manga.title}
             </h1>
             {manga.rating > 0 && (
-              <div className="flex items-center gap-2 mb-4 text-sm font-bold text-yellow-400">
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold text-yellow-400">
                 ★ {(manga.rating / 10).toFixed(1)} / 10
-                <span className="text-slate-500 font-normal text-xs">{manga.popularity.toLocaleString()} followers</span>
+                <span className="text-white/50 font-normal text-xs hidden sm:inline">{manga.popularity.toLocaleString()} followers</span>
               </div>
             )}
-            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-bold text-sm bg-blue-600 text-white shadow-[0_0_24px_rgba(37,99,235,0.5)] group-hover:bg-blue-500 transition-colors">
-              <BookOpen size={15} /> Read Now
+            <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs sm:text-sm bg-blue-600 text-white shadow-[0_0_24px_rgba(37,99,235,0.5)] group-hover:bg-blue-500 transition-colors">
+              <BookOpen size={13} /> Read Now
             </span>
           </div>
         </div>
