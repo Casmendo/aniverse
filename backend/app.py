@@ -43,7 +43,7 @@ app.config.update(
     MAIL_DEFAULT_SENDER            = os.environ.get('MAIL_USERNAME', 'noreply@aniverse.com')
 )
 
-API_BASE     = os.environ.get('API_BASE', 'https://animapi.ayohost.site')
+API_BASE     = os.environ.get('API_BASE', 'https://apis.ayohost.site')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 CORS(app,
@@ -278,23 +278,20 @@ def _find_url(payload):
     return None
 
 def _search_session(slug):
+    """Search for an anime ID by slug/name using the new /api/v1/search endpoint."""
     if not slug: return None
     try:
-        data = _get('/search', params={'q': slug})
-        items = data.get('data') or data.get('results') or []
-        if not isinstance(items, list):
+        data = _get('/api/v1/search', params={'q': slug.replace('-', ' '), 'limit': 5})
+        items = data.get('results') or data.get('data') or []
+        if not isinstance(items, list) or not items:
             return None
-        best = None
         lower_slug = slug.lower().replace('-', ' ').strip()
         for item in items:
-            title = str(item.get('title') or item.get('anime_title') or item.get('name') or '').lower()
-            session = item.get('session') or item.get('anime_session') or item.get('slug') or item.get('id')
-            if session and lower_slug and lower_slug in title:
-                best = item
-                break
-        if not best and items:
-            best = items[0]
-        return best.get('session') or best.get('anime_session') or best.get('slug') or best.get('id') if best else None
+            title = str(item.get('title') or item.get('name') or '').lower()
+            item_id = item.get('id') or item.get('slug')
+            if item_id and lower_slug and lower_slug in title:
+                return item_id
+        return items[0].get('id') or items[0].get('slug') if items else None
     except Exception:
         return None
 
@@ -447,14 +444,16 @@ def health(): return jsonify({'status':'ok','version':'2.0.0'})
 # ── Anime Proxy ────────────────────────────────────────────────────────────────
 
 @app.route('/api/airing')
-@cache.cached(timeout=30, query_string=True)
+@cache.cached(timeout=60, query_string=True)
 def api_airing():
+    """Uses the new /api/v1/recent endpoint (recently updated anime)."""
     page = request.args.get('page', 1, type=int)
-    # /api/airing is broken on animapi — go straight to /api/latest-release which works
-    for path in ['/api/latest-release', '/api/airing', '/api/top-anime']:
+    for path in ['/api/v1/recent', '/api/v1/latest-episodes', '/api/v1/trending']:
         try:
-            data = _get(path, params={'page': page} if path == '/api/airing' else None, timeout=8)
-            return jsonify(data)
+            data = _get(path, params={'page': page}, timeout=10)
+            # Normalise to a consistent shape: wrap items list
+            items = data.get('items') or data.get('results') or data.get('data') or []
+            return jsonify({'results': items, 'data': items, 'page': data.get('page', page)})
         except Exception as e:
             app.logger.warning(f'[airing] {path} failed: {e}')
             continue
@@ -464,7 +463,9 @@ def api_airing():
 @cache.cached(timeout=60)
 def api_latest_release():
     try:
-        return jsonify(_get('/api/latest-release', timeout=8))
+        data = _get('/api/v1/newest', timeout=10)
+        items = data.get('items') or data.get('results') or data.get('data') or []
+        return jsonify({'results': items, 'data': items})
     except Exception as e:
         app.logger.warning(f'[latest-release] failed: {e}')
         return jsonify({'error': str(e), 'data': [], 'results': []}), 502
@@ -472,9 +473,11 @@ def api_latest_release():
 @app.route('/api/trending')
 @cache.cached(timeout=120)
 def api_trending():
-    for path in ['/api/latest-release', '/api/top-anime']:
+    for path in ['/api/v1/trending', '/api/v1/popular']:
         try:
-            return jsonify(_get(path, timeout=8))
+            data = _get(path, timeout=10)
+            items = data.get('items') or data.get('results') or data.get('data') or []
+            return jsonify({'results': items, 'data': items})
         except Exception as e:
             app.logger.warning(f'[trending] {path} failed: {e}')
             continue
@@ -483,9 +486,11 @@ def api_trending():
 @app.route('/api/recommended')
 @cache.cached(timeout=120)
 def api_recommended():
-    for path in ['/api/latest-release', '/api/recent-episodes']:
+    for path in ['/api/v1/popular', '/api/v1/newest', '/api/v1/recent']:
         try:
-            return jsonify(_get(path, timeout=8))
+            data = _get(path, timeout=10)
+            items = data.get('items') or data.get('results') or data.get('data') or []
+            return jsonify({'results': items, 'data': items})
         except Exception as e:
             app.logger.warning(f'[recommended] {path} failed: {e}')
             continue
@@ -497,85 +502,89 @@ def api_search():
     q = request.args.get('q','').strip()
     if not q: return jsonify({'results':[]})
     if len(q)>200: return jsonify({'error':'Too long'}),400
-    ck=f'search:{q.lower()}'
+    ck=f'search_v1:{q.lower()}'
     hit=cache.get(ck)
     if hit: return jsonify(hit)
-    for path in ['/api/search', '/search']:
-        try:
-            data = _get(path, params={'q': q})
-            if data and (data.get('results') or data.get('data') or data.get('anime') or isinstance(data, list)):
-                cache.set(ck, data, timeout=120)
-                return jsonify(data)
-        except Exception:
-            continue
+    try:
+        data = _get('/api/v1/search', params={'q': q, 'limit': 30})
+        items = data.get('results') or data.get('data') or []
+        # Normalise results to a consistent shape
+        normalised = [{'id': i.get('id'), 'title': i.get('title'), 'image': i.get('image'), 'url': i.get('url')} for i in items]
+        resp = {'results': normalised, 'data': normalised, 'total': data.get('total', len(normalised))}
+        cache.set(ck, resp, timeout=120)
+        return jsonify(resp)
+    except Exception as e:
+        app.logger.warning(f'[search] failed: {e}')
     return jsonify({'error':'Search failed','results':[]}),502
 
 @app.route('/api/anime/<slug>')
 def api_detail(slug):
+    """Get anime details using new /api/v1/anime/{id} endpoint."""
     if not SLUG_RE.match(slug): return jsonify({'error':'Invalid slug'}),400
-    ck=f'anime:{slug}'; hit=cache.get(ck)
+    ck=f'anime_v1:{slug}'; hit=cache.get(ck)
     if hit:
         u=_me()
         if u: hit['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
         return jsonify(hit)
 
     anime_name = request.args.get('title','').strip() or request.args.get('anime_name','').strip()
+
+    # Try direct ID first (new API uses slug as id)
     try:
-        params = {'anime_name': anime_name} if anime_name else None
-        data = _get(f'/api/anime/{slug}/info', params=params)
-        if isinstance(data, dict) and data:
-            cache.set(ck, data, timeout=3600)
+        data = _get(f'/api/v1/anime/{slug}/info')
+        if isinstance(data, dict) and data.get('success'):
+            info = data.get('info', {})
+            # Normalise to compat shape
+            normalised = {
+                'id': info.get('id', slug), 'title': info.get('title', anime_name or slug),
+                'image': info.get('image'), 'description': info.get('description'),
+                'genres': info.get('genres', []), 'status': info.get('status'),
+                'rating': info.get('rating'), 'aired': info.get('aired'),
+                'totalEpisodes': info.get('totalEpisodes'),
+                'episodes': [{'id': str(e.get('number')), 'number': e.get('number'), 'url': e.get('url')} for e in info.get('episodes', [])],
+                'in_watchlist': False
+            }
+            cache.set(ck, normalised, timeout=3600)
             u=_me()
-            if u: data['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
-            return jsonify(data)
+            if u: normalised['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
+            return jsonify(normalised)
     except Exception:
         pass
 
-    session_id = _search_session(slug) or slug
-    if session_id != slug:
+    # Search fallback to find the right ID
+    resolved_id = _search_session(slug)
+    if resolved_id and resolved_id != slug:
         try:
-            data = _get(f'/api/anime/{session_id}/info', params={'anime_name': anime_name} if anime_name else None)
-            if isinstance(data, dict) and data:
-                cache.set(ck, data, timeout=3600)
+            data = _get(f'/api/v1/anime/{resolved_id}/info')
+            if isinstance(data, dict) and data.get('success'):
+                info = data.get('info', {})
+                normalised = {
+                    'id': info.get('id', resolved_id), 'title': info.get('title', anime_name or slug),
+                    'image': info.get('image'), 'description': info.get('description'),
+                    'genres': info.get('genres', []), 'status': info.get('status'),
+                    'rating': info.get('rating'), 'aired': info.get('aired'),
+                    'totalEpisodes': info.get('totalEpisodes'),
+                    'episodes': [{'id': str(e.get('number')), 'number': e.get('number'), 'url': e.get('url')} for e in info.get('episodes', [])],
+                    'in_watchlist': False
+                }
+                cache.set(ck, normalised, timeout=3600)
                 u=_me()
-                if u: data['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
-                return jsonify(data)
+                if u: normalised['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
+                return jsonify(normalised)
         except Exception:
             pass
 
+    # Final fallback: return a stub with search results
     try:
-        search_results = _get('/api/search', params={'q': slug})
-        results = search_results.get('data') or search_results.get('results') or []
-        if results:
-            best_match = None
-            lower_slug = slug.lower().replace('-', ' ').strip()
-            for item in results:
-                title = str(item.get('title','') or item.get('anime_title','') or item.get('name','') or '').lower()
-                if lower_slug and lower_slug in title:
-                    best_match = item
-                    break
-            if not best_match and results:
-                best_match = results[0]
-            if best_match:
-                if not best_match.get('title') and anime_name:
-                    best_match['title'] = anime_name
-                data = {
-                    'anime': best_match,
-                    'data': best_match,
-                    'session': best_match.get('session'),
-                    'title': best_match.get('title'),
-                    'poster': best_match.get('poster'),
-                    'episodes': best_match.get('episodes'),
-                    'status': best_match.get('status'),
-                    'type': best_match.get('type'),
-                    'score': best_match.get('score'),
-                    'year': best_match.get('year'),
-                    'season': best_match.get('season')
-                }
-                cache.set(ck,data,timeout=3600)
-                u=_me()
-                if u: data['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
-                return jsonify(data)
+        search_data = _get('/api/v1/search', params={'q': (anime_name or slug).replace('-', ' '), 'limit': 5})
+        items = search_data.get('results') or []
+        if items:
+            best = items[0]
+            stub = {'id': best.get('id', slug), 'title': best.get('title', anime_name or slug),
+                    'image': best.get('image'), 'in_watchlist': False}
+            u=_me()
+            if u: stub['in_watchlist']=Watchlist.query.filter_by(user_id=u.id,anime_slug=slug).first() is not None
+            return jsonify(stub)
     except Exception:
         pass
 
@@ -583,43 +592,41 @@ def api_detail(slug):
 
 @app.route('/api/anime/<slug>/episodes')
 def api_episodes(slug):
+    """Get episodes using new /api/v1/anime/{id}/episodes endpoint."""
     if not SLUG_RE.match(slug): return jsonify({'error':'Invalid slug'}),400
-    ck=f'eps:{slug}'; hit=cache.get(ck)
+    ck=f'eps_v1:{slug}'; hit=cache.get(ck)
     if hit: return jsonify(hit)
 
     anime_name = request.args.get('title','').strip() or request.args.get('anime_name','').strip()
-    session_id = slug
-    params = {'anime_name': anime_name} if anime_name else None
-    try:
-        data = _get(f'/api/anime/{session_id}/episodes', params=params)
-        cache.set(ck,data,timeout=1800); return jsonify(data)
-    except Exception:
-        pass
 
-    session_id = _search_session(slug) or slug
-    if session_id != slug:
+    # Try direct with slug as ID
+    for anime_id in [slug, _search_session(slug)]:
+        if not anime_id: continue
         try:
-            data = _get(f'/api/anime/{session_id}/episodes', params=params)
-            cache.set(ck,data,timeout=1800); return jsonify(data)
-        except Exception:
-            pass
+            data = _get(f'/api/v1/anime/{anime_id}/episodes')
+            if data.get('success') and data.get('episodes'):
+                # Normalise: new API returns [{number, url}], convert to [{id, num, session, url}]
+                eps = [{'id': str(e.get('number')), 'num': e.get('number'),
+                        'session': str(e.get('number')), 'number': e.get('number'),
+                        'episode': e.get('number'), 'url': e.get('url')} for e in data['episodes']]
+                result = {'episodes': eps, 'results': eps, 'data': eps, 'total': data.get('total', len(eps))}
+                cache.set(ck, result, timeout=1800)
+                return jsonify(result)
+        except Exception as e:
+            app.logger.warning(f'[episodes] {anime_id} failed: {e}')
+            continue
 
-    try:
-        data=_get(f'/api/anime/{slug}/episodes', params=params)
-        cache.set(ck,data,timeout=1800); return jsonify(data)
-    except requests.Timeout: return jsonify({'error':'Timed out','episodes':[]}),504
-    except Exception as e: return jsonify({'error':str(e),'episodes':[]}),502
+    return jsonify({'error':'Episodes not found','episodes':[]}),404
 
 @app.route('/api/genres')
 @cache.cached(timeout=1800)
 def api_genres():
     fallback = {'genres': ['Action','Adventure','Comedy','Drama','Fantasy','Horror','Mecha','Romance','Sci-Fi','Slice of Life','Sports','Supernatural','Thriller','Ecchi','Isekai','Shounen']}
     try:
-        data = _get('/api/genres')
-        if isinstance(data, dict) and ('genres' in data or 'data' in data):
-            return jsonify(data)
-        if isinstance(data, list):
-            return jsonify({'genres': data})
+        data = _get('/api/v1/genres')
+        if isinstance(data, dict) and data.get('success'):
+            genre_list = [g.get('name') for g in data.get('genres', []) if g.get('name')]
+            return jsonify({'genres': genre_list})
         return jsonify(fallback)
     except requests.Timeout:
         return jsonify(fallback),504
@@ -630,95 +637,100 @@ def api_genres():
 @cache.cached(timeout=1800)
 def api_genre(genre):
     if not genre or len(genre) > 64: return jsonify({'error':'Invalid genre'}),400
+    # New API uses genre slug in lowercase
+    genre_slug = genre.lower().replace(' ', '-')
     try:
-        data = _get(f'/api/genre/{genre}')
-        return jsonify(data)
+        data = _get(f'/api/v1/genres/{genre_slug}', params={'page': request.args.get('page', 1)})
+        if data.get('success'):
+            items = data.get('items') or []
+            return jsonify({'results': items, 'data': items, 'genre': data.get('genre')})
     except Exception:
-        # Genre endpoint may not exist on remote API. Fall back to a search by genre name.
-        try:
-            data = _get('/api/search', params={'q': genre})
-            return jsonify(data)
-        except Exception:
-            try:
-                return jsonify(_get('/api/top-anime'))
-            except Exception as e:
-                app.logger.error(f'[genre fallback]{genre} {e}')
-                return jsonify({'results':[]}),502
+        pass
+    # Fallback: search by genre name
+    try:
+        data = _get('/api/v1/search', params={'q': genre, 'limit': 20})
+        items = data.get('results') or []
+        return jsonify({'results': items, 'data': items})
+    except Exception as e:
+        app.logger.error(f'[genre fallback]{genre} {e}')
+        return jsonify({'results':[]}),502
 
 @app.route('/api/stream/qualities')
 @limiter.limit('60 per minute')
 def get_stream_qualities():
-    ep_id = request.args.get('episode_session','').strip() or request.args.get('episode_id','').strip() or request.args.get('id','').strip()
+    """New API: /api/v1/anime/{id}/episodes/{ep}/qualities."""
+    ep_num = request.args.get('episode_session','').strip() or request.args.get('episode_id','').strip() or request.args.get('id','').strip()
     anime_slug = request.args.get('anime_slug','').strip() or request.args.get('slug','').strip()
-    if not ep_id: return jsonify({'error':'episode_session required'}),400
-    if not anime_slug: return jsonify({'error':'anime_slug required'}),400
-    if not SLUG_RE.match(anime_slug): return jsonify({'error':'Invalid anime_slug'}),400
+    stream_type = request.args.get('type', 'sub')
+    if not ep_num: return jsonify({'qualities': ['1080p','720p','480p','360p'], 'audios': ['sub','dub']})
+    if not anime_slug: return jsonify({'qualities': ['1080p','720p','480p','360p'], 'audios': ['sub','dub']})
     try:
-        data = _get('/api/stream/qualities', params={'anime_slug': anime_slug, 'episode_session': ep_id})
-        if isinstance(data, dict):
-            return jsonify(data)
-        if isinstance(data, list):
-            return jsonify({'qualities': data})
-        return jsonify({'qualities': ['best','1080p','720p','480p'], 'audios': ['jpn','eng']})
+        data = _get(f'/api/v1/anime/{anime_slug}/episodes/{ep_num}/qualities', params={'type': stream_type})
+        if data.get('success'):
+            quals = [q.get('label') for q in data.get('qualities', []) if q.get('label')]
+            return jsonify({'qualities': quals or ['1080p','720p','480p','360p'], 'streams': data.get('qualities', []), 'audios': ['sub','dub']})
     except Exception:
-        return jsonify({'qualities': ['best','1080p','720p','480p'], 'audios': ['jpn','eng']})
+        pass
+    return jsonify({'qualities': ['1080p','720p','480p','360p'], 'audios': ['sub','dub']})
 
 @app.route('/api/get-stream',methods=['POST','GET'])
 @app.route('/api/stream',methods=['POST','GET'])
 @limiter.limit('60 per minute')
 def get_stream():
+    """New API: /api/v1/anime/{id}/episodes/{ep}/streams?type=sub|dub|all.
+    
+    The new API returns a list of streams with {type: 'SUB'|'DUB', url, headers}.
+    We pick the best stream URL and pass it through our proxy for seamless HLS playback
+    via the custom VideoPlayer.
+    """
     if request.method=='GET':
-        ep_id = request.args.get('episode_session','').strip() or request.args.get('episode_id','').strip() or request.args.get('id','').strip()
+        ep_num = request.args.get('episode_session','').strip() or request.args.get('episode_id','').strip() or request.args.get('id','').strip()
         anime_slug = request.args.get('anime_slug','').strip() or request.args.get('slug','').strip()
-        quality = request.args.get('quality','').strip()
-        audio = request.args.get('audio','').strip()
+        audio = request.args.get('audio', 'sub').strip()  # jpn -> sub, eng -> dub
     else:
         d=request.get_json(silent=True) or {}
-        ep_id = str(d.get('episode_session','')).strip() or str(d.get('episode_id','')).strip() or str(d.get('id','')).strip()
+        ep_num = str(d.get('episode_session','')).strip() or str(d.get('episode_id','')).strip() or str(d.get('id','')).strip()
         anime_slug = str(d.get('anime_slug','')).strip() or str(d.get('slug','')).strip()
-        quality = str(d.get('quality','')).strip()
-        audio = str(d.get('audio','')).strip()
-    if not ep_id: return jsonify({'error':'episode_session required'}),400
+        audio = str(d.get('audio', 'sub')).strip()
+
+    if not ep_num: return jsonify({'error':'episode number required'}),400
     if not anime_slug: return jsonify({'error':'anime_slug required'}),400
     if not SLUG_RE.match(anime_slug): return jsonify({'error':'Invalid anime_slug'}),400
-    params = {'anime_slug': anime_slug, 'episode_session': ep_id}
-    if quality: params['quality'] = quality
-    if audio: params['audio'] = audio
-    try:
-        result = _get('/api/stream', params=params)
-        
-        # Pass through the upstream proxy_m3u8 if it exists (since our backend proxy gets blocked by Cloudflare)
-        proxy_m3u8 = result.get('proxy_m3u8')
-        
-        url = result.get('stream_url') or result.get('url') or result.get('hls') or ''
-        
-        # If it's the iframe player, extract the token
-        if url and ('token=' in url or '/api/player' in url):
-            from urllib.parse import urlparse, parse_qs, unquote
-            full = url if url.startswith('http') else f'{API_BASE}{url}'
-            parsed = urlparse(full)
-            params_qs = parse_qs(parsed.query)
-            token = params_qs.get('token', [None])[0]
-            if token:
-                real_url = unquote(token)
-                import urllib.parse
-                encoded = urllib.parse.quote(real_url, safe='')
-                # Fallback to our proxy, but prioritize upstream proxy_m3u8
-                return jsonify({
-                    'stream_url': f'/api/proxy-stream?url={encoded}',
-                    'direct_url': real_url,
-                    'proxy_m3u8': proxy_m3u8
-                })
 
-        if url and url.startswith('/'):
-            url = f'{API_BASE}{url}'
-            
-        return jsonify({
-            'stream_url': url,
-            'proxy_m3u8': proxy_m3u8
-        })
+    # Map old audio codes to new API type param
+    stream_type = 'dub' if audio in ('eng', 'dub') else 'sub'
+
+    try:
+        data = _get(f'/api/v1/anime/{anime_slug}/episodes/{ep_num}/streams', params={'type': stream_type})
+        if data.get('success') and data.get('streams'):
+            streams = data['streams']
+            # Pick the preferred stream: DUB if requested, else SUB
+            preferred_type = 'DUB' if stream_type == 'dub' else 'SUB'
+            selected = next((s for s in streams if s.get('type') == preferred_type), None)
+            if not selected:
+                selected = streams[0]  # Fallback to first available
+
+            url = selected.get('url', '')
+            stream_headers = selected.get('headers', {})
+            referer = stream_headers.get('Referer', stream_headers.get('referer', API_BASE))
+
+            if url:
+                import urllib.parse
+                encoded_url = urllib.parse.quote(url, safe='')
+                encoded_referer = urllib.parse.quote(referer, safe='')
+                # Build proxy URL for our custom VideoPlayer — rewrite M3U8 through backend
+                proxy_url = f'/api/proxy-stream?url={encoded_url}&referer={encoded_referer}'
+                return jsonify({
+                    'stream_url': proxy_url,
+                    'direct_url': url,
+                    'proxy_m3u8': proxy_url,
+                    'provider': data.get('provider', 'AniVerse'),
+                    'type': selected.get('type'),
+                    'all_streams': streams
+                })
     except Exception as e:
-        app.logger.error(f'[stream]{e}')
+        app.logger.error(f'[stream] {anime_slug} ep{ep_num}: {e}')
+
     return jsonify({'error': 'Stream unavailable'}), 502
 
 @app.route('/api/proxy-stream')
@@ -789,10 +801,19 @@ def api_download():
 
 @app.route('/api/download/<download_id>/file')
 def api_download_file(download_id):
+    """Download episode using new /api/v1/anime/{id}/episodes/{ep}/download endpoint."""
     if not download_id:
         return jsonify({'error':'Missing id'}),400
     try:
-        r = requests.get(f'{API_BASE}/api/download/{download_id}/file', headers=_hdrs(), stream=True, timeout=60)
+        # New API format: download_id is 'animeSlug_epNum'
+        parts = download_id.rsplit('_', 1)
+        if len(parts) == 2:
+            anime_id, ep_num = parts
+            r = requests.get(f'{API_BASE}/api/v1/anime/{anime_id}/episodes/{ep_num}/download',
+                             headers=_hdrs(), stream=True, timeout=60)
+        else:
+            r = requests.get(f'{API_BASE}/api/v1/anime/{download_id}/episodes/1/download',
+                             headers=_hdrs(), stream=True, timeout=60)
         r.raise_for_status()
         response = Response(r.iter_content(chunk_size=8192), status=r.status_code, content_type=r.headers.get('Content-Type','application/octet-stream'))
         if r.headers.get('Content-Disposition'):
@@ -808,15 +829,8 @@ def api_download_file(download_id):
 
 @app.route('/api/download/<download_id>/status')
 def api_download_status(download_id):
-    if not download_id:
-        return jsonify({'error':'Missing id'}),400
-    try:
-        return jsonify(_get(f'/api/download/{download_id}/status'))
-    except requests.Timeout:
-        return jsonify({'error':'Timed out'}),504
-    except Exception as e:
-        app.logger.error(f'[download_status]{e}')
-        return jsonify({'error':str(e)}),502
+    # No direct equivalent in new API — return a stub
+    return jsonify({'status': 'completed', 'id': download_id})
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
 

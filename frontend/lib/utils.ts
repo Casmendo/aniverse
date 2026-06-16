@@ -38,12 +38,11 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     };
   }
 
-  // Title priority: anime_title > name > title > anime_name
-  // anime_title is the field the API uses for human-readable names
+  // Title priority: title > anime_title > name > anime_name
   const candidates = [
+    raw.title,
     raw.anime_title,
     raw.name,
-    raw.title,
     raw.anime_name,
   ];
 
@@ -64,25 +63,24 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     }
   }
 
-  // Final fallback
-  if (!title) {
-    title = 'Unknown Anime';
-  }
+  if (!title) title = 'Unknown Anime';
 
-  // Slug priority: anime_session > session > slug > id
-  const slug = String(raw.anime_session || raw.session || raw.slug || raw.anime_id || raw.id || '');
+  // Slug/ID priority: new API uses 'id', old used session/slug
+  const slug = String(raw.id || raw.anime_session || raw.session || raw.slug || raw.anime_id || '');
 
   return {
     slug,
     title,
-    cover:       String(raw.cover || raw.image || raw.poster || raw.anime_poster || raw.thumbnail || raw.snapshot || ''),
-    banner:      String(raw.banner || raw.cover || raw.image || raw.poster || raw.snapshot || ''),
-    description: String(raw.description || raw.synopsis || raw.overview || ''),
-    score:       parseFloat(String(raw.score || raw.rating || 0)) || 0,
+    // New API uses 'image', old used cover/poster/snapshot
+    cover:       String(raw.image || raw.cover || raw.poster || raw.anime_poster || raw.thumbnail || raw.snapshot || ''),
+    banner:      String(raw.banner || raw.image || raw.cover || raw.poster || raw.snapshot || ''),
+    description: String(raw.description || raw.synopsis || raw.overview || raw.aliases || ''),
+    score:       parseFloat(String(raw.rating || raw.score || 0)) || 0,
     status:      String(raw.status || ''),
     type:        String(raw.type || raw.format || ''),
     year:        String(raw.year || (String(raw.aired || raw.start_date || raw.created_at || '')).split('-')[0] || ''),
-    episodes:    Number(raw.total_episodes || raw.episodes_count || raw.episode_count || raw.episode || 0) || 0,
+    // New API uses totalEpisodes, old used total_episodes
+    episodes:    Number(raw.totalEpisodes || raw.total_episodes || raw.episodes_count || raw.episode_count || raw.episode || 0) || 0,
     genres:      (Array.isArray(raw.genres) ? raw.genres : Array.isArray(raw.genre) ? raw.genre : [])
                   .map((g: unknown) => typeof g === 'string' ? g : (g as {name:string}).name || ''),
     in_watchlist: Boolean(raw.in_watchlist),
@@ -90,7 +88,8 @@ export function extractAnimeData(raw: Record<string, unknown>) {
 }
 
 export function extractEpisode(raw: Record<string, unknown>, index: number) {
-  const num = Number(raw.episode || raw.number || raw.ep_number || index + 1);
+  // New API returns {number, url}, old API used {episode_session, episode, snapshot}
+  const num = Number(raw.number || raw.episode || raw.num || raw.ep_number || index + 1);
   let title = String(raw.title || raw.name || `Episode ${num}`);
 
   // If title is just a number, empty, or a session hash, use default
@@ -99,7 +98,8 @@ export function extractEpisode(raw: Record<string, unknown>, index: number) {
   }
 
   return {
-    id:        String(raw.session || raw.episode_session || raw.id || raw.slug || num),
+    // New API: use the episode number as ID (since no session), old: use session
+    id:        String(raw.session || raw.episode_session || raw.id || raw.number || raw.slug || num),
     num,
     title,
     thumbnail: String(raw.snapshot || raw.thumbnail || raw.image || raw.cover || ''),

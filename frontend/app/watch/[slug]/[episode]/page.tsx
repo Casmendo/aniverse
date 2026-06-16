@@ -37,10 +37,10 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   const [loadStream, setLoadStream] = useState(true);
   const [streamErr, setStreamErr] = useState('');
   const [showEpList, setShowEpList] = useState(false);
-  const [qualityOptions, setQualityOptions] = useState<string[]>(['1080', '720', '480', '360']);
-  const [audioOptions, setAudioOptions] = useState<string[]>(['jpn', 'eng']);
-  const [selectedQuality, setSelectedQuality] = useState('1080');
-  const [selectedAudio, setSelectedAudio] = useState('jpn');
+  const [qualityOptions, setQualityOptions] = useState<string[]>(['1080p', '720p', '480p', '360p']);
+  const [audioOptions, setAudioOptions] = useState<string[]>(['sub', 'dub']);
+  const [selectedQuality, setSelectedQuality] = useState('1080p');
+  const [selectedAudio, setSelectedAudio] = useState('sub');
   const [relatedSeries, setRelatedSeries] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
@@ -135,18 +135,19 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     });
   }, []);
 
-  // ── STREAMING: Use your friend's iframe player logic ──────────────────────
+  // ── STREAMING: Use custom VideoPlayer with our backend HLS proxy ──────────
   const fetchStream = useCallback(async (ep: ReturnType<typeof extractEpisode>) => {
     setLoadStream(true); setStreamErr(''); setStreamUrl('');
     try {
-      // Normalize quality: strip 'p', strip 'best' -> use empty string so API picks best
-      const q = selectedQuality.replace(/p$/i, '').replace('best', '1080');
-      const { data } = await animeAPI.getStream(ep.id, slug, q, selectedAudio);
-      // Use proxy_m3u8 for our custom HLS player
+      // Map audio selection: 'sub'/'jpn' -> sub, 'dub'/'eng' -> dub
+      const audioType = (selectedAudio === 'eng' || selectedAudio === 'dub') ? 'dub' : 'sub';
+      // Episode ID is now the episode number for the new API
+      const { data } = await animeAPI.getStream(ep.id, slug, selectedQuality, audioType);
+      // Backend returns proxy_m3u8 for our custom HLS player
       let url: string = data.proxy_m3u8 || data.stream_url || data.url || '';
       if (!url) throw new Error('No stream URL found — try another episode.');
       if (url.startsWith('/')) url = `${BACKEND_BASE}${url}`;
-      
+
       setIntro(data.intro);
       setOutro(data.outro);
 
@@ -166,25 +167,26 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     if (!currentEp) return;
     animeAPI.getStreamQualities(currentEp.id, slug)
       .then(({ data }) => {
-        const streams = data.streams || data.qualities || [];
-        if (Array.isArray(streams) && streams.length > 0) {
-          const quals = Array.from(new Set(streams.map((s: any) => String(s.quality || s).replace(/p$/i, ''))));
-          const auds = Array.from(new Set(streams.map((s: any) => String(s.audio || 'jpn'))));
+        // New API returns {qualities: [{label, height, bandwidth, streamUrl, downloadUrl}]}
+        const qualList = data.qualities || data.streams || [];
+        if (Array.isArray(qualList) && qualList.length > 0) {
+          const quals = Array.from(new Set(qualList.map((q: any) =>
+            String(q.label || q.quality || q).replace(/p$/i, '')
+          ))).filter(Boolean);
           if (quals.length) {
             setQualityOptions(quals);
-            // Only fix selection if current choice isn't available (don't re-trigger stream)
-            setSelectedQuality(prev => quals.includes(prev) ? prev : (quals.includes('1080') ? '1080' : quals[0]));
+            setSelectedQuality(prev => quals.includes(prev) ? prev : (quals.find(q => q.includes('1080')) || quals[0]));
           }
-          if (auds.length) {
-            setAudioOptions(auds);
-            // Only fix audio if current choice isn't available
-            setSelectedAudio(prev => auds.includes(prev) ? prev : (auds.includes('jpn') ? 'jpn' : auds[0]));
-          }
+        }
+        // New API always supports sub/dub
+        const auds = data.audios || ['sub', 'dub'];
+        if (auds.length) {
+          setAudioOptions(auds);
         }
       })
       .catch(() => {
-        setQualityOptions(['1080', '720', '480', '360']);
-        setAudioOptions(['jpn', 'eng']);
+        setQualityOptions(['1080p', '720p', '480p', '360p']);
+        setAudioOptions(['sub', 'dub']);
       });
   }, [currentEp, slug]);
 

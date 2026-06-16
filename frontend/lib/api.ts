@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-// ── Anime API client (direct to animapi.ayohost.site — works WITHOUT backend) ──
+// ── Anime API client (direct to apis.ayohost.site — works WITHOUT backend) ──
 const ANIMAPI = axios.create({
-  baseURL: 'https://animapi.ayohost.site',
+  baseURL: 'https://apis.ayohost.site',
   timeout: 120000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -172,7 +172,7 @@ export const downloadAPI = {
   // Download jobs (animapi — direct, no backend needed)
   createJob:     (data: Record<string,unknown>) => ANIMAPI.post('/api/download', data),
   getJobStatus:  (id: string) => ANIMAPI.get(`/api/download/${id}/status`),
-  getJobFile:    (id: string) => `https://animapi.ayohost.site/api/download/${id}/file`,
+  getJobFile:    (id: string) => `https://apis.ayohost.site/api/v1/anime/${id}/episodes/1/download`,
 };
 
 // ── Watchlist (backend) ────────────────────────────────────────────────────
