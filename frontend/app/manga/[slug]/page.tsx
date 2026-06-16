@@ -53,23 +53,22 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
     if (isNaN(anilistId)) { setError('Invalid manga'); setLoadingManga(false); return; }
 
     unifiedMangaService.getDetail(anilistId)
-      .then(async (data) => {
+      .then((data) => {
         setManga(data);
         document.title = `${data.title} — MangaVerse`;
+        setLoadingManga(false); // Stop showing skeleton immediately!
 
         // Fetch chapters in background after manga loads (ID resolution is deferred to getChapters)
         setLoadingChapters(true);
-        try {
-          const chaps = await unifiedMangaService.getChapters(data);
-          setChapters(chaps);
-        } catch (e) {
-          console.error('Chapter fetch failed:', e);
-        } finally {
-          setLoadingChapters(false);
-        }
+        unifiedMangaService.getChapters(data)
+          .then(chaps => setChapters(chaps))
+          .catch(e => console.error('Chapter fetch failed:', e))
+          .finally(() => setLoadingChapters(false));
       })
-      .catch(() => setError('Failed to load manga. Please try again.'))
-      .finally(() => setLoadingManga(false));
+      .catch(() => {
+        setError('Failed to load manga. Please try again.');
+        setLoadingManga(false);
+      });
   }, [anilistId]);
 
   if (loadingManga) return <Skeleton />;
