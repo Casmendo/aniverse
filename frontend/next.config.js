@@ -20,7 +20,16 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://aniverse-xi.vercel.app',
   },
+
   ...(isAndroid ? {} : {
+    async rewrites() {
+      return [
+        {
+          source: '/backend_api/:path*',
+          destination: 'http://projcts.ayohost.site:3008/:path*',
+        },
+      ];
+    },
     async headers() {
     return [
       {
