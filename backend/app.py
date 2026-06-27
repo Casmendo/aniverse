@@ -28,7 +28,7 @@ from email_validator import validate_email, EmailNotValidError
 app = Flask(__name__)
 app.config.update(
     SECRET_KEY                     = os.environ.get('SECRET_KEY', 'aniverse-v2-secret'),
-    SQLALCHEMY_DATABASE_URI        = os.environ.get('DATABASE_URL', 'sqlite:///aniverse.db'),
+    SQLALCHEMY_DATABASE_URI        = os.environ.get('DATABASE_URL', 'sqlite:///aniverse.db').replace('postgres://', 'postgresql://'),
     SQLALCHEMY_TRACK_MODIFICATIONS = False,
     SESSION_COOKIE_HTTPONLY        = True,
     SESSION_COOKIE_SAMESITE        = 'None',
