@@ -1,0 +1,12 @@
+<svg viewBox="0 0 34 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="apkG" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#CCD0CF"/>
+      <stop offset="60%" stop-color="#9BA8AB"/>
+      <stop offset="100%" stop-color="#4A5C6A"/>
+    </linearGradient>
+  </defs>
+  <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#apkG)"/>
+  <path d="M17 10L22 26H12Z" fill="#06141B"/>
+  <circle cx="17" cy="2" r="2.5" fill="#CCD0CF"/>
+</svg>

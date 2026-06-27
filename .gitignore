@@ -1,0 +1,36 @@
+node_modules/
+.next/
+out/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.env
+
+# Database
+*.sqlite3
+*.db
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Secrets — never commit these
+*.pem
+*.tar.gz
+*.key
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Aniverse</string>
+    <string name="title_activity_main">Aniverse</string>
+    <string name="package_name">com.aniverse.app</string>
+    <string name="custom_url_scheme">com.aniverse.app</string>
+</resources>

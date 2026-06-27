@@ -1,0 +1,16 @@
+{
+  "appId": "com.aniverse.app",
+  "appName": "Aniverse",
+  "webDir": "out",
+  "android": {
+    "backgroundColor": "#06141B"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#06141B",
+      "showSpinner": false,
+      "androidSplashResourceName": "splash"
+    }
+  }
+}
