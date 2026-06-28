@@ -120,9 +120,11 @@ export default function HomePage() {
     }).finally(() => setLoadingP(false));
 
     animeAPI.getGenres().then(({data}) => {
-      const list = Array.isArray(data)
+      let list = Array.isArray(data)
         ? data
         : Array.isArray(data.genres) ? data.genres : [];
+      // Extract string from {id, name, url} objects
+      list = list.map((g: any) => g?.id || g?.name || g);
       if (list.length) setGenres(list);
       if (!activeGenre && list.length) setActiveGenre(list[0]);
     }).catch(() => {}).finally(() => setLoadingG(false));
