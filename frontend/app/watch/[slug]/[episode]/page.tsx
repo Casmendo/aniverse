@@ -144,7 +144,8 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       
       let url = '';
       if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
-        url = data.streams[0].url;
+        const rawUrl = data.streams[0].url;
+        url = `/api/proxy-stream?url=${encodeURIComponent(rawUrl)}`;
       } else {
         url = data.proxy_m3u8 || data.stream_url || data.url || '';
       }
