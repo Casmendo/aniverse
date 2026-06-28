@@ -92,10 +92,21 @@ export default function HomePage() {
       cacheLatest(arr);
     }).finally(() => setLoadingLR(false));
 
-    animeAPI.getTrending().then(({data}) => {
+    animeAPI.getTrending().then(async ({data}) => {
       const arr = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
-      setMostWatched(arr);
-      cacheMostWatched(arr);
+      const enriched = await Promise.all(arr.map(async (item: any) => {
+        if (item.poster || item.cover || item.image) return item;
+        if (!item.title && !item.anime_title) return item;
+        try {
+          const { data: sd } = await animeAPI.search(item.title || item.anime_title);
+          const sItems = Array.isArray(sd) ? sd : sd.results || sd.items || sd.data || [];
+          const match = sItems.find((s: any) => s.id === item.id || s.title?.toLowerCase() === (item.title || item.anime_title)?.toLowerCase()) || sItems[0];
+          if (match && (match.poster || match.image || match.cover)) return { ...item, cover: match.poster || match.image || match.cover };
+        } catch {}
+        return item;
+      }));
+      setMostWatched(enriched);
+      cacheMostWatched(enriched);
     }).finally(() => setLoadingMW(false));
 
     const hardcodedPopular = [
