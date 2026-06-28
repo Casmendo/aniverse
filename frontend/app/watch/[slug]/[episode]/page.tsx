@@ -82,7 +82,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   // Fetch episodes
   useEffect(() => {
     animeAPI.getEpisodes(slug, initialTitle || anime?.title || '').then(({ data }) => {
-      const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+      const raw = data.info?.episodes || data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
       const eps = raw.map((ep: Record<string, unknown>, i: number) => extractEpisode(ep, i));
       setEpisodes(eps);
       // Find the current episode by session ID or episode number
