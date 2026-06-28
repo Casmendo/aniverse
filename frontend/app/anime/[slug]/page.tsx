@@ -166,7 +166,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
       try {
         // We still load episodes to get episode count for the Watch Now button
         const { data } = await animeAPI.getEpisodes(slug, initialTitle || anime?.title || '');
-        const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+        const raw = data.info?.episodes || data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
         setEpisodes(raw.map((ep:Record<string,unknown>,i:number)=>extractEpisode(ep,i)));
       } catch {}
       finally { setLoadingEps(false); }
