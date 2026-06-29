@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-// ── Anime API client (direct to apis.ayohost.site — works WITHOUT backend) ──
+// ── Anime API client (routed through our Next.js Edge proxy to fix CORS) ──
 const ANIMAPI = axios.create({
-  baseURL: 'https://leo-aniverse-ca5adf1fd1b9.herokuapp.com/api/v1',
+  baseURL: '/api/anime',
   timeout: 120000,
   headers: { 'Content-Type': 'application/json' },
 });
