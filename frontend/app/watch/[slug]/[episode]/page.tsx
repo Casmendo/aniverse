@@ -145,13 +145,13 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       let url = '';
       if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
         const rawUrl = data.streams[0].url;
-        url = `/api/proxy-stream?url=${encodeURIComponent(rawUrl)}`;
+        url = `/api/proxy?url=${encodeURIComponent(rawUrl)}`;
       } else {
         url = data.proxy_m3u8 || data.stream_url || data.url || '';
       }
       
       if (!url) throw new Error('No stream URL found — try another episode.');
-      if (url.startsWith('/')) url = `${BACKEND_BASE}${url}`;
+      // if (url.startsWith('/')) url = `${BACKEND_BASE}${url}`; // Remove backend prefix, use nextjs proxy!
 
       setIntro(data.intro);
       setOutro(data.outro);
