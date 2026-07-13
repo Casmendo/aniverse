@@ -16,8 +16,8 @@ import { processDownload } from '@/lib/downloadService';
 
 const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.aniiverse.name.ng';
 
-export default function WatchPage({ params, searchParams }: { params: { slug: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
-  const { slug, episode } = params;
+export default function WatchPage({ params, searchParams }: { params: { id: string; episode: string }, searchParams: { title?: string, ep?: string } }) {
+  const { id: slug, episode } = params;
   const initialTitle = searchParams.title || '';
   const initialEpNum = searchParams.ep ? Number(searchParams.ep) : 0;
   const router = useRouter();
@@ -82,7 +82,7 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
   // Fetch episodes
   useEffect(() => {
     animeAPI.getEpisodes(slug, initialTitle || anime?.title || '').then(({ data }) => {
-      const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+      const raw = data.info?.episodes || data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
       const eps = raw.map((ep: Record<string, unknown>, i: number) => extractEpisode(ep, i));
       setEpisodes(eps);
       // Find the current episode by session ID or episode number
@@ -143,18 +143,34 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
       const { data } = await animeAPI.getStream(ep.id, slug, selectedQuality, audioType);
       
       let url = '';
-      if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
+      let qualities = [] as string[];
+
+      // Consumet/Anilist structure
+      if (data.sources && Array.isArray(data.sources)) {
+        qualities = Array.from(new Set(data.sources.map((s:any) => s.quality.replace(/p$/i, ''))));
+        
+        // Find best match for selected quality, default to auto/highest
+        const match = data.sources.find((s:any) => s.quality.includes(selectedQuality)) 
+                   || data.sources.find((s:any) => s.quality === 'auto')
+                   || data.sources.find((s:any) => s.quality === 'default')
+                   || data.sources[0];
+                   
+        url = match?.url || '';
+      } else if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
         url = data.streams[0].url;
       } else {
         url = data.proxy_m3u8 || data.stream_url || data.url || '';
       }
       
       if (!url) throw new Error('No stream URL found — try another episode.');
-      if (url.startsWith('/')) url = `${BACKEND_BASE}${url}`;
+      
+      // Route through new proxy
+      url = `/api/anime/proxy/hls?url=${encodeURIComponent(url)}`;
 
-      setIntro(data.intro);
-      setOutro(data.outro);
-
+      if (qualities.length > 0) {
+        setQualityOptions(qualities.filter(q => q !== 'auto' && q !== 'default'));
+      }
+      
       setStreamUrl(url);
     } catch (e: any) {
       console.error('Stream Fetch Error:', e);
@@ -166,32 +182,10 @@ export default function WatchPage({ params, searchParams }: { params: { slug: st
     if (currentEp) fetchStream(currentEp);
   }, [currentEp, fetchStream]);
 
-  // Fetch available qualities — only updates the OPTIONS LIST, never triggers a stream reload
+  // Qualities are now extracted directly from getStream
   useEffect(() => {
     if (!currentEp) return;
-    animeAPI.getStreamQualities(currentEp.id, slug)
-      .then(({ data }) => {
-        // New API returns {qualities: [{label, height, bandwidth, streamUrl, downloadUrl}]}
-        const qualList = data.qualities || data.streams || [];
-        if (Array.isArray(qualList) && qualList.length > 0) {
-          const quals = Array.from(new Set(qualList.map((q: any) =>
-            String(q.label || q.quality || q).replace(/p$/i, '')
-          ))).filter(Boolean);
-          if (quals.length) {
-            setQualityOptions(quals);
-            setSelectedQuality(prev => quals.includes(prev) ? prev : (quals.find(q => q.includes('1080')) || quals[0]));
-          }
-        }
-        // New API always supports sub/dub
-        const auds = data.audios || ['sub', 'dub'];
-        if (auds.length) {
-          setAudioOptions(auds);
-        }
-      })
-      .catch(() => {
-        setQualityOptions(['1080p', '720p', '480p', '360p']);
-        setAudioOptions(['sub', 'dub']);
-      });
+    setAudioOptions(['sub', 'dub']);
   }, [currentEp, slug]);
 
   // Track episode in watchlist store

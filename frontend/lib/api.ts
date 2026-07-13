@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 
-// ── Anime API client (direct to apis.ayohost.site — works WITHOUT backend) ──
+// ── Anime API client (routed through our Next.js Edge proxy to fix CORS) ──
 const ANIMAPI = axios.create({
-  baseURL: 'https://leo-aniverse-ca5adf1fd1b9.herokuapp.com/api/v1',
+  baseURL: '/api/anime',
   timeout: 120000,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -107,17 +107,26 @@ BACKEND.interceptors.response.use(
 // ── Anime endpoints (direct to animapi — no backend needed) ────────────────
 export const animeAPI = {
   getAiring:    (page = 1) => ANIMAPI.get('/recent', { params: { page } }),
-  search:       (q: string) => ANIMAPI.get('/search', { params: { q } }),
-  getDetail:    (slug: string, animeName?: string) => ANIMAPI.get(`/anime/${slug}/info`),
-  getEpisodes:  (slug: string, animeName?: string) => ANIMAPI.get(`/anime/${slug}/info`),
-  getStream:    (episodeSession: string, animeSlug: string, quality = 'best', audio = 'sub') =>
-    ANIMAPI.get(`/anime/${animeSlug}/episodes/${episodeSession}/streams`, { params: { type: audio } }),
-  getStreamQualities: (episodeSession: string, animeSlug: string) =>
-    ANIMAPI.get(`/anime/${animeSlug}/episodes/${episodeSession}/qualities`),
-  getTrending:  () => ANIMAPI.get('/trending'),
-  getRecommended: () => ANIMAPI.get('/popular'),
+  search:       (q: string, page = 1) => ANIMAPI.get('/search', { params: { q, page } }),
+  getDetail:    (id: string) => ANIMAPI.get(`/info/${id}`),
+  getEpisodes:  (id: string, audio = 'sub') => ANIMAPI.get(`/episodes/${id}`, { params: { audio } }),
+  getStream:    (episodeSession: string, id: string, quality = 'best', audio = 'sub') =>
+    ANIMAPI.get(`/stream/${id}/${episodeSession}`, { params: { audio } }),
+  getTrending:  (page = 1) => ANIMAPI.get('/trending', { params: { page } }),
+  getRecommended: (page = 1) => ANIMAPI.get('/popular', { params: { page } }),
   getGenres:    () => ANIMAPI.get('/genres'),
   getGenre:     (genre: string, page = 1) => ANIMAPI.get(`/genres/${genre}`, { params: { page } }),
+  
+  // New Custom Endpoints
+  getSeasonal:  (year: number, season: string) => ANIMAPI.get('/seasonal', { params: { year, season } }),
+  getRandom:    (genre?: string) => ANIMAPI.get('/random', { params: { genre } }),
+  getCharacters: (id: string, page = 1) => ANIMAPI.get(`/characters/${id}`, { params: { page } }),
+  getCharacterDetail: (characterId: string) => ANIMAPI.get(`/characters/person/${characterId}`),
+  getStaff:     (id: string, page = 1) => ANIMAPI.get(`/staff/${id}`, { params: { page } }),
+  getStaffDetail: (staffId: string) => ANIMAPI.get(`/staff/person/${staffId}`),
+  getRelations: (id: string) => ANIMAPI.get(`/relations/${id}`),
+  getRecommendationsForAnime: (id: string) => ANIMAPI.get(`/recommendations/${id}`),
+  getSchedule:  (day: string) => ANIMAPI.get('/schedule', { params: { day } }),
 };
 
 // ── Auth endpoints (backend — needs Pterodactyl) ────────────────────────────
@@ -170,7 +179,7 @@ export const downloadAPI = {
   // Download jobs (animapi — direct, no backend needed)
   createJob:     (data: Record<string,unknown>) => Promise.resolve({ data: { id: 'done', status: 'completed' } }),
   getJobStatus:  (id: string) => Promise.resolve({ data: { status: 'completed', progress: 100 } }),
-  getJobFile:    (id: string, animeId?: string) => `https://leo-aniverse-ca5adf1fd1b9.herokuapp.com/api/v1/anime/${animeId}/episodes/${id}/download`,
+  getJobFile:    (id: string, animeId?: string, audio = 'sub') => `/api/anime/download/${animeId}/${id}?audio=${audio}`,
 };
 
 // ── Watchlist (backend) ────────────────────────────────────────────────────

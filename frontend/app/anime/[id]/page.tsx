@@ -15,8 +15,8 @@ import { useDownloadStore } from '@/store/downloadStore';
 import { downloadAPI } from '@/lib/api';
 import { processDownload } from '@/lib/downloadService';
 
-export default function AnimePage({ params, searchParams }: { params: { slug:string }, searchParams: { title?: string } }) {
-  const { slug } = params;
+export default function AnimePage({ params, searchParams }: { params: { id:string }, searchParams: { title?: string } }) {
+  const { id: slug } = params;
   const initialTitle = searchParams.title || '';
   // Helper to detect raw UUID/session strings that are never valid anime titles
   const isUuid = (s: string) => /^[a-f0-9-]{20,}$/i.test(s) && !s.includes(' ');
@@ -43,6 +43,9 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
   const [expanded,    setExpanded]    = useState(false);
   const [relatedSeries, setRelatedSeries] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [characters, setCharacters] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
+  const [relations, setRelations] = useState<any[]>([]);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [selectedEpisodes, setSelectedEpisodes] = useState<string[]>([]);
   const [selectedQuality, setSelectedQuality] = useState('1080');
@@ -166,7 +169,7 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
       try {
         // We still load episodes to get episode count for the Watch Now button
         const { data } = await animeAPI.getEpisodes(slug, initialTitle || anime?.title || '');
-        const raw = data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
+        const raw = data.info?.episodes || data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
         setEpisodes(raw.map((ep:Record<string,unknown>,i:number)=>extractEpisode(ep,i)));
       } catch {}
       finally { setLoadingEps(false); }
@@ -204,6 +207,17 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
       }).catch(() => {});
     });
   }, []);
+
+  // Fetch Characters, Staff, and Relations
+  useEffect(() => {
+    if (!slug) return;
+    animeAPI.getCharacters(slug).then(({ data }) => setCharacters(data || []))
+      .catch(() => {});
+    animeAPI.getStaff(slug).then(({ data }) => setStaff(data || []))
+      .catch(() => {});
+    animeAPI.getRelations(slug).then(({ data }) => setRelations(data || []))
+      .catch(() => {});
+  }, [slug]);
 
   useEffect(() => { loadCmts(1,false); }, [slug]);
 
@@ -380,44 +394,94 @@ export default function AnimePage({ params, searchParams }: { params: { slug:str
           </div>
         </div>
 
-        {/* Related Seasons / Series */}
-        {relatedSeries.length > 0 && (
+        {/* Relations (from new API) */}
+        {relations.length > 0 && (
           <div className="mt-8 border-t border-[var(--border)] pt-6">
-            <h3 className="font-display font-bold text-lg text-s5 mb-4">Related Seasons</h3>
-            <div className="flex flex-wrap gap-2">
-              {relatedSeries.slice(0, 10).map((rel) => (
-                <Link key={rel.session || rel.id} href={`/anime/${rel.session || rel.id}?title=${encodeURIComponent(rel.title)}`}
-                  className="px-4 py-2 rounded-xl bg-s2 border border-[var(--border)] text-xs font-bold text-s4 hover:text-s5 hover:border-s3 transition-all"
-                >
-                  {rel.title}
-                </Link>
-              ))}
+            <h2 className="font-display font-bold text-lg text-s5 mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded-full bg-s5 inline-block" />
+              Related Anime
+            </h2>
+            <div className="flex gap-4 overflow-x-auto pb-3 ep-scroll">
+              {relations.map((r: any, i: number) => {
+                // The relations API usually returns { id, title, image, relationType }
+                const relId = r.id || r.node?.id;
+                const relTitle = r.title?.english || r.title?.romaji || r.title?.native || r.title || 'Unknown';
+                const relImage = r.image || r.coverImage?.extraLarge || r.coverImage?.large || '';
+                const relType = r.relationType || r.type || '';
+                return (
+                  <Link key={relId || i} href={`/anime/${relId}?title=${encodeURIComponent(relTitle)}`}
+                    className="shrink-0 w-32 group">
+                    <div className="w-32 h-44 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2.5"
+                      style={{ boxShadow: 'var(--shadow-sm)' }}>
+                      {relImage
+                        ? <img src={relImage} alt={relTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        : <div className="w-full h-full flex items-center justify-center"><Play size={22} className="text-s3" /></div>}
+                      {relType && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-white uppercase">{relType.replace(/_/g, ' ')}</span>}
+                    </div>
+                    <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{relTitle}</p>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Related Seasons */}
-        {relatedSeries.length > 0 && (
-          <div className="mt-8 border-t border-[var(--border)] pt-6">
+        {/* Characters */}
+        {characters.length > 0 && (
+          <div className="mt-8">
             <h2 className="font-display font-bold text-lg text-s5 mb-4 flex items-center gap-2">
               <span className="w-1.5 h-5 rounded-full bg-s5 inline-block" />
-              Related Seasons &amp; Movies
+              Characters
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
-              {relatedSeries.map((r: any, i: number) => {
-                const a = extractAnimeData(r);
+            <div className="flex gap-4 overflow-x-auto pb-3 ep-scroll">
+              {characters.slice(0, 15).map((c: any, i: number) => {
+                const charId = c.id || c.node?.id;
+                const charName = c.name?.full || c.name || 'Unknown';
+                const charImage = c.image || c.image?.large || '';
+                const charRole = c.role || '';
                 return (
-                  <Link key={a.slug || i} href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`}
-                    className="shrink-0 w-32 group">
-                    <div className="w-32 h-44 rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all relative mb-2.5"
-                      style={{ boxShadow: 'var(--shadow-sm)' }}>
-                      {a.cover
-                        ? <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        : <div className="w-full h-full flex items-center justify-center"><Play size={22} className="text-s3" /></div>}
-                      {a.type && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5/90 text-white uppercase">{a.type}</span>}
+                  <div key={charId || i} className="shrink-0 w-24 flex flex-col items-center group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2 shadow-sm">
+                      {charImage ? (
+                        <img src={charImage} alt={charName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-s3 font-bold text-xl">{charName[0]}</div>
+                      )}
                     </div>
-                    <p className="text-xs font-semibold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{a.title}</p>
-                  </Link>
+                    <p className="text-xs font-bold text-s5 text-center line-clamp-1">{charName}</p>
+                    {charRole && <p className="text-[10px] text-s4 text-center truncate w-full">{charRole}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Staff */}
+        {staff.length > 0 && (
+          <div className="mt-6">
+            <h2 className="font-display font-bold text-lg text-s5 mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded-full bg-s5 inline-block" />
+              Staff
+            </h2>
+            <div className="flex gap-4 overflow-x-auto pb-3 ep-scroll">
+              {staff.slice(0, 10).map((s: any, i: number) => {
+                const staffId = s.id || s.node?.id;
+                const staffName = s.name?.full || s.name || 'Unknown';
+                const staffImage = s.image || s.image?.large || '';
+                const staffRole = s.role || '';
+                return (
+                  <div key={staffId || i} className="shrink-0 w-20 flex flex-col items-center group">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2 shadow-sm">
+                      {staffImage ? (
+                        <img src={staffImage} alt={staffName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-s3 font-bold text-lg">{staffName[0]}</div>
+                      )}
+                    </div>
+                    <p className="text-[11px] font-bold text-s5 text-center line-clamp-1 w-full">{staffName}</p>
+                    {staffRole && <p className="text-[9px] text-s4 text-center truncate w-full">{staffRole}</p>}
+                  </div>
                 );
               })}
             </div>

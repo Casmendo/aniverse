@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Home, Download, Bookmark, AppWindow, Pencil, LogOut, LogIn, X, History, ChevronRight, BookOpen } from 'lucide-react';
+import { Home, Download, Bookmark, AppWindow, Pencil, LogOut, LogIn, X, History, ChevronRight, BookOpen, Calendar, Sun } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useAuthStore } from '@/store/authStore';
@@ -36,6 +36,8 @@ export default function Sidebar() {
   const nav = [
     { href:'/',          icon:Home,      label:'Anime' },
     { href:'/manga',     icon:BookOpen,  label:'MangaVerse' },
+    { href:'/schedule',  icon:Calendar,  label:'Schedule' },
+    { href:'/seasonal',  icon:Sun,       label:'Seasonal' },
     { href:'/downloads', icon:Download,  label:'Downloads' },
     { href:'/watchlist', icon:Bookmark,  label:`Watchlist${watchlist.length ? ` (${watchlist.length})` : ''}` },
   ];

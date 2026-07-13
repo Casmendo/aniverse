@@ -38,20 +38,27 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     };
   }
 
-  // Title priority: title > anime_title > name > anime_name
-  const candidates = [
-    raw.title,
-    raw.anime_title,
-    raw.name,
-    raw.anime_name,
-  ];
-
   let title = '';
-  for (const c of candidates) {
-    const val = String(c || '').trim();
-    if (val && !isSessionOrHash(val)) {
-      title = val;
-      break;
+  if (typeof raw.title === 'object' && raw.title !== null) {
+    const t = raw.title as Record<string, string>;
+    title = t.english || t.romaji || t.native || '';
+  } else {
+    // Title priority: title > anime_title > name > anime_name
+    const candidates = [
+      raw.title,
+      raw.anime_title,
+      raw.name,
+      raw.anime_name,
+    ];
+
+    for (const c of candidates) {
+      if (typeof c === 'string') {
+        const val = c.trim();
+        if (val && !isSessionOrHash(val)) {
+          title = val;
+          break;
+        }
+      }
     }
   }
 
