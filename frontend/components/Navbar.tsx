@@ -50,6 +50,38 @@ export default function Navbar() {
         </a>
         
         {/* Divider */}
+        <div className="w-[1px] h-5 bg-white/10 hidden md:block" />
+        
+        {/* Random Anime Button */}
+        <button
+          onClick={async () => {
+            try {
+              const { animeAPI } = await import('@/lib/api');
+              const { data } = await animeAPI.getRandom();
+              const anime = data;
+              if (anime && anime.id) {
+                const title = anime.title?.english || anime.title?.romaji || anime.title?.native || 'Random Anime';
+                window.location.href = `/anime/${anime.id}?title=${encodeURIComponent(title)}`;
+              }
+            } catch (err) {
+              console.error('Failed to get random anime', err);
+            }
+          }}
+          className="hidden md:flex shrink-0 px-3 py-1.5 bg-s5/10 hover:bg-s5/20 border border-s5/20 rounded-full items-center gap-1.5 transition-colors group whitespace-nowrap"
+          title="Surprise Me!"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-s5 group-hover:rotate-12 transition-transform">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <circle cx="15.5" cy="15.5" r="1.5"></circle>
+            <circle cx="15.5" cy="8.5" r="1.5"></circle>
+            <circle cx="8.5" cy="15.5" r="1.5"></circle>
+            <circle cx="12" cy="12" r="1.5"></circle>
+          </svg>
+          <span className="text-[10px] font-bold text-s5 uppercase tracking-wider">Random</span>
+        </button>
+
+        {/* Divider */}
         <div className="w-[1px] h-5 bg-white/10" />
         
         {/* MangaVerse Button */}

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Clock, Zap, History, X, Download } from 'lucide-react';
+import { Clock, Zap, History, X, Download, Sun, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import HeroSlider   from '@/components/HeroSlider';
@@ -45,6 +45,14 @@ export default function HomePage() {
   
   const [latestReleases, setLatestReleases] = useState<Record<string,unknown>[]>(cachedLatest);
   const [mostWatched, setMostWatched] = useState<Record<string,unknown>[]>(cachedMostWatched);
+
+  const [seasonal, setSeasonal] = useState<Record<string,unknown>[]>([]);
+  const [loadingSeasonal, setLoadingSeasonal] = useState(true);
+  const [schedule, setSchedule] = useState<Record<string,unknown>[]>([]);
+  const [loadingSchedule, setLoadingSchedule] = useState(true);
+  const [scheduleDay, setScheduleDay] = useState<string>(
+    ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]
+  );
 
   useEffect(() => {
     const hardcodedAiring = ['witch hat atelier', 'dr stone', 're zero', 'classroom of the elite', 'wistoria season 2'];
@@ -139,7 +147,26 @@ export default function HomePage() {
       if (list.length) setGenres(list);
       if (!activeGenre && list.length) setActiveGenre(list[0]);
     }).catch(() => {}).finally(() => setLoadingG(false));
+
+    animeAPI.getSeasonal(new Date().getFullYear(), ['WINTER','SPRING','SUMMER','FALL'][Math.floor((new Date().getMonth() / 12) * 4)]).then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.anime || data.results || data.items || data.data || [];
+      setSeasonal(arr);
+    }).finally(() => setLoadingSeasonal(false));
+
+    animeAPI.getSchedule(scheduleDay).then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.schedule || data.results || data.items || data.data || [];
+      setSchedule(arr);
+    }).finally(() => setLoadingSchedule(false));
   }, []);
+
+  // When scheduleDay changes, fetch new schedule
+  useEffect(() => {
+    setLoadingSchedule(true);
+    animeAPI.getSchedule(scheduleDay).then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.schedule || data.results || data.items || data.data || [];
+      setSchedule(arr);
+    }).finally(() => setLoadingSchedule(false));
+  }, [scheduleDay]);
 
   useEffect(() => {
     if (!activeGenre) return;
@@ -238,6 +265,11 @@ export default function HomePage() {
 
       <div className="section-line" />
 
+      {/* Seasonal Anime */}
+      <AnimeSection title="Seasonal Anime" loading={loadingSeasonal} items={seasonal} watchedSlugs={watchedSlugs}
+        icon={<Sun size={14} className="text-s4" />}
+        onDownload={handleDownload} onWatchlist={handleWatchlist} />
+
       {/* Airing Now */}
       <AnimeSection title="Airing Now" loading={loadingA} items={airing} watchedSlugs={watchedSlugs}
         icon={<Clock size={14} className="text-s4" />}
@@ -250,6 +282,64 @@ export default function HomePage() {
       <AnimeSection title="Most Watched" loading={loadingMW} items={mostWatched} watchedSlugs={watchedSlugs}
         icon={<History size={14} className="text-s4" />}
         onDownload={handleDownload} onWatchlist={handleWatchlist} />
+
+      <div className="section-line" />
+
+      {/* Release Schedule */}
+      <section className="px-[clamp(16px,4vw,56px)] py-7">
+        <div className="flex items-center gap-3 font-display font-bold text-[clamp(.95rem,2.3vw,1.2rem)] text-s5 mb-5">
+          <div className="w-7 h-7 rounded-lg bg-s2 flex items-center justify-center border border-[var(--border)] shrink-0">
+            <Calendar size={14} className="text-s4" />
+          </div>
+          Release Schedule
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-4 ep-scroll mb-2">
+          {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(day => (
+            <button key={day} onClick={() => setScheduleDay(day)}
+              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+                scheduleDay === day ? 'bg-s5 text-s0' : 'bg-s2 text-s4 hover:bg-s3/50'
+              }`}>
+              {day}
+            </button>
+          ))}
+        </div>
+        
+        {/* Render schedule items using the same AnimeCard wrap pattern as AnimeSection */}
+        <div className="relative">
+          <div className="snap-row">
+            {loadingSchedule
+              ? Array.from({ length: 8 }, (_, i) => <div key={`skeleton-${i}`} className="w-[180px] h-[260px] bg-s2 animate-pulse rounded-xl" />)
+              : schedule.length > 0
+                ? schedule.map((raw: any, i) => {
+                    // Reusing the same props structure as AnimeSection mappings
+                    const { extractAnimeData } = require('@/lib/utils');
+                    const a = extractAnimeData(raw);
+                    // animeAPI schedule might have airingAt/airingTime we could show, but standard AnimeCard is fine
+                    return (
+                      <div key={`schedule-${a.slug}-${i}`} className="shrink-0 w-[clamp(140px,16vw,180px)]">
+                        <Link href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`} className="group block">
+                          <div className="relative rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2.5" style={{ aspectRatio: '2/3', boxShadow: 'var(--shadow-sm)' }}>
+                            <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                            {a.type && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white uppercase">{a.type}</span>}
+                            {raw.episode && <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5 text-s0 uppercase">EP {raw.episode}</span>}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                              <span className="text-white text-[10px] font-bold">{new Date(raw.airingAt * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                          </div>
+                          <p className="text-xs font-bold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{a.title}</p>
+                        </Link>
+                      </div>
+                    );
+                  })
+                : (
+                  <div className="w-full min-h-[220px] flex items-center justify-center rounded-3xl border border-dashed border-s2 bg-s0/60 text-s4 text-sm">
+                    No schedule data for {scheduleDay}.
+                  </div>
+                )
+            }
+          </div>
+        </div>
+      </section>
 
       <AnimeSection title="Popular Anime" loading={loadingP} items={popular} watchedSlugs={watchedSlugs}
         icon={<History size={14} className="text-s4" />}

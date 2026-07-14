@@ -211,11 +211,11 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
   // Fetch Characters, Staff, and Relations
   useEffect(() => {
     if (!slug) return;
-    animeAPI.getCharacters(slug).then(({ data }) => setCharacters(data || []))
+    animeAPI.getCharacters(slug).then(({ data }) => setCharacters(data.characters || data || []))
       .catch(() => {});
-    animeAPI.getStaff(slug).then(({ data }) => setStaff(data || []))
+    animeAPI.getStaff(slug).then(({ data }) => setStaff(data.staff || data || []))
       .catch(() => {});
-    animeAPI.getRelations(slug).then(({ data }) => setRelations(data || []))
+    animeAPI.getRelations(slug).then(({ data }) => setRelations(data.relations || data || []))
       .catch(() => {});
   }, [slug]);
 
