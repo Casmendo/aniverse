@@ -441,6 +441,8 @@ export default function VideoPlayer({
       ref={containerRef}
       className="relative bg-black w-full aspect-video select-none overflow-hidden"
       style={{ cursor: showCtrl ? 'default' : 'none' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setShowCtrl(false)}
     >
       {/* Video element — always mounted, never recreated */}
       <video
