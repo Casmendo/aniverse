@@ -375,17 +375,17 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
             {/* Actions */}
             <div className="flex gap-2.5 flex-wrap">
               <Link href={episodes.length?`/watch/${slug}/${episodes[0].id}?title=${encodeURIComponent(a.title)}&ep=${episodes[0].num}`:'#'}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-s5 text-s0 hover:bg-s4 hover:-translate-y-0.5 transition-all"
-                style={{boxShadow:'var(--shadow)'}}>
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-accent text-white hover:bg-accent/90 hover:-translate-y-0.5 transition-all"
+                style={{boxShadow:'0 4px 14px rgba(225,29,72,0.4), inset 0 1px 2px rgba(255,255,255,0.2)'}}>
                 <Play size={16} fill="currentColor" />Watch Now
               </Link>
               <button onClick={() => setShowDownloadModal(true)}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm text-s5 bg-s1 border border-[var(--border)] hover:bg-s2 hover:-translate-y-0.5 transition-all">
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-bold text-sm text-accent bg-transparent border-2 border-accent/40 hover:bg-accent/10 hover:border-accent hover:-translate-y-0.5 transition-all">
                 <Download size={15}/>Download EP
               </button>
               <button onClick={handleWatchlist}
-                className={`inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm border transition-all hover:-translate-y-0.5 ${
-                  inWl ? 'bg-s2 border-[var(--border-hi)] text-s5' : 'text-s4 border-[var(--border)] bg-s1 hover:bg-s2'
+                className={`inline-flex items-center gap-2 px-5 py-3 rounded-full font-medium text-sm border-2 transition-all hover:-translate-y-0.5 ${
+                  inWl ? 'bg-s2 border-[var(--border-hi)] text-s5' : 'text-s4 border-transparent bg-s1 hover:bg-s2'
                 }`}>
                 {inWl ? <BookmarkCheck size={15}/> : <Bookmark size={15}/>}
                 {inWl ? 'In Watchlist' : 'Watchlist'}
@@ -511,60 +511,64 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
         )}
 
         {/* Characters */}
+        {/* Characters */}
         {characters.length > 0 && (
           <div className="mt-8">
-            <h2 className="font-display font-bold text-lg text-s5 mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-5 rounded-full bg-s5 inline-block" />
+            <h2 className="font-display font-bold text-xl text-white mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded bg-white inline-block shadow-[0_0_8px_rgba(255,255,255,0.3)]" />
               Characters
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3 ep-scroll">
+            <div className="flex gap-5 overflow-x-auto pb-6 ep-scroll" style={{ scrollbarWidth: 'none' }}>
               {characters.slice(0, 15).map((c: any, i: number) => {
                 const charId = c.id || c.node?.id;
                 const charName = c.name?.full || c.name || 'Unknown';
                 const charImage = c.image || c.image?.large || '';
                 const charRole = c.role || '';
                 return (
-                  <div key={charId || i} className="shrink-0 w-24 flex flex-col items-center group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2 shadow-sm">
+                  <div key={charId || i} className="shrink-0 w-[85px] flex flex-col items-center group">
+                    <div className="w-[85px] h-[85px] rounded-full overflow-hidden bg-s1 group-hover:ring-2 ring-accent/50 transition-all mb-3 shadow-md relative">
                       {charImage ? (
-                        <img src={charImage} alt={charName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                        <img src={charImage} alt={charName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-s3 font-bold text-xl">{charName[0]}</div>
                       )}
+                      <div className="absolute inset-0 rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] pointer-events-none" />
                     </div>
-                    <p className="text-xs font-bold text-s5 text-center line-clamp-1">{charName}</p>
-                    {charRole && <p className="text-[10px] text-s4 text-center truncate w-full">{charRole}</p>}
+                    <p className="text-[11px] font-bold text-white text-center leading-tight line-clamp-2 w-full">{charName}</p>
+                    {charRole && <p className="text-[9px] text-s4 text-center truncate w-full mt-0.5">{charRole}</p>}
                   </div>
                 );
               })}
             </div>
+            <div className="w-full h-[1px] bg-white/5 mt-2" />
           </div>
         )}
 
         {/* Staff */}
         {staff.length > 0 && (
-          <div className="mt-6">
-            <h2 className="font-display font-bold text-lg text-s5 mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-5 rounded-full bg-s5 inline-block" />
+          <div className="mt-8">
+            <h2 className="font-display font-bold text-xl text-white mb-5 flex items-center gap-2">
+              <span className="w-1.5 h-5 rounded bg-white inline-block shadow-[0_0_8px_rgba(255,255,255,0.3)]" />
               Staff
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3 ep-scroll">
+            <div className="flex gap-5 overflow-x-auto pb-6 ep-scroll" style={{ scrollbarWidth: 'none' }}>
               {staff.slice(0, 10).map((s: any, i: number) => {
                 const staffId = s.id || s.node?.id;
                 const staffName = s.name?.full || s.name || 'Unknown';
                 const staffImage = s.image || s.image?.large || '';
                 const staffRole = s.role || '';
                 return (
-                  <div key={staffId || i} className="shrink-0 w-20 flex flex-col items-center group">
-                    <div className="w-20 h-20 rounded-full overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2 shadow-sm">
+                  <div key={staffId || i} className="shrink-0 w-[85px] flex flex-col items-center group">
+                    <div className="w-[85px] h-[85px] rounded-full overflow-hidden bg-s1 group-hover:ring-2 ring-accent/50 transition-all mb-3 shadow-md relative">
                       {staffImage ? (
-                        <img src={staffImage} alt={staffName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+                        <img src={staffImage} alt={staffName} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-s3 font-bold text-lg">{staffName[0]}</div>
                       )}
+                      <div className="absolute inset-0 rounded-full shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] pointer-events-none" />
                     </div>
-                    <p className="text-[11px] font-bold text-s5 text-center line-clamp-1 w-full">{staffName}</p>
-                    {staffRole && <p className="text-[9px] text-s4 text-center truncate w-full">{staffRole}</p>}
+                    <p className="text-[11px] font-bold text-white text-center leading-tight line-clamp-2 w-full">{staffName}</p>
+                    {staffRole && <p className="text-[9px] text-s4 text-center truncate w-full mt-0.5">{staffRole}</p>}
                   </div>
                 );
               })}
