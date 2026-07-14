@@ -504,6 +504,15 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                   <div className="mb-4 pb-4 border-b border-[var(--border)]">
                     <p className="text-xs font-bold text-s4 uppercase tracking-widest px-2 mb-2">Direct Download (MP4)</p>
                     <div className="flex items-center gap-3 p-3 rounded-xl bg-s2/50 border border-[var(--border)]">
+                      <div className="w-14 h-9 rounded bg-s1 overflow-hidden shrink-0 flex items-center justify-center relative">
+                        {currentEp.thumbnail || anime?.banner || anime?.cover ? (
+                          <img src={currentEp.thumbnail || anime?.banner || anime?.cover} alt="" className="w-full h-full object-cover opacity-80"
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : null}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-[9px] font-mono font-bold text-white z-10 drop-shadow-md">EP {currentEp.num}</span>
+                        </div>
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-bold text-s5">EP {currentEp.num}</div>
                         <div className="text-sm text-s4 line-clamp-1">{currentEp.title}</div>
@@ -524,6 +533,15 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                       className={`flex items-center gap-3 p-3 mb-1 rounded-xl cursor-pointer border transition-all ${isSelected ? 'bg-s5/10 border-s5/30' : 'border-transparent hover:bg-s2'}`}>
                       <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all ${isSelected ? 'bg-s5 border-s5' : 'border-s3'}`}>
                         {isSelected && <Check size={12} className="text-white" strokeWidth={3} />}
+                      </div>
+                      <div className="w-14 h-9 rounded bg-s1 overflow-hidden shrink-0 flex items-center justify-center relative">
+                        {ep.thumbnail || anime?.banner || anime?.cover ? (
+                          <img src={ep.thumbnail || anime?.banner || anime?.cover} alt="" className="w-full h-full object-cover opacity-80"
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        ) : null}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-[9px] font-mono font-bold text-white z-10 drop-shadow-md">EP {ep.num}</span>
+                        </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-xs font-bold ${isSelected ? 'text-s5' : 'text-s4'}`}>EP {ep.num}</div>
