@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2, X, Check } from 'lucide-react';
+import { Play, Download, Bookmark, BookmarkCheck, ChevronDown, ChevronUp, MessageSquare, Send, Trash2, X, Check, Tv, Layers, Clock, BookOpen, Calendar, Building2, Tags, Flag, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animeAPI, commentAPI } from '@/lib/api';
 const ADMIN_EMAIL = 'isahmusa9921@gmail.com';
@@ -392,6 +392,90 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
               </button>
             </div>
           </div>
+        </div>
+        
+        {/* Anime Metadata Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-6 gap-x-4 mt-10 pt-8 border-t border-[var(--border)]">
+          {a.format && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Tv size={14} className="text-s3" /> Format
+              </div>
+              <span className="text-sm font-bold text-s5">{a.format}</span>
+            </div>
+          )}
+          {a.episodes > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Layers size={14} className="text-s3" /> Episodes
+              </div>
+              <span className="text-sm font-bold text-s5">{a.episodes}</span>
+            </div>
+          )}
+          {a.duration > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Clock size={14} className="text-s3" /> Duration
+              </div>
+              <span className="text-sm font-bold text-s5">{a.duration} min</span>
+            </div>
+          )}
+          {a.source && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <BookOpen size={14} className="text-s3" /> Source
+              </div>
+              <span className="text-sm font-bold text-s5">{a.source}</span>
+            </div>
+          )}
+          {(a.season || a.year) && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Calendar size={14} className="text-s3" /> Season
+              </div>
+              <span className="text-sm font-bold text-s5">
+                {a.season ? `${a.season} ${a.year}`.toUpperCase() : a.year}
+              </span>
+            </div>
+          )}
+          {((a as any).studios?.length > 0) && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Building2 size={14} className="text-s3" /> Studios
+              </div>
+              <span className="text-sm font-bold text-s5">
+                {(a as any).studios[0].name || (a as any).studios[0]}
+              </span>
+            </div>
+          )}
+          {a.genres?.length > 0 && (
+            <div className="flex flex-col gap-1.5 col-span-2 sm:col-span-1 md:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Tags size={14} className="text-s3" /> Genres
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {a.genres.slice(0,3).map((g: string) => (
+                  <span key={g} className="text-[10px] px-2 py-0.5 rounded bg-red-500/10 text-red-400 font-semibold border border-red-500/20">{g}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {(a as any).country && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Flag size={14} className="text-s3" /> Country
+              </div>
+              <span className="text-sm font-bold text-s5">{(a as any).country}</span>
+            </div>
+          )}
+          {(a as any).popularity > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
+                <Users size={14} className="text-s3" /> Popularity
+              </div>
+              <span className="text-sm font-bold text-s5">{(a as any).popularity.toLocaleString()} users</span>
+            </div>
+          )}
         </div>
 
         {/* Relations (from new API) */}

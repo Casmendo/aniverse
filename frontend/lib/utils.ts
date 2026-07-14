@@ -85,9 +85,16 @@ export function extractAnimeData(raw: Record<string, unknown>) {
     score:       parseFloat(String(raw.rating || raw.score || 0)) || 0,
     status:      String(raw.status || ''),
     type:        String(raw.type || raw.format || ''),
+    format:      String(raw.format || raw.type || ''),
     year:        String(raw.year || (String(raw.aired || raw.start_date || raw.created_at || '')).split('-')[0] || ''),
+    season:      String(raw.season || ''),
     // New API uses totalEpisodes, old used total_episodes
     episodes:    Number(raw.totalEpisodes || raw.total_episodes || raw.episodes_count || raw.episode_count || raw.episode || 0) || 0,
+    duration:    Number(raw.duration || 0) || 0,
+    popularity:  Number(raw.popularity || 0) || 0,
+    source:      String(raw.source || ''),
+    country:     String(raw.countryOfOrigin || raw.country || ''),
+    studios:     (Array.isArray(raw.studios) ? raw.studios : []) as any[],
     genres:      (Array.isArray(raw.genres) ? raw.genres : Array.isArray(raw.genre) ? raw.genre : [])
                   .map((g: unknown) => typeof g === 'string' ? g : (g as {name:string}).name || ''),
     in_watchlist: Boolean(raw.in_watchlist),
