@@ -38,8 +38,7 @@ export default function Sidebar() {
     { href:'/manga',     icon:BookOpen,  label:'MangaVerse' },
     { href:'/schedule',  icon:Calendar,  label:'Schedule' },
     { href:'/seasonal',  icon:Sun,       label:'Seasonal' },
-    { href:'/downloads', icon:Download,  label:'Downloads' },
-    { href:'/watchlist', icon:Bookmark,  label:`Watchlist${watchlist.length ? ` (${watchlist.length})` : ''}` },
+    { href:'/library',   icon:Bookmark,  label:'Library' },
   ];
 
   return (

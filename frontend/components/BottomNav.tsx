@@ -12,7 +12,7 @@ const NAV_LEFT = [
   { href:'/library',   icon:Download, label:'Library' },
 ];
 const NAV_RIGHT = [
-  { href:'/catalog',   icon:Bookmark, label:'Catalog' }, 
+  { href:'/search',    icon:Search,   label:'Search' }, 
   { href:'/profile',   icon:User,     label:'Profile' },
 ];
 

@@ -55,44 +55,13 @@ export default function HomePage() {
   );
 
   useEffect(() => {
-    const hardcodedAiring = ['witch hat atelier', 'dr stone', 're zero', 'classroom of the elite', 'wistoria season 2'];
-    Promise.all(hardcodedAiring.map(q => animeAPI.search(q).then(r => {
-      const arr = Array.isArray(r.data) ? r.data : r.data.results || r.data.items || r.data.data || r.data.anime || [];
-      return arr.length > 0 ? arr[0] : null;
-    }).catch(() => null))).then(results => {
-      const manualAiring = results.filter(Boolean) as Record<string,unknown>[];
-      animeAPI.getAiring().then(async ({data}) => {
-        const fetchAiring = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
-        const merged = [...manualAiring, ...fetchAiring];
-        // Deduplicate by session/id
-        const seen = new Set<string>();
-        const unique = merged.filter(item => {
-          const key = String((item as any).session || (item as any).id || Math.random());
-          if (seen.has(key)) return false;
-          seen.add(key); return true;
-        });
-
-        // Enrich items that only have snapshot (no poster) by searching their title
-        const enriched = await Promise.all(unique.map(async (item: any) => {
-          if (item.poster || item.cover || item.image) return item;
-          if (!item.anime_title) return item;
-          try {
-            const { data: sd } = await animeAPI.search(item.anime_title);
-            const sItems = Array.isArray(sd) ? sd : sd.results || sd.items || sd.data || [];
-            const match = sItems.find((s: any) =>
-              s.session === item.anime_session || s.title?.toLowerCase() === item.anime_title?.toLowerCase()
-            ) || sItems[0];
-            if (match?.poster) return { ...item, poster: match.poster };
-          } catch {}
-          return item;
-        }));
-
-        setAiring(enriched);
-        cacheAiring(enriched);
-      }).catch(() => {
-        if (cachedAiring.length === 0) setAiring(manualAiring);
-      }).finally(() => setLoadingA(false));
-    });
+    animeAPI.getAiring().then(async ({data}) => {
+      const arr = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
+      setAiring(arr);
+      cacheAiring(arr);
+    }).catch(() => {
+      if (cachedAiring.length === 0) setAiring([]);
+    }).finally(() => setLoadingA(false));
 
     animeAPI.getRecommended().then(({data}) => {
       const arr = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
@@ -100,43 +69,17 @@ export default function HomePage() {
       cacheLatest(arr);
     }).finally(() => setLoadingLR(false));
 
-    animeAPI.getTrending().then(async ({data}) => {
+    animeAPI.getTrending().then(({data}) => {
       const arr = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
-      const enriched = await Promise.all(arr.map(async (item: any) => {
-        if (item.poster || item.cover || item.image) return item;
-        if (!item.title && !item.anime_title) return item;
-        try {
-          const { data: sd } = await animeAPI.search(item.title || item.anime_title);
-          const sItems = Array.isArray(sd) ? sd : sd.results || sd.items || sd.data || [];
-          const match = sItems.find((s: any) => s.id === item.id || s.title?.toLowerCase() === (item.title || item.anime_title)?.toLowerCase()) || sItems[0];
-          if (match && (match.poster || match.image || match.cover)) return { ...item, cover: match.poster || match.image || match.cover };
-        } catch {}
-        return item;
-      }));
-      setMostWatched(enriched);
-      cacheMostWatched(enriched);
+      setMostWatched(arr);
+      cacheMostWatched(arr);
     }).finally(() => setLoadingMW(false));
 
-    const hardcodedPopular = [
-      'wistoria', 'jack of all trades', 'eminence in shadow', 'dr stone', 'one piece',
-      'vinland saga', 'black clover', 'demon slayer', 'attack on titan', 'death note',
-      'one punch man', 'fullmetal alchemist', 'jujutsu kaisen', 'tokyo ghoul',
-      'sword art online', 'hunter x hunter'
-    ];
-    Promise.all(hardcodedPopular.map(q => animeAPI.search(q).then(r => {
-      const arr = Array.isArray(r.data) ? r.data : r.data.results || r.data.items || r.data.data || r.data.anime || [];
-      return arr.length > 0 ? arr[0] : null;
-    }).catch(() => null))).then(results => {
-      const seen = new Set<string>();
-      const unique = (results.filter(Boolean) as Record<string,unknown>[]).filter(item => {
-        const key = String((item as any).session || (item as any).id || Math.random());
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      setPopular(unique);
-      cachePopular(unique);
-    }).finally(() => setLoadingP(false));
+    animeAPI.getPopular().then(({data}) => {
+      const arr = Array.isArray(data) ? data : data.results || data.items || data.data || data.anime || [];
+      setPopular(arr);
+      cachePopular(arr);
+    }).catch(() => {}).finally(() => setLoadingP(false));
 
     animeAPI.getGenres().then(({data}) => {
       let list = Array.isArray(data)
