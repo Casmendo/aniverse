@@ -399,51 +399,51 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
           {a.format && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Tv size={14} className="text-s4" /> Format
+                <Tv size={14} className="text-s3" /> Format
               </div>
-              <span className="text-sm font-bold text-white">{a.format}</span>
+              <span className="text-sm font-bold text-s5">{a.format}</span>
             </div>
           )}
           {a.episodes > 0 && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Layers size={14} className="text-s4" /> Episodes
+                <Layers size={14} className="text-s3" /> Episodes
               </div>
-              <span className="text-sm font-bold text-white">{a.episodes}</span>
+              <span className="text-sm font-bold text-s5">{a.episodes}</span>
             </div>
           )}
           {a.duration > 0 && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Clock size={14} className="text-s4" /> Duration
+                <Clock size={14} className="text-s3" /> Duration
               </div>
-              <span className="text-sm font-bold text-white">{a.duration} min</span>
+              <span className="text-sm font-bold text-s5">{a.duration} min</span>
             </div>
           )}
           {a.source && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <BookOpen size={14} className="text-s4" /> Source
+                <BookOpen size={14} className="text-s3" /> Source
               </div>
-              <span className="text-sm font-bold text-white">{a.source}</span>
+              <span className="text-sm font-bold text-s5">{a.source}</span>
             </div>
           )}
           {(a.season || a.year) && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Calendar size={14} className="text-s4" /> Season
+                <Calendar size={14} className="text-s3" /> Season
               </div>
-              <span className="text-sm font-bold text-white">
-                {a.season ? (a.season.includes(a.year) ? a.season.toUpperCase() : `${a.season} ${a.year}`.toUpperCase()) : a.year}
+              <span className="text-sm font-bold text-s5">
+                {a.season ? `${a.season} ${a.year}`.toUpperCase() : a.year}
               </span>
             </div>
           )}
           {((a as any).studios?.length > 0) && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Building2 size={14} className="text-s4" /> Studios
+                <Building2 size={14} className="text-s3" /> Studios
               </div>
-              <span className="text-sm font-bold text-white">
+              <span className="text-sm font-bold text-s5">
                 {(a as any).studios[0].name || (a as any).studios[0]}
               </span>
             </div>
@@ -451,7 +451,7 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
           {a.genres?.length > 0 && (
             <div className="flex flex-col gap-1.5 col-span-2 sm:col-span-1 md:col-span-2 lg:col-span-1">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Tags size={14} className="text-s4" /> Genres
+                <Tags size={14} className="text-s3" /> Genres
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {a.genres.slice(0,3).map((g: string) => (
@@ -463,17 +463,17 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
           {(a as any).country && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Flag size={14} className="text-s4" /> Country
+                <Flag size={14} className="text-s3" /> Country
               </div>
-              <span className="text-sm font-bold text-white">{(a as any).country}</span>
+              <span className="text-sm font-bold text-s5">{(a as any).country}</span>
             </div>
           )}
           {(a as any).popularity > 0 && (
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2 text-s4 text-[11px] font-bold uppercase tracking-wider">
-                <Users size={14} className="text-s4" /> Popularity
+                <Users size={14} className="text-s3" /> Popularity
               </div>
-              <span className="text-sm font-bold text-white">{(a as any).popularity.toLocaleString()} users</span>
+              <span className="text-sm font-bold text-s5">{(a as any).popularity.toLocaleString()} users</span>
             </div>
           )}
         </div>
