@@ -24,9 +24,8 @@ export async function GET(
       signal: AbortSignal.timeout(25000),
     });
 
-    const data = await response.text();
-
-    return new Response(data, {
+    // Return the response stream directly for faster loading and proper video chunking
+    return new Response(response.body, {
       status: response.status,
       headers: {
         'Content-Type': response.headers.get('content-type') || 'application/json',
