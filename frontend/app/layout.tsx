@@ -2,6 +2,7 @@
 import './globals.css';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import Navbar    from '@/components/Navbar';
 import Sidebar   from '@/components/Sidebar';
 import BottomNav from '@/components/BottomNav';
