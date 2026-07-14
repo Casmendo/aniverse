@@ -37,7 +37,7 @@ export const processDownload = async (
       addOrUpdateItem(jobId, downloadName, Math.min(99, pct));
 
       if (['done', 'finished', 'completed'].includes(status)) {
-        fileUrl = await downloadAPI.getJobFile(jobId);
+        fileUrl = downloadAPI.getJobFile(ep.id, anime.slug || anime.id, audio);
         break;
       }
       if (['failed', 'error'].includes(status)) throw new Error('Server processing failed');
