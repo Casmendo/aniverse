@@ -113,6 +113,7 @@ export const animeAPI = {
   getStream:    (episodeSession: string, id: string, quality = 'best', audio = 'sub') =>
     ANIMAPI.get(`/stream/${id}/${episodeSession}`, { params: { audio } }),
   getTrending:  (page = 1) => ANIMAPI.get('/trending', { params: { page } }),
+  getPopular:   (page = 1) => ANIMAPI.get('/popular', { params: { page } }),
   getRecommended: (page = 1) => ANIMAPI.get('/popular', { params: { page } }),
   getGenres:    () => ANIMAPI.get('/genres'),
   getGenre:     (genre: string, page = 1) => ANIMAPI.get(`/genres/${genre}`, { params: { page } }),
