@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;600;700;900&family=Space+Mono:wght@400;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,38 +6,38 @@
 
 :root {
   --font-orbitron:   'Orbitron', monospace;
-  --font-exo:        'Exo 2', sans-serif;
+  --font-outfit:     'Outfit', sans-serif;
   --font-space-mono: 'Space Mono', monospace;
 
-  /* Original Steel palette + Crimson accent */
-  --s0: #06141B;
-  --s1: #11212D;
-  --s2: #253745;
-  --s3: #4A5C6A;
-  --s4: #9BA8AB;
-  --s5: #CCD0CF;
+  /* Deep Dark Red Premium Palette */
+  --s0: #0a0506;
+  --s1: #140a0c;
+  --s2: #211215;
+  --s3: #4a3338;
+  --s4: #a38a90;
+  --s5: #ffe4e6;
   --accent: #e11d48;
 
   /* Semantic */
   --bg:       var(--s0);
   --surface:  var(--s1);
   --elevated: var(--s2);
-  --border:   rgba(74,92,106,0.4);
-  --border-hi:rgba(155,168,171,0.25);
+  --border:   rgba(74, 51, 56, 0.4);
+  --border-hi:rgba(163, 138, 144, 0.25);
   --text:     var(--s5);
   --text-dim: var(--s4);
   --text-muted:var(--s3);
 
   /* Pre-baked opacities for UI overlays */
-  --s0-95: rgba(6,20,27,0.95);
-  --s1-95: rgba(17,33,45,0.95);
-  --s2-95: rgba(37,55,69,0.95);
+  --s0-95: rgba(10, 5, 6, 0.95);
+  --s1-95: rgba(20, 10, 12, 0.95);
+  --s2-95: rgba(33, 18, 21, 0.95);
 
   /* Depth shadows — NO colour glows */
   --shadow-sm: 0 2px 8px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.7);
   --shadow:    0 8px 32px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.8);
   --shadow-lg: 0 24px 64px rgba(0,0,0,.7),0 8px 24px rgba(0,0,0,.9);
-  --inset-top: inset 0 1px 0 rgba(204,208,207,.06);
+  --inset-top: inset 0 1px 0 rgba(255, 228, 230, 0.06);
 }
 
 /* ── Reset ── */
@@ -45,7 +45,7 @@
 html{ scroll-behavior:smooth; -webkit-tap-highlight-color:transparent; height:100%; }
 
 body{
-  font-family: var(--font-exo);
+  font-family: var(--font-outfit);
   background: var(--s0);
   color: var(--s5);
   min-height: 100vh;

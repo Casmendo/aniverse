@@ -45,7 +45,7 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
         
         {/* Text Logo */}
         <div className="relative mb-4 flex items-center select-none group">
-          <span className="font-display font-black text-6xl tracking-tight text-accent drop-shadow-sm">
+          <span className="font-display font-black text-6xl tracking-tight text-accent drop-shadow-sm mr-2">
             Ani
           </span>
           <span className="font-display font-black text-6xl tracking-tight text-white drop-shadow-sm">

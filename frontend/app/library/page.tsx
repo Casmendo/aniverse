@@ -34,9 +34,14 @@ export default function LibraryPage() {
     <div className="min-h-screen pb-24">
       {/* Header */}
       <div className="pt-8 px-[clamp(16px,5vw,56px)] bg-s0 sticky top-0 z-30 pb-2">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center font-black text-white">H</div>
-          <h1 className="font-display font-black text-2xl text-s5">Library</h1>
+        <div className="flex items-center mb-6 select-none group cursor-default">
+          <span className="font-display font-black text-3xl tracking-tight text-accent transition-transform duration-300 group-hover:scale-105 mr-1.5">
+            Ani
+          </span>
+          <span className="font-display font-black text-3xl tracking-tight text-white transition-transform duration-300 group-hover:scale-105 mr-3">
+            Verse
+          </span>
+          <h1 className="font-display font-black text-3xl text-s5">Library</h1>
         </div>
 
         {/* Tabs */}

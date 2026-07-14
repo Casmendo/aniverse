@@ -32,7 +32,7 @@ export default function Navbar() {
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
         {/* Logo */}
         <a href="/" className="flex items-center select-none group">
-          <span className="font-display font-black text-3xl tracking-tight text-accent transition-transform duration-300 group-hover:scale-105">
+          <span className="font-display font-black text-3xl tracking-tight text-accent transition-transform duration-300 group-hover:scale-105 mr-1.5">
             Ani
           </span>
           <span className="font-display font-black text-3xl tracking-tight text-white transition-transform duration-300 group-hover:scale-105">
