@@ -230,56 +230,90 @@ export default function HomePage() {
 
       {/* Release Schedule */}
       <section className="px-[clamp(16px,4vw,56px)] py-7">
-        <div className="flex items-center gap-3 font-display font-bold text-[clamp(.95rem,2.3vw,1.2rem)] text-s5 mb-5">
-          <div className="w-7 h-7 rounded-lg bg-s2 flex items-center justify-center border border-[var(--border)] shrink-0">
-            <Calendar size={14} className="text-s4" />
-          </div>
-          Release Schedule
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-4 ep-scroll mb-2">
-          {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(day => (
-            <button key={day} onClick={() => setScheduleDay(day)}
-              className={`px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
-                scheduleDay === day ? 'bg-s5 text-s0' : 'bg-s2 text-s4 hover:bg-s3/50'
-              }`}>
-              {day}
-            </button>
-          ))}
-        </div>
-        
-        {/* Render schedule items using the same AnimeCard wrap pattern as AnimeSection */}
-        <div className="relative">
-          <div className="snap-row">
-            {loadingSchedule
-              ? Array.from({ length: 8 }, (_, i) => <div key={`skeleton-${i}`} className="w-[180px] h-[260px] bg-s2 animate-pulse rounded-xl" />)
-              : schedule.length > 0
-                ? schedule.map((raw: any, i) => {
-                    // Reusing the same props structure as AnimeSection mappings
-                    const { extractAnimeData } = require('@/lib/utils');
-                    const a = extractAnimeData(raw);
-                    // animeAPI schedule might have airingAt/airingTime we could show, but standard AnimeCard is fine
-                    return (
-                      <div key={`schedule-${a.slug}-${i}`} className="shrink-0 w-[clamp(140px,16vw,180px)]">
-                        <Link href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`} className="group block">
-                          <div className="relative rounded-xl overflow-hidden bg-s2 border border-[var(--border)] group-hover:border-s5/60 transition-all mb-2.5" style={{ aspectRatio: '2/3', boxShadow: 'var(--shadow-sm)' }}>
-                            <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                            {a.type && <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white uppercase">{a.type}</span>}
-                            {raw.episode && <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-s5 text-s0 uppercase">EP {raw.episode}</span>}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                              <span className="text-white text-[10px] font-bold">{new Date(raw.airingAt * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                            </div>
-                          </div>
-                          <p className="text-xs font-bold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-tight">{a.title}</p>
-                        </Link>
-                      </div>
-                    );
-                  })
-                : (
-                  <div className="w-full min-h-[220px] flex items-center justify-center rounded-3xl border border-dashed border-s2 bg-s0/60 text-s4 text-sm">
-                    No schedule data for {scheduleDay}.
+        <div className="p-[2px] rounded-[32px] bg-gradient-to-r from-accent via-purple-500 to-accent relative overflow-hidden group shadow-[0_8px_32px_rgba(59,130,246,0.15)]">
+          {/* Subtle glowing blur behind the container */}
+          <div className="absolute inset-0 bg-gradient-to-r from-accent via-purple-500 to-accent opacity-30 blur-xl group-hover:opacity-60 transition-opacity duration-700" />
+          
+          <div className="relative bg-s0 rounded-[30px] p-6 sm:p-8 z-10">
+            {/* Title with Vertical Bar */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-1.5 h-7 bg-accent rounded-full" />
+              <h2 className="font-display font-bold text-2xl text-s5">Schedule</h2>
+            </div>
+            
+            {/* Pill Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-4 ep-scroll mb-6">
+              {['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map(day => (
+                <button key={day} onClick={() => setScheduleDay(day)}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 ${
+                    scheduleDay === day 
+                      ? 'bg-accent text-white shadow-[0_4px_14px_rgba(59,130,246,0.4)]' 
+                      : 'bg-s1 text-s4 hover:bg-s2 hover:text-s5 border border-transparent hover:border-white/10'
+                  }`}>
+                  {day}
+                </button>
+              ))}
+            </div>
+
+            {/* Horizontal Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {loadingSchedule ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div key={`skel-${i}`} className="flex gap-4 p-3 bg-s1 rounded-2xl animate-pulse border border-white/5">
+                    <div className="w-[84px] h-[112px] bg-s2 rounded-xl shrink-0" />
+                    <div className="flex-1 py-2">
+                      <div className="h-4 bg-s2 rounded w-3/4 mb-4" />
+                      <div className="h-3 bg-s2 rounded w-1/2" />
+                    </div>
                   </div>
-                )
-            }
+                ))
+              ) : schedule.length > 0 ? (
+                schedule.map((raw: any, i) => {
+                  const { extractAnimeData } = require('@/lib/utils');
+                  const a = extractAnimeData(raw);
+                  
+                  // Compute if airing time is past or future (for Aired vs Airing status)
+                  const airingTime = raw.airingAt ? new Date(raw.airingAt * 1000) : null;
+                  const isAired = airingTime ? airingTime < new Date() : true;
+                  const timeString = airingTime ? airingTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Unknown';
+
+                  return (
+                    <Link key={`sched-${a.slug}-${i}`} href={`/anime/${a.slug}?title=${encodeURIComponent(a.title)}`}
+                      className="group flex gap-4 p-3 bg-s1 border border-white/5 hover:border-accent/50 hover:bg-s2/50 rounded-2xl transition-all duration-300 relative overflow-hidden">
+                      
+                      {/* Left: Cover */}
+                      <div className="relative w-[84px] h-[112px] shrink-0 rounded-xl overflow-hidden shadow-md bg-s2">
+                        <img src={a.cover} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        {raw.episode && (
+                          <div className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[10px] font-bold text-white shadow-sm border border-white/10">
+                            {raw.episode}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Info */}
+                      <div className="flex flex-col justify-center flex-1 py-1 overflow-hidden pr-2">
+                        <h3 className="text-sm font-bold text-s4 group-hover:text-s5 transition-colors line-clamp-2 leading-snug mb-3">
+                          {a.title}
+                        </h3>
+                        
+                        <div className="flex items-center gap-2 text-[10px] sm:text-[11px] font-bold tracking-wide uppercase">
+                          <span className={`w-2 h-2 rounded-full ${isAired ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`} />
+                          <span className={isAired ? 'text-s4' : 'text-s5'}>
+                            {isAired ? `Aired at ${timeString}` : `Airing at ${timeString}`}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="col-span-full min-h-[160px] flex items-center justify-center rounded-2xl border border-dashed border-s2 bg-s1/50 text-s4 text-sm font-semibold">
+                  No anime scheduled for {scheduleDay}.
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </section>
