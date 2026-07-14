@@ -9,12 +9,12 @@ module.exports = {
     extend: {
       colors: {
         white: '#fff0f2', // very subtle red-tinted white to replace pure white
-        s0: '#0a0506',   // deep background
-        s1: '#140a0c',   // surface
-        s2: '#211215',   // elevated
-        s3: '#4a3338',   // muted
-        s4: '#a38a90',   // body text
-        s5: '#ffe4e6',   // primary text
+        s0: '#06141B',   // deep background
+        s1: '#11212D',   // surface
+        s2: '#253745',   // elevated
+        s3: '#4A5C6A',   // muted
+        s4: '#9BA8AB',   // body text
+        s5: '#CCD0CF',   // primary text
         accent: '#e11d48', // deep rose-crimson accent
       },
       fontFamily: {
@@ -23,8 +23,8 @@ module.exports = {
         mono:    ['var(--font-space-mono)', 'monospace'],
       },
       backgroundImage: {
-        'depth': 'linear-gradient(180deg,#0a0506 0%,#140a0c 100%)',
-        'surface': 'linear-gradient(135deg,#140a0c 0%,#211215 100%)',
+        'depth': 'linear-gradient(180deg,#06141B 0%,#11212D 100%)',
+        'surface': 'linear-gradient(135deg,#11212D 0%,#1a2d3d 100%)',
       },
       boxShadow: {
         'depth-sm': '0 2px 8px rgba(0,0,0,0.5),0 1px 2px rgba(0,0,0,0.7)',

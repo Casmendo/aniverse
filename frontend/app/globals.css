@@ -9,29 +9,29 @@
   --font-outfit:     'Outfit', sans-serif;
   --font-space-mono: 'Space Mono', monospace;
 
-  /* Deep Dark Red Premium Palette */
-  --s0: #0a0506;
-  --s1: #140a0c;
-  --s2: #211215;
-  --s3: #4a3338;
-  --s4: #a38a90;
-  --s5: #ffe4e6;
+  /* Original Steel palette + Crimson accent */
+  --s0: #06141B;
+  --s1: #11212D;
+  --s2: #253745;
+  --s3: #4A5C6A;
+  --s4: #9BA8AB;
+  --s5: #CCD0CF;
   --accent: #e11d48;
 
   /* Semantic */
   --bg:       var(--s0);
   --surface:  var(--s1);
   --elevated: var(--s2);
-  --border:   rgba(74, 51, 56, 0.4);
-  --border-hi:rgba(163, 138, 144, 0.25);
+  --border:   rgba(74,92,106,0.4);
+  --border-hi:rgba(155,168,171,0.25);
   --text:     var(--s5);
   --text-dim: var(--s4);
   --text-muted:var(--s3);
 
   /* Pre-baked opacities for UI overlays */
-  --s0-95: rgba(10, 5, 6, 0.95);
-  --s1-95: rgba(20, 10, 12, 0.95);
-  --s2-95: rgba(33, 18, 21, 0.95);
+  --s0-95: rgba(6,20,27,0.95);
+  --s1-95: rgba(17,33,45,0.95);
+  --s2-95: rgba(37,55,69,0.95);
 
   /* Depth shadows — NO colour glows */
   --shadow-sm: 0 2px 8px rgba(0,0,0,.5),0 1px 2px rgba(0,0,0,.7);
