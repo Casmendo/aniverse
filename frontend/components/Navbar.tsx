@@ -29,65 +29,15 @@ export default function Navbar() {
       </button>
 
       {/* Center */}
-      <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+      <div className="absolute left-1/2 -translate-x-1/2 flex items-center">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 select-none group">
-          <svg viewBox="0 0 34 38" fill="none" className="w-8 h-9 transition-transform duration-300 group-hover:scale-110">
-            <defs>
-              <linearGradient id="navLg" x1="0" y1="0" x2="34" y2="38" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#ffffff"/>
-                <stop offset="50%" stopColor="#fca5a5"/>
-                <stop offset="100%" stopColor="#e11d48"/>
-              </linearGradient>
-            </defs>
-            <path d="M17 2L32 36H24L21 29H13L10 36H2Z" fill="url(#navLg)"/>
-            <path d="M17 10L22 26H12Z" fill="var(--s0)"/>
-            <circle cx="17" cy="2" r="2.5" fill="#e11d48"/>
-          </svg>
-          <span className="font-display font-black text-xl tracking-tight text-white">
-            niVerse
+        <a href="/" className="flex items-center select-none group">
+          <span className="font-display font-black text-3xl tracking-tight text-accent transition-transform duration-300 group-hover:scale-105">
+            Ani
           </span>
-        </a>
-        
-        {/* Divider */}
-        <div className="w-[1px] h-5 bg-white/10 hidden md:block" />
-        
-        {/* Random Anime Button */}
-        <button
-          onClick={async () => {
-            try {
-              const { animeAPI } = await import('@/lib/api');
-              const { data } = await animeAPI.getRandom();
-              const anime = data;
-              if (anime && anime.id) {
-                const title = anime.title?.english || anime.title?.romaji || anime.title?.native || 'Random Anime';
-                window.location.href = `/anime/${anime.id}?title=${encodeURIComponent(title)}`;
-              }
-            } catch (err) {
-              console.error('Failed to get random anime', err);
-            }
-          }}
-          className="hidden md:flex shrink-0 px-3 py-1.5 bg-s5/10 hover:bg-s5/20 border border-s5/20 rounded-full items-center gap-1.5 transition-colors group whitespace-nowrap"
-          title="Surprise Me!"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-s5 group-hover:rotate-12 transition-transform">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <circle cx="15.5" cy="15.5" r="1.5"></circle>
-            <circle cx="15.5" cy="8.5" r="1.5"></circle>
-            <circle cx="8.5" cy="15.5" r="1.5"></circle>
-            <circle cx="12" cy="12" r="1.5"></circle>
-          </svg>
-          <span className="text-[10px] font-bold text-s5 uppercase tracking-wider">Random</span>
-        </button>
-
-        {/* Divider */}
-        <div className="w-[1px] h-5 bg-white/10" />
-        
-        {/* MangaVerse Button */}
-        <a href="/manga" className="flex shrink-0 px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/20 rounded-full items-center gap-1.5 transition-colors group whitespace-nowrap">
-          <img src="/mangaverse-logo.png" alt="MangaVerse" className="w-4 h-4 object-contain rounded-[2px] shrink-0" />
-          <span className="text-[10px] font-bold text-blue-400 group-hover:text-blue-300 uppercase tracking-wider">Manga</span>
+          <span className="font-display font-black text-3xl tracking-tight text-white transition-transform duration-300 group-hover:scale-105">
+            Verse
+          </span>
         </a>
       </div>
 

@@ -43,34 +43,23 @@ export default function LoadingScreen({ onDone }: { onDone: () => void }) {
       {/* Main Content (Centered) */}
       <div className={`flex flex-col items-center relative z-10 transition-all duration-700 ${phase === 'logo' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
         
-        {/* A glyph */}
-        <div className="relative mb-8">
-          <svg viewBox="0 0 80 90" fill="none" className="w-24 h-24 drop-shadow-lg">
-            <defs>
-              <linearGradient id="lsGrad" x1="0" y1="0" x2="80" y2="90" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="var(--accent)"/>
-                <stop offset="100%" stopColor="var(--accent)"/>
-              </linearGradient>
-            </defs>
-            {/* Bold futuristic A - pure red */}
-            <path d="M40 4L76 86H60L53 68H27L20 86H4Z" fill="url(#lsGrad)"/>
-            <path d="M40 24L52 60H28Z" fill="var(--s0)"/>
-            {/* Corner accents */}
-            <line x1="0" y1="86" x2="14" y2="86" stroke="var(--s4)" strokeWidth="3" strokeLinecap="round"/>
-            <line x1="66" y1="86" x2="80" y2="86" stroke="var(--s4)" strokeWidth="3" strokeLinecap="round"/>
-            <circle cx="40" cy="4" r="3.5" fill="var(--s4)"/>
-          </svg>
+        {/* Text Logo */}
+        <div className="relative mb-4 flex items-center select-none group">
+          <span className="font-display font-black text-6xl tracking-tight text-accent drop-shadow-sm">
+            Ani
+          </span>
+          <span className="font-display font-black text-6xl tracking-tight text-white drop-shadow-sm">
+            Verse
+          </span>
+          
           {/* Animated underline */}
-          <div className="absolute -bottom-3 left-0 right-0 h-[2px] bg-s2 rounded-full overflow-hidden">
-            <div className="h-full bg-s4 transition-all duration-700"
+          <div className="absolute -bottom-4 left-0 right-0 h-[2px] bg-s2 rounded-full overflow-hidden">
+            <div className="h-full bg-accent transition-all duration-700"
               style={{ width: `${progress}%` }} />
           </div>
         </div>
 
-        <div className="font-display font-black tracking-widest text-3xl text-s5 mb-3 drop-shadow-sm">
-          ANIVERSE
-        </div>
-        <div className="font-mono text-s4 text-[11px] tracking-[.4em] uppercase mb-12">
+        <div className="font-mono text-s4 text-[11px] tracking-[.4em] uppercase mb-12 mt-6 text-center">
           Enter the Multiverse
         </div>
 
