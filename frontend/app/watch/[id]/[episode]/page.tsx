@@ -273,7 +273,7 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                 </span>
                 <button onClick={() => setShowEpList(false)}><X size={16} className="text-s3" /></button>
               </div>
-              <EpList episodes={episodes} current={currentEp} onSelect={switchEp} />
+              <EpList episodes={episodes} current={currentEp} onSelect={switchEp} animeCover={anime?.banner || anime?.cover} />
             </motion.div>
           </motion.div>
         )}
@@ -339,6 +339,7 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                 onAudioChange={setSelectedAudio}
                 intro={intro}
                 outro={outro}
+                animeCover={anime?.banner || anime?.cover}
                 />
               );
             })()}
@@ -553,10 +554,11 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
   );
 }
 
-function EpList({ episodes, current, onSelect }: {
+function EpList({ episodes, current, onSelect, animeCover }: {
   episodes: ReturnType<typeof extractEpisode>[];
   current: ReturnType<typeof extractEpisode> | null;
   onSelect: (ep: ReturnType<typeof extractEpisode>) => void;
+  animeCover?: string;
 }) {
   return (
     <div className="flex-1 overflow-y-auto ep-scroll">
@@ -566,13 +568,14 @@ function EpList({ episodes, current, onSelect }: {
           <button key={ep.id} onClick={() => onSelect(ep)}
             className={`w-full flex items-center gap-3 px-4 py-3 border-b border-[rgba(74,92,106,0.12)] text-left transition-all hover:bg-s2/50 ${active ? 'bg-s2/60 border-l-2 border-l-s5' : ''
               }`}>
-            <div className="w-16 h-10 rounded bg-s2 overflow-hidden shrink-0 flex items-center justify-center">
-              {ep.thumbnail ? (
-                <img src={ep.thumbnail} alt="" className="w-full h-full object-cover"
+            <div className="w-16 h-10 rounded bg-s2 overflow-hidden shrink-0 flex items-center justify-center relative">
+              {ep.thumbnail || animeCover ? (
+                <img src={ep.thumbnail || animeCover} alt="" className="w-full h-full object-cover opacity-80"
                   onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-              ) : (
-                <span className="text-[9px] font-mono font-bold text-s3">EP {ep.num}</span>
-              )}
+              ) : null}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-[9px] font-mono font-bold text-white z-10 drop-shadow-md">EP {ep.num}</span>
+              </div>
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[9px] font-mono text-s4 font-bold mb-0.5">EP {ep.num}</div>

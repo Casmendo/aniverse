@@ -18,6 +18,7 @@ interface Props {
   onEnded?: () => void; onProgress?: (t: number, d: number) => void; autoPlay?: boolean;
   qualityOptions?: string[]; audioOptions?: string[]; selectedQuality?: string; selectedAudio?: string;
   onQualityChange?: (q: string) => void; onAudioChange?: (a: string) => void;
+  onDownload?: () => void; animeCover?: string;
   intro?: { start: number; end: number }; outro?: { start: number; end: number };
   localPath?: string;
   poster?: string;
@@ -27,7 +28,7 @@ export default function VideoPlayer({
   streamUrl, slug, episodeId, isFetchingStream, streamFetchError, onRetry,
   episodes, currentEp, onEpisodeSelect, onEnded, onProgress, autoPlay = true,
   qualityOptions = [], audioOptions = [], selectedQuality, selectedAudio,
-  onQualityChange, onAudioChange, intro, outro, localPath, poster
+  onQualityChange, onAudioChange, onDownload, animeCover, intro, outro, localPath, poster
 }: Props) {
   const videoRef     = useRef<HTMLVideoElement>(null);
   const hlsRef       = useRef<any>(null);
@@ -737,10 +738,13 @@ export default function VideoPlayer({
                   <button key={ep.id} ref={active ? activeEpRef : null} onClick={() => { onEpisodeSelect?.(ep); setShowEpisodes(false); }}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all mb-1 ${active ? 'bg-s5/20 border border-s5/30' : 'hover:bg-white/5 border border-transparent'}`}>
                     <div className="w-14 h-9 rounded-lg bg-white/5 overflow-hidden shrink-0 flex items-center justify-center relative">
-                      {ep.thumbnail
-                        ? <img src={ep.thumbnail} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        : <span className="text-[9px] font-mono font-bold text-white/40">EP {ep.num}</span>}
-                      {active && <div className="absolute inset-0 bg-s5/20 flex items-center justify-center"><Play size={12} fill="white" className="text-white" /></div>}
+                      {ep.thumbnail || animeCover
+                        ? <img src={ep.thumbnail || animeCover} alt="" className="w-full h-full object-cover opacity-80" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        : null}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <span className="text-[9px] font-mono font-bold text-white z-10 drop-shadow-md">EP {ep.num}</span>
+                      </div>
+                      {active && <div className="absolute inset-0 bg-s5/20 flex items-center justify-center z-20"><Play size={12} fill="white" className="text-white" /></div>}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className={`text-[9px] font-mono font-bold mb-0.5 ${active ? 'text-s5' : 'text-white/40'}`}>EP {ep.num}</div>
