@@ -374,11 +374,18 @@ export default function AnimePage({ params, searchParams }: { params: { id:strin
 
             {/* Actions */}
             <div className="flex gap-2.5 flex-wrap">
-              <Link href={episodes.length?`/watch/${slug}/${episodes[0].id}?title=${encodeURIComponent(a.title)}&ep=${episodes[0].num}`:'#'}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-accent text-white hover:bg-accent/90 hover:-translate-y-0.5 transition-all"
-                style={{boxShadow:'0 4px 14px rgba(225,29,72,0.4), inset 0 1px 2px rgba(255,255,255,0.2)'}}>
-                <Play size={16} fill="currentColor" />Watch Now
-              </Link>
+              {episodes.length > 0 ? (
+                <Link href={`/watch/${slug}/${episodes[0].id}?title=${encodeURIComponent(a.title)}&ep=${episodes[0].num}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-accent text-white hover:bg-accent/90 hover:-translate-y-0.5 transition-all"
+                  style={{boxShadow:'0 4px 14px rgba(225,29,72,0.4), inset 0 1px 2px rgba(255,255,255,0.2)'}}>
+                  <Play size={16} fill="currentColor" />Watch Now
+                </Link>
+              ) : (
+                <button disabled
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm bg-s3 text-s4 cursor-not-allowed">
+                  <Play size={16} fill="currentColor" />No Episodes
+                </button>
+              )}
               <button onClick={() => setShowDownloadModal(true)}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-bold text-sm text-accent bg-transparent border-2 border-accent/40 hover:bg-accent/10 hover:border-accent hover:-translate-y-0.5 transition-all">
                 <Download size={15}/>Download EP
