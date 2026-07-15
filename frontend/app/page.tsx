@@ -146,7 +146,7 @@ export default function HomePage() {
   };
 
   const watchedSlugs = new Set(watchlist.map(w => w.slug));
-  const heroItems    = airing;
+  const heroItems    = mostWatched.length > 0 ? mostWatched : popular;
 
   return (
     <>
@@ -213,10 +213,7 @@ export default function HomePage() {
         icon={<Sun size={14} className="text-s4" />}
         onDownload={handleDownload} onWatchlist={handleWatchlist} />
 
-      {/* Airing Now */}
-      <AnimeSection title="Airing Now" loading={loadingA} items={airing} watchedSlugs={watchedSlugs}
-        icon={<Clock size={14} className="text-s4" />}
-        onDownload={handleDownload} onWatchlist={handleWatchlist} />
+
 
       <AnimeSection title="Latest Releases" loading={loadingLR} items={latestReleases} watchedSlugs={watchedSlugs}
         icon={<Zap size={14} className="text-s4" />}
