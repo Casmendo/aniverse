@@ -85,13 +85,19 @@ export default function VideoPlayer({
     }, 6000);
   }, []);
 
-  const handleMouseMove = useCallback(() => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
     if (!showCtrl) showControls();
     else {
       clearTimeout(ctrlTimer.current);
       ctrlTimer.current = setTimeout(() => setShowCtrl(false), 6000);
     }
   }, [showCtrl, showControls]);
+
+  const handlePointerLeave = useCallback((e: React.PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
+    setShowCtrl(false);
+  }, []);
 
   // ── Skip animation ─────────────────────────────────────────────────────────
   const flashSkip = useCallback((dir: 'fwd' | 'bck', targetTime: number) => {
@@ -452,8 +458,8 @@ export default function VideoPlayer({
       ref={containerRef}
       className="relative bg-black w-full aspect-video select-none overflow-hidden"
       style={{ cursor: showCtrl ? 'default' : 'none' }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setShowCtrl(false)}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
     >
       {/* Video element — always mounted, never recreated */}
       <video
