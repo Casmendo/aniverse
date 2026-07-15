@@ -6,8 +6,9 @@ import { useProgressStore } from '@/store/progressStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 
-import { Camera, PictureInPicture2 } from 'lucide-react';
+import { Camera, PictureInPicture2, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/components/Toast';
+import { useRouter } from 'next/navigation';
 
 declare global { interface Window { Hls: any; } }
 
@@ -41,6 +42,7 @@ export default function VideoPlayer({
 
   const { getProgress, setProgress } = useProgressStore();
   const toast = useToast();
+  const router = useRouter();
 
   const [playing,    setPlaying]    = useState(false);
   const [buffering,  setBuffering]  = useState(true);
@@ -760,6 +762,38 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
+      {/* Top controls bar */}
+      {!isLocked && (
+        <div className={`absolute top-0 left-0 right-0 px-4 pt-4 pb-12 z-40 flex items-center justify-between transition-opacity duration-300 ${showCtrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{ background: 'linear-gradient(180deg, rgba(0,0,0,.8) 0%, transparent 100%)' }}
+          onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => router.back()} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white transition-colors border border-white/10">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="flex flex-col">
+              <span className="text-white font-bold text-sm sm:text-base line-clamp-1">{currentEp?.title || slug}</span>
+              {currentEp && <span className="text-white/70 text-xs font-semibold">Episode {currentEp.num}</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-2">
+            {episodes && episodes.length > 0 && (
+              <button onClick={() => { setShowEpisodes(v => !v); setShowSettings(false); setShowDownload(false); }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showEpisodes ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}>
+                <List size={18} /> <span className="hidden sm:inline">Episodes</span>
+              </button>
+            )}
+            <button onClick={() => { setShowSettings(v => !v); setShowEpisodes(false); setShowDownload(false); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showSettings ? 'bg-s5 text-white' : 'hover:bg-white/10 text-white/90'}`}>
+              <Settings size={18} />
+            </button>
+            <button onClick={() => setIsLocked(true)} className="flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              <Lock size={18} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom controls bar */}
       {!isLocked && (
         <div className={`absolute bottom-0 left-0 right-0 px-4 pb-4 z-40 transition-opacity duration-300 ${showCtrl ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
@@ -807,55 +841,50 @@ export default function VideoPlayer({
           />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
           {/* Left controls */}
-          <div className="flex items-center gap-1">
-            <button onClick={togglePlay} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              {playing ? <Pause size={20} /> : <Play size={20} fill="white" />}
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <button onClick={togglePlay} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              {playing ? <Pause size={22} /> : <Play size={22} fill="white" />}
             </button>
-            <button onClick={() => skipTime(-10, false)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              <SkipBack size={18} />
+            <button onClick={() => skipTime(-10, false)} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              <SkipBack size={20} />
             </button>
-            <button onClick={() => skipTime(10, false)} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              <SkipForward size={18} />
+            <button onClick={() => skipTime(10, false)} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              <SkipForward size={20} />
             </button>
-            <button onClick={toggleMute} className="w-9 h-9 hidden sm:flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            
+            <button onClick={toggleMute} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              {muted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
             <input type="range" min="0" max="1" step="0.05" value={muted ? 0 : volume}
               onChange={e => changeVol(parseFloat(e.target.value))}
-              className="w-16 hidden sm:block accent-s5 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
-            <span className="text-white/70 text-[11px] font-mono ml-1">{formatTime(displayCurrent)} / {formatTime(duration)}</span>
+              className="w-12 sm:w-16 accent-s5 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
+            
+            <button className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors hidden sm:flex ml-1">
+              <Sun size={20} />
+            </button>
+            <input type="range" min="0.1" max="1" step="0.05" value={brightness}
+              onChange={e => setBrightness(parseFloat(e.target.value))}
+              className="w-12 sm:w-16 hidden sm:block accent-s5 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
+
+            <span className="text-white/70 text-xs font-mono ml-2 hidden lg:inline">{formatTime(displayCurrent)} / {formatTime(duration)}</span>
           </div>
 
-          <div className="flex-1" />
-
           {/* Right controls */}
-          <div className="flex items-center gap-1">
-            {episodes && episodes.length > 0 && (
-              <button onClick={() => { setShowEpisodes(v => !v); setShowSettings(false); setShowDownload(false); }}
-                className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showEpisodes ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/90'}`}>
-                <List size={15} /> Episodes
-              </button>
-            )}
-            <button onClick={() => { setShowSettings(v => !v); setShowEpisodes(false); setShowDownload(false); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${showSettings ? 'bg-s5 text-white' : 'hover:bg-white/10 text-white/90'}`}>
-              <Settings size={15} /> <span className="hidden sm:inline">Settings</span>
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            <span className="text-white/70 text-[10px] sm:text-xs font-mono mr-2 lg:hidden">{formatTime(displayCurrent)}</span>
+            <button onClick={() => { setShowDownload(true); setShowSettings(false); setShowEpisodes(false); }} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Download">
+              <Download size={20} />
             </button>
-            <button onClick={() => { setShowDownload(true); setShowSettings(false); setShowEpisodes(false); }} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Download">
-              <Download size={18} />
+            <button onClick={takeScreenshot} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Screenshot">
+              <Camera size={20} />
             </button>
-            <button onClick={() => setIsLocked(true)} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              <Lock size={18} />
+            <button onClick={togglePiP} className="hidden sm:flex w-10 h-10 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Picture in Picture">
+              <PictureInPicture2 size={20} />
             </button>
-            <button onClick={takeScreenshot} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Screenshot">
-              <Camera size={18} />
-            </button>
-            <button onClick={togglePiP} className="hidden sm:flex w-9 h-9 items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors" title="Picture in Picture">
-              <PictureInPicture2 size={18} />
-            </button>
-            <button onClick={toggleFS} className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
-              {fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+            <button onClick={toggleFS} className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-white/10 text-white transition-colors">
+              {fullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
             </button>
           </div>
         </div>
