@@ -82,14 +82,14 @@ export default function VideoPlayer({
     clearTimeout(ctrlTimer.current);
     ctrlTimer.current = setTimeout(() => {
       setShowCtrl(false);
-    }, 3500);
+    }, 6000);
   }, []);
 
   const handleMouseMove = useCallback(() => {
     if (!showCtrl) showControls();
     else {
       clearTimeout(ctrlTimer.current);
-      ctrlTimer.current = setTimeout(() => setShowCtrl(false), 3500);
+      ctrlTimer.current = setTimeout(() => setShowCtrl(false), 6000);
     }
   }, [showCtrl, showControls]);
 
@@ -229,8 +229,17 @@ export default function VideoPlayer({
         // Double tap: skip forward/back
         skipTime(side === 'right' ? 10 : -10);
       } else {
-        // Single tap: pure toggle — show if hidden, hide if shown
-        setShowCtrl(prev => !prev);
+        // Single tap: show with timer if hidden, hide if shown
+        setShowCtrl(prev => {
+          if (!prev) {
+            clearTimeout(ctrlTimer.current);
+            ctrlTimer.current = setTimeout(() => setShowCtrl(false), 6000);
+            return true;
+          } else {
+            clearTimeout(ctrlTimer.current);
+            return false;
+          }
+        });
       }
       tapCount.current = 0;
     }, 280);
@@ -509,12 +518,12 @@ export default function VideoPlayer({
       <AnimatePresence>
         {(showCtrl || (indicator && indicator.type === 'brightness')) && !isLocked && !buffering && !errMsg && !streamFetchError && (
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-            className="absolute left-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-14 h-48 rounded-2xl shadow-2xl border border-white/10">
-            <Sun size={22} className="text-white mb-3" />
-            <div className="h-24 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-10 h-36 rounded-2xl shadow-2xl border border-white/10">
+            <Sun size={18} className="text-white mb-2" />
+            <div className="h-20 w-1 bg-white/20 rounded-full mb-2 flex flex-col justify-end overflow-hidden">
               <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${Math.round(brightness * 100)}%` }} />
             </div>
-            <span className="text-white font-bold text-[10px]">{Math.round(brightness * 100)}%</span>
+            <span className="text-white font-bold text-[9px]">{Math.round(brightness * 100)}%</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -523,12 +532,12 @@ export default function VideoPlayer({
       <AnimatePresence>
         {(showCtrl || (indicator && indicator.type === 'volume')) && !isLocked && !buffering && !errMsg && !streamFetchError && (
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}
-            className="absolute right-6 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-14 h-48 rounded-2xl shadow-2xl border border-white/10">
-            {muted || volume === 0 ? <VolumeX size={22} className="text-white mb-3" /> : <Volume2 size={22} className="text-white mb-3" />}
-            <div className="h-24 w-1.5 bg-white/20 rounded-full mb-3 flex flex-col justify-end overflow-hidden">
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-10 h-36 rounded-2xl shadow-2xl border border-white/10">
+            {muted || volume === 0 ? <VolumeX size={18} className="text-white mb-2" /> : <Volume2 size={18} className="text-white mb-2" />}
+            <div className="h-20 w-1 bg-white/20 rounded-full mb-2 flex flex-col justify-end overflow-hidden">
               <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${Math.round(volume * 100)}%` }} />
             </div>
-            <span className="text-white font-bold text-[10px]">{Math.round(volume * 100)}%</span>
+            <span className="text-white font-bold text-[9px]">{Math.round(volume * 100)}%</span>
           </motion.div>
         )}
       </AnimatePresence>
