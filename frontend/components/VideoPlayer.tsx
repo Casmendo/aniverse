@@ -520,30 +520,16 @@ export default function VideoPlayer({
         )}
       </AnimatePresence>
 
-      {/* Left Brightness Widget */}
+      {/* Volume/Brightness Indicator */}
       <AnimatePresence>
-        {(showCtrl || (indicator && indicator.type === 'brightness')) && !isLocked && !buffering && !errMsg && !streamFetchError && (
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-            className="absolute left-4 top-[38%] -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-12 h-44 rounded-2xl shadow-2xl border border-white/10">
-            <Sun size={20} className="text-white mb-2.5" />
-            <div className="h-24 w-[6px] bg-white/20 rounded-full mb-2.5 flex flex-col justify-end overflow-hidden">
-              <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${Math.round(brightness * 100)}%` }} />
+        {indicator && (
+          <motion.div initial={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: indicator.type === 'volume' ? 20 : -20 }} transition={{ duration: 0.2 }}
+            className={`absolute top-1/3 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-12 h-32 rounded-2xl shadow-2xl border border-white/10 ${indicator.type === 'volume' ? 'right-6' : 'left-6'}`}>
+            {indicator.type === 'volume' ? <Volume2 size={20} className="text-white mb-2" /> : <Sun size={20} className="text-white mb-2" />}
+            <div className="h-12 w-1.5 bg-white/20 rounded-full mb-2 flex flex-col justify-end overflow-hidden">
+              <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${indicator.value}%` }} />
             </div>
-            <span className="text-white font-bold text-[10px]">{Math.round(brightness * 100)}%</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Right Volume Widget */}
-      <AnimatePresence>
-        {(showCtrl || (indicator && indicator.type === 'volume')) && !isLocked && !buffering && !errMsg && !streamFetchError && (
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}
-            className="absolute right-4 top-[38%] -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center justify-center bg-black/60 backdrop-blur-md w-12 h-44 rounded-2xl shadow-2xl border border-white/10">
-            {muted || volume === 0 ? <VolumeX size={20} className="text-white mb-2.5" /> : <Volume2 size={20} className="text-white mb-2.5" />}
-            <div className="h-24 w-[6px] bg-white/20 rounded-full mb-2.5 flex flex-col justify-end overflow-hidden">
-              <div className="w-full bg-s5 rounded-full transition-all" style={{ height: `${Math.round(volume * 100)}%` }} />
-            </div>
-            <span className="text-white font-bold text-[10px]">{Math.round(volume * 100)}%</span>
+            <span className="text-white font-bold text-[9px]">{indicator.value}%</span>
           </motion.div>
         )}
       </AnimatePresence>
