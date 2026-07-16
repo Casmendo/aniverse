@@ -675,8 +675,13 @@ export default function VideoPlayer({
             onClick={(e) => { e.stopPropagation(); setShowDownload(false); }}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-6 w-[90%] max-w-sm flex flex-col items-center text-center shadow-2xl">
-              <h2 className="text-white font-bold text-xl mb-1">Download Episode {currentEp?.num || '??'}</h2>
+              className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-6 w-[90%] max-w-sm flex flex-col items-center text-center shadow-2xl relative">
+              
+              <button onClick={() => setShowDownload(false)} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                <X size={20} />
+              </button>
+
+              <h2 className="text-white font-bold text-xl mb-1 mt-2">Download Episode {currentEp?.num || '??'}</h2>
               <p className="text-white/50 text-xs font-semibold mb-6 line-clamp-1">{currentEp?.title || slug}</p>
               
               <div className="w-full text-left mb-4">
