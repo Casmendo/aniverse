@@ -675,21 +675,21 @@ export default function VideoPlayer({
             onClick={(e) => { e.stopPropagation(); setShowDownload(false); }}>
             <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#1A1A1A] border border-white/10 rounded-3xl p-6 w-[90%] max-w-sm flex flex-col items-center text-center shadow-2xl relative">
+              className="bg-s1 border border-white/10 rounded-3xl p-6 w-[90%] max-w-sm flex flex-col items-center text-center shadow-2xl relative">
               
-              <button onClick={() => setShowDownload(false)} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+              <button onClick={() => setShowDownload(false)} className="absolute top-4 right-4 p-2 text-s4 hover:text-white hover:bg-s2 rounded-full transition-colors">
                 <X size={20} />
               </button>
 
               <h2 className="text-white font-bold text-xl mb-1 mt-2">Download Episode {currentEp?.num || '??'}</h2>
-              <p className="text-white/50 text-xs font-semibold mb-6 line-clamp-1">{currentEp?.title || slug}</p>
+              <p className="text-s4 text-xs font-semibold mb-6 line-clamp-1">{currentEp?.title || slug}</p>
               
               <div className="w-full text-left mb-4">
-                <p className="text-white/70 text-xs font-bold mb-2">Select Resolution</p>
+                <p className="text-s5 text-xs font-bold mb-2">Select Resolution</p>
                 <div className="flex gap-2">
                   {['480P', '720P', '1080P'].map(res => (
                      <button key={res} onClick={() => setDlRes(res)}
-                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-accent/10 border-accent text-accent' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-accent/10 border-accent text-accent' : 'border-s3 text-s4 hover:bg-s2 hover:text-s5'}`}>
                        {res}
                      </button>
                   ))}
@@ -697,11 +697,11 @@ export default function VideoPlayer({
               </div>
 
               <div className="w-full text-left mb-6">
-                <p className="text-white/70 text-xs font-bold mb-2">Select Subtitle</p>
+                <p className="text-s5 text-xs font-bold mb-2">Select Subtitle</p>
                 <div className="flex gap-2">
                   {['None', 'English'].map(sub => (
                      <button key={sub} onClick={() => setDlSub(sub)}
-                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlSub === sub ? 'bg-accent/10 border-accent text-accent' : 'border-white/10 text-white hover:bg-white/5'}`}>
+                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlSub === sub ? 'bg-accent/10 border-accent text-accent' : 'border-s3 text-s4 hover:bg-s2 hover:text-s5'}`}>
                        {sub}
                      </button>
                   ))}
