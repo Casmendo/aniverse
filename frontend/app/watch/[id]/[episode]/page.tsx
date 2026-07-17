@@ -157,12 +157,16 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                    
         url = match?.url || '';
       } else if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
-        qualities = Array.from(new Set(data.streams.map((s:any) => s.quality.replace(/p$/i, ''))));
+        qualities = Array.from(new Set(
+          data.streams
+            .filter((s:any) => s && s.quality)
+            .map((s:any) => s.quality.replace(/p$/i, ''))
+        ));
         
-        const match = data.streams.find((s:any) => s.quality.includes(selectedQuality)) 
-                   || data.streams.find((s:any) => s.quality === '1080')
-                   || data.streams.find((s:any) => s.quality === '720')
-                   || data.streams.find((s:any) => s.quality === 'auto')
+        const match = data.streams.find((s:any) => s && s.quality && s.quality.includes(selectedQuality)) 
+                   || data.streams.find((s:any) => s && s.quality === '1080p' || s?.quality === '1080')
+                   || data.streams.find((s:any) => s && s.quality === '720p' || s?.quality === '720')
+                   || data.streams.find((s:any) => s && s.quality === 'auto')
                    || data.streams[0];
                    
         url = match?.url || '';
