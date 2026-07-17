@@ -146,13 +146,17 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
       let qualities = [] as string[];
 
       // Consumet/Anilist structure
-      if (data.sources && Array.isArray(data.sources)) {
-        qualities = Array.from(new Set(data.sources.map((s:any) => s.quality.replace(/p$/i, ''))));
+      if (data.sources && Array.isArray(data.sources) && data.sources.length > 0 && typeof data.sources[0] === 'object' && data.sources[0].url) {
+        qualities = Array.from(new Set(
+          data.sources
+            .filter((s:any) => s && s.quality)
+            .map((s:any) => s.quality.replace(/p$/i, ''))
+        ));
         
         // Find best match for selected quality, default to auto/highest
-        const match = data.sources.find((s:any) => s.quality.includes(selectedQuality)) 
-                   || data.sources.find((s:any) => s.quality === 'auto')
-                   || data.sources.find((s:any) => s.quality === 'default')
+        const match = data.sources.find((s:any) => s && s.quality && s.quality.includes(selectedQuality)) 
+                   || data.sources.find((s:any) => s && s.quality === 'auto')
+                   || data.sources.find((s:any) => s && s.quality === 'default')
                    || data.sources[0];
                    
         url = match?.url || '';
