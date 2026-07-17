@@ -157,7 +157,15 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
                    
         url = match?.url || '';
       } else if (data.streams && Array.isArray(data.streams) && data.streams.length > 0) {
-        url = data.streams[0].url;
+        qualities = Array.from(new Set(data.streams.map((s:any) => s.quality.replace(/p$/i, ''))));
+        
+        const match = data.streams.find((s:any) => s.quality.includes(selectedQuality)) 
+                   || data.streams.find((s:any) => s.quality === '1080')
+                   || data.streams.find((s:any) => s.quality === '720')
+                   || data.streams.find((s:any) => s.quality === 'auto')
+                   || data.streams[0];
+                   
+        url = match?.url || '';
       } else {
         url = data.proxy_m3u8 || data.stream_url || data.url || '';
       }

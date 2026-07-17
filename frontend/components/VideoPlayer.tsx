@@ -686,13 +686,16 @@ export default function VideoPlayer({
               
               <div className="w-full text-left mb-4">
                 <p className="text-s5 text-xs font-bold mb-2">Select Resolution</p>
-                <div className="flex gap-2">
-                  {['480P', '720P', '1080P'].map(res => (
-                     <button key={res} onClick={() => setDlRes(res)}
-                       className={`flex-1 py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-accent/10 border-accent text-accent' : 'border-s3 text-s4 hover:bg-s2 hover:text-s5'}`}>
-                       {res}
-                     </button>
-                  ))}
+                <div className="flex flex-wrap gap-2">
+                  {(qualities.length > 0 ? qualities : ['720P', '1080P']).map(res => {
+                     const formattedRes = res.toUpperCase().endsWith('P') ? res.toUpperCase() : `${res}P`;
+                     return (
+                       <button key={res} onClick={() => setDlRes(res)}
+                         className={`flex-1 min-w-[60px] py-2 rounded-xl border text-xs font-bold transition-colors ${dlRes === res ? 'bg-accent/10 border-accent text-accent' : 'border-s3 text-s4 hover:bg-s2 hover:text-s5'}`}>
+                         {formattedRes}
+                       </button>
+                     );
+                  })}
                 </div>
               </div>
 
