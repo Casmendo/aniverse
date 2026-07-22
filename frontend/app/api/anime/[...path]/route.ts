@@ -30,7 +30,7 @@ function rewriteM3u8(m3u8Text: string, selfOrigin: string): string {
     if (line.startsWith('#') && line.includes('URI="')) {
       const rewrittenLine = line.replace(/URI="([^"]+)"/g, (_match, uri) => {
         const absolute = toAbsolute(uri);
-        return `URI="${selfOrigin}/api/anime/proxy/ts?url=${encodeURIComponent(absolute)}"`;
+        return `URI="${selfOrigin}/api/proxy?url=${encodeURIComponent(absolute)}"`;
       });
       rewritten.push(rewrittenLine);
       continue;
@@ -39,7 +39,7 @@ function rewriteM3u8(m3u8Text: string, selfOrigin: string): string {
     // Segment or sub-playlist URL (non-directive, non-empty line)
     if (!line.startsWith('#') && line.length > 0) {
       const absolute = toAbsolute(line);
-      rewritten.push(`${selfOrigin}/api/anime/proxy/ts?url=${encodeURIComponent(absolute)}`);
+      rewritten.push(`${selfOrigin}/api/proxy?url=${encodeURIComponent(absolute)}`);
       continue;
     }
 
