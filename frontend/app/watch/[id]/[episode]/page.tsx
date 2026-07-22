@@ -181,8 +181,12 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
       
       if (!url) throw new Error('No stream URL found — try another episode.');
       
-      // Route through new proxy
-      url = `/api/anime/proxy/hls?url=${encodeURIComponent(url)}`;
+      // Route through new proxy or rewrite if already from backend
+      if (url.includes('apiv1.ayomikuntechies.site/api/proxy')) {
+        url = url.replace('https://apiv1.ayomikuntechies.site/api', '/api/anime');
+      } else if (!url.startsWith('/api/anime/proxy')) {
+        url = `/api/anime/proxy/hls?url=${encodeURIComponent(url)}`;
+      }
 
       if (qualities.length > 0) {
         setQualityOptions(qualities.filter(q => q !== 'auto' && q !== 'default'));
@@ -190,7 +194,7 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
       
       setStreamUrl(url);
     } catch (e: any) {
-      console.error('Stream Fetch Error:', e);
+      // Intentionally omitting console.error to keep the console clean for expected 404s
       setStreamErr(e.message || 'Video source unavailable');
     } finally { setLoadStream(false); }
   }, [slug, selectedQuality, selectedAudio]);
