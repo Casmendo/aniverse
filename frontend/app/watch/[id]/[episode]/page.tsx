@@ -81,7 +81,7 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
 
   // Fetch episodes
   useEffect(() => {
-    animeAPI.getEpisodes(slug, initialTitle || anime?.title || '').then(({ data }) => {
+    animeAPI.getEpisodes(slug).then(({ data }) => {
       const raw = data.info?.episodes || data.episodes || data.data || data.results || (Array.isArray(data) ? data : []);
       const eps = raw.map((ep: Record<string, unknown>, i: number) => extractEpisode(ep, i));
       setEpisodes(eps);
@@ -164,10 +164,11 @@ export default function WatchPage({ params, searchParams }: { params: { id: stri
         qualities = Array.from(new Set(
           data.streams
             .filter((s:any) => s && s.quality)
-            .map((s:any) => s.quality.replace(/p$/i, ''))
+            .map((s:any) => `${s.quality.replace(/p$/i, '')}p ${s.source || ''}`.trim())
         ));
         
-        const match = data.streams.find((s:any) => s && s.quality && s.quality.includes(selectedQuality)) 
+        const match = data.streams.find((s:any) => s && s.quality && `${s.quality.replace(/p$/i, '')}p ${s.source || ''}`.trim() === selectedQuality) 
+                   || data.streams.find((s:any) => s && s.quality && s.quality.replace(/p$/i, '') + 'p' === selectedQuality.split(' ')[0])
                    || data.streams.find((s:any) => s && s.quality === '1080p' || s?.quality === '1080')
                    || data.streams.find((s:any) => s && s.quality === '720p' || s?.quality === '720')
                    || data.streams.find((s:any) => s && s.quality === 'auto')

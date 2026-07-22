@@ -731,9 +731,11 @@ export default function VideoPlayer({
                     toast('Download started — check Library tab', 'info');
                   });
                 } else {
-                  // Web: browser download → saves to phone root Downloads folder, open with VLC etc.
+                  // Web: browser download uses new backend endpoint
+                  const downloadUrl = `/api/anime/download/${slug}/${currentEp?.id || episodeId}?audio=${selectedAudio || 'sub'}&quality=${dlRes.replace('P', 'p')}`;
                   const a = document.createElement('a');
-                  a.href = streamUrl;
+                  a.href = downloadUrl;
+                  a.target = '_blank';
                   a.download = `${slug}-ep${currentEp?.num || episodeId}.mp4`;
                   document.body.appendChild(a);
                   a.click();
